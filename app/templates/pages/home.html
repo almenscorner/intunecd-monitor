@@ -1,0 +1,461 @@
+
+{% extends "base/template.html" %}
+{% block title %} Home {% endblock title %}
+
+{% block stylesheets %}
+{% endblock stylesheets %}
+
+{% block content %}
+  <div class="container-fluid py-4">
+    <!--- Pipeline -->
+    {% include "include/pipelinestatus.html" %}
+    <!--- End Pipeline -->
+
+    <!--- Trends -->
+    <div class="row mt-4">
+      <div class="col-xl-4 col-lg-12 mb-5">
+        <div class="card card-chart">
+          <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
+              <div class="bg-gradient-info shadow-success shadow-info border-radius-lg py-3 pe-1">
+            <canvas id="lineChartTracked" class="chart-canvas" style="display: block; box-sizing: border-box; height: 170px; width: 489.7px;" width="489" height="170"></canvas>
+              </div>
+          </div>
+          <div class="card-body">
+            <h3 class="card-title">Tracked</h3>
+            <p class="card-category">trend over tracked configurations</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-xl-4 col-lg-12 mb-5">
+        <div class="card card-chart">
+          <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
+            <div class="bg-gradient-warning shadow-warning shadow-warning border-radius-lg py-3 pe-1">
+            <canvas id="lineChartDiffs" class="chart-canvas" style="display: block; box-sizing: border-box; height: 170px; width: 489.7px;" width="489" height="170"></canvas>
+          </div>
+          </div>
+          <div class="card-body">
+            <h3 class="card-title">Changes</h3>
+            <p class="card-category">trend over changes between configurations</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-xl-4 col-lg-12 mb-5">
+        <div class="card card-chart">
+          <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
+              <div class="bg-gradient-primary shadow-primary shadow-primary border-radius-lg py-3 pe-1">
+            <canvas id="lineChartAverage" class="chart-canvas" style="display: block; box-sizing: border-box; height: 170px; width: 489.7px;" width="489" height="170"></canvas>
+              </div>
+          </div>
+          <div class="card-body">
+            <h3 class="card-title">Average</h3>
+            <p class="card-category">change average per last {{ diff_data_len }} records</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!--- End Trends -->
+
+    <!--- Diff -->
+    <div class="row mt-4">
+
+      <div class="col-xl-4 col-sm-6 mb-xl-0 mb-5">
+        <div class="card">
+          <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
+            <div class="bg-gradient-info shadow-info shadow-info border-radius-lg py-4">
+            <div class="text-center">
+              <h3 class="text-light" id="tracked"></h3>
+            </div>
+          </div>
+          </div>
+          <div class="card-body">
+            <h4 class="card-title">Tracked configurations</h4>
+          </div>
+          <div class="card-footer d-flex">
+            <i class="material-icons position-relative ms-auto text-lg me-1 my-auto">access_time</i>
+            <p class="font-weight-normal my-auto">Updated on: {{ count_data.last_update }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-xl-4 col-sm-6 mb-xl-0 mb-5">
+        <div class="card">
+          <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
+            <div class="bg-gradient-success shadow-success shadow-success border-radius-lg py-4">
+            <div class="text-center">
+              <h3 class="text-light" id="match"></h3>
+            </div>
+          </div>
+          </div>
+          <div class="card-body">
+            <h4 class="card-title">Matching</h4>
+          </div>
+          <div class="card-footer d-flex">
+              <i class="material-icons position-relative ms-auto text-lg me-1 my-auto">access_time</i>
+              <p class="font-weight-normal my-auto">Updated on: {{ match_data.last_update }}</p>
+            </div>
+        </div>
+      </div>
+
+      <div class="col-xl-4 col-sm-6 mb-xl-0 mb-5">
+        <div class="card">
+          <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
+            <div class="bg-gradient-warning shadow-warning shadow-warning border-radius-lg py-4">
+            <div class="text-center">
+              <h3 class="text-light" id="diff"></h3>
+            </div>
+          </div>
+          </div>
+          <div class="card-body">
+            <h4 class="card-title">Not matching</h4>
+          </div>
+          <div class="card-footer d-flex">
+            <i class="material-icons position-relative ms-auto text-lg me-1 my-auto">access_time</i>
+            <p class="font-weight-normal my-auto">Updated on: {{ diff_data.last_update }}</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <!--- End Diff -->
+
+    <!--- Feeds -->
+    <div class="row mt-4">
+      <div class="col-lg-6 col-md-12">
+        <div class="col-4">
+          <h2 class="text-secondary">Update feed</h2>
+        </div>
+        <div class="card mb-5">
+          <div class="card-body table-responsive" style="height: 515px;">
+            <table class="table table-hover">
+              <tbody>
+                {% for item in update_feed %}
+                <tr>
+                  <td>
+                    <div class="d-flex px-2 py-1">
+                      {% if "No difference" in item or "Checking if" in item %}
+                        <div class="icon icon-m me-4">
+                          <i class="material-icons opacity-5">check_circle</i>
+                        </div>
+                        <div class="d-flex flex-column justify-content-center">
+                          <h9 class="mb-0 text-sm">{{ item }}</h9>
+                        </div>
+                      {% else %}
+                      <div class="icon icon-m me-4">
+                        <i class="material-icons opacity-5">published_with_changes</i>
+                      </div>
+                      <div class="d-flex flex-column justify-content-center">
+                        <h9 class="mb-0 text-sm">{{ item }}</h9>
+                      </div>
+                      {% endif %}
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-6 col-md-12">
+        <div class="col-4">
+          <h2 class="text-secondary">Backup feed</h2>
+        </div>
+        <div class="card mb-5">
+          <div class="card-body table-responsive" style="height: 515px;">
+            <table class="table table-hover">
+              <tbody>
+                {% for item in backup_feed %}
+                <tr>
+                  <td>
+                    <div class="d-flex px-2 py-1">
+                        <div class="icon icon-m me-4">
+                          <i class="material-icons opacity-5">cloud_download</i>
+                        </div>
+                        <div class="d-flex flex-column justify-content-center">
+                          <h9 class="mb-0 text-sm">{{ item }}</h9>
+                        </div>
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!--- End Feeds -->
+  </div>
+
+{% endblock content %}
+
+{% block javascripts %}
+<script src="https://cdn.jsdelivr.net/npm/countup.js@1.8.5/dist/countUp.js" 
+integrity="sha256-uuJpDbZXxCG+b0n1BHZF/culPcadU3xCGhSIrbiypTg=" 
+crossorigin="anonymous"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.js"
+integrity="sha256-gjQYlCMM/HIX3lODQvv5er+D4m6hfcSetDqlGj8FGj0="
+crossorigin="anonymous"></script>
+
+{% if sock is true %}
+<script>
+  const update_status = (pipelines) => {
+    document.getElementById('pipelinestatus').innerHTML = pipelines;
+  };
+
+  const socket = new WebSocket('wss://' + location.host + '/pipelinestatus');
+  socket.addEventListener('message', ev => {
+      update_status(ev.data);
+  });
+</script>
+{% endif %}
+
+<script>
+  var ctx = document.getElementById("lineChartDiffs").getContext("2d");
+  var lineChart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: {{ labelsDiff | safe }},
+  datasets: [
+    {
+      label: 'Diffs',
+      data: {{ diffs | safe }},
+    fill: false,
+    borderColor: "white",
+    lineTension: 0.1
+                      },
+  ]
+              },
+              options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false,
+          }
+        },
+        interaction: {
+          intersect: false,
+          mode: 'index',
+        },
+        scales: {
+          y: {
+            grid: {
+              drawBorder: false,
+              display: true,
+              drawOnChartArea: true,
+              drawTicks: false,
+              borderDash: [5, 5],
+              color: 'rgba(255, 255, 255, .2)'
+            },
+            ticks: {
+              suggestedMin: 0,
+              suggestedMax: 500,
+              beginAtZero: true,
+              padding: 10,
+              font: {
+                size: 14,
+                weight: 300,
+                family: "Roboto",
+                style: 'normal',
+                lineHeight: 2
+              },
+              color: "#fff"
+            },
+          },
+          x: {
+            grid: {
+              drawBorder: false,
+              display: true,
+              drawOnChartArea: true,
+              drawTicks: false,
+              borderDash: [5, 5],
+              color: 'rgba(255, 255, 255, .2)'
+            },
+            ticks: {
+              display: false
+              },
+            }
+          }
+        }
+    });
+</script>
+
+<script>
+  var ctx = document.getElementById("lineChartTracked").getContext("2d");
+  var lineChart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: {{ labelsConfig | safe }},
+  datasets: [
+    {
+      label: 'Tracked',
+      data: {{ config_counts | safe }},
+    fill: false,
+    borderColor: "white",
+    lineTension: 0.1
+                      },
+  ]
+              },
+              options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false,
+          }
+        },
+        interaction: {
+          intersect: false,
+          mode: 'index',
+        },
+        scales: {
+          y: {
+            grid: {
+              drawBorder: false,
+              display: true,
+              drawOnChartArea: true,
+              drawTicks: false,
+              borderDash: [5, 5],
+              color: 'rgba(255, 255, 255, .2)'
+            },
+            ticks: {
+              suggestedMin: 0,
+              suggestedMax: 500,
+              beginAtZero: true,
+              padding: 10,
+              font: {
+                size: 14,
+                weight: 300,
+                family: "Roboto",
+                style: 'normal',
+                lineHeight: 2
+              },
+              color: "#fff"
+            },
+          },
+          x: {
+            grid: {
+              drawBorder: false,
+              display: true,
+              drawOnChartArea: true,
+              drawTicks: false,
+              borderDash: [5, 5],
+              color: 'rgba(255, 255, 255, .2)'
+            },
+            ticks: {
+              display: false
+              },
+            }
+          }
+        }
+    });
+</script>
+
+<script>
+  var ctx = document.getElementById("lineChartAverage").getContext("2d");
+  var lineChart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: {{ labelsAverage | safe }},
+  datasets: [
+    {
+      label: 'Average',
+      data: {{ average_diffs | safe }},
+    fill: false,
+    borderColor: "white",
+    lineTension: 0.1
+                      },
+  ]
+              },
+              options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false,
+          }
+        },
+        interaction: {
+          intersect: false,
+          mode: 'index',
+        },
+        scales: {
+          y: {
+            grid: {
+              drawBorder: false,
+              display: true,
+              drawOnChartArea: true,
+              drawTicks: false,
+              borderDash: [5, 5],
+              color: 'rgba(255, 255, 255, .2)'
+            },
+            ticks: {
+              suggestedMin: 0,
+              suggestedMax: 500,
+              beginAtZero: true,
+              padding: 10,
+              font: {
+                size: 14,
+                weight: 300,
+                family: "Roboto",
+                style: 'normal',
+                lineHeight: 2
+              },
+              color: "#fff"
+            },
+          },
+          x: {
+            grid: {
+              drawBorder: false,
+              display: true,
+              drawOnChartArea: true,
+              drawTicks: false,
+              borderDash: [5, 5],
+              color: 'rgba(255, 255, 255, .2)'
+            },
+            ticks: {
+              display: false
+              },
+            }
+          }
+        }
+    });
+</script>
+
+<script>
+  function count () {
+    var matchCount = new CountUp('match', 0, "{{ matchCount }}");
+    if (!matchCount.error) {
+      matchCount.start();
+    } else {
+      console.error(matchCount.error);
+    }
+    var diffCount = new CountUp('diff', 0, "{{ diffCount }}");
+    if (!diffCount.error) {
+      diffCount.start();
+    } else {
+      console.error(diffCount.error);
+    }
+    var trackedCount = new CountUp('tracked', 0, "{{ trackedCount }}");
+    if (!trackedCount.error) {
+      trackedCount.start();
+    } else {
+      console.error(trackedCount.error);
+    }
+  }
+
+  window.addEventListener('load', count);
+</script>
+
+<style>
+    .dark-version .table> :not(caption)>*>* {
+    border-color: transparent !important;
+    color: rgba(255, 255, 255, 0.6) !important;
+}
+</style>
+
+{% endblock javascripts %}

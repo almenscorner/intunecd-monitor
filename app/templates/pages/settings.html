@@ -1,0 +1,177 @@
+{% extends "base/template.html" %}
+
+{% block title %} Settings {% endblock title %}
+
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block content %}
+<div class="container-fluid py-4">
+
+    <div class="row mt-4">
+        <div class="col-lg-3">
+            <div class="position-sticky pb-lg-5 pb-3 mt-lg-0 mt-5 ps-2" style="top: 100px">
+                <h3>Settings</h3>
+                <h6 class="text-secondary font-weight-normal pe-3">Environment variables configured</h6>
+            </div>
+        </div>
+        <div class="col-lg-9">
+            <div class="card">
+                <div class="card-body px-4 pb-2">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>setting</th>
+                                    <th>value</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody class="table-body">
+                                <tr>
+                                    <td class="align-middle text-sm"> Client ID </td>
+                                    <td class="align-middle text-sm"> {{ settings.CLIENT_ID }} </td>
+                                </tr>
+                                <tr>
+                                    <td class="align-middle text-sm"> Authority </td>
+                                    <td class="align-middle text-sm"> {{ settings.AUTHORITY }} </td>
+                                </tr>
+                                <tr>
+                                    <td class="align-middle text-sm"> Redirect path </td>
+                                    <td class="align-middle text-sm"> {{ settings.REDIRECT_PATH }} </td>
+                                </tr>
+                                <tr>
+                                    <td class="align-middle text-sm"> Scope </td>
+                                    <td class="align-middle text-sm"> {{ settings.SCOPE }} </td>
+                                </tr>
+                                <tr>
+                                    <td class="align-middle text-sm"> Azure SQL DB Driver </td>
+                                    <td class="align-middle text-sm"> {{ settings.AZ_DB_DRIVER}} </td>
+                                </tr>
+                                <tr>
+                                    <td class="align-middle text-sm"> Azure SQL DB Server </td>
+                                    <td class="align-middle text-sm"> {{ settings.AZ_DB_SERVER}} </td>
+                                </tr>
+                                <tr>
+                                    <td class="align-middle text-sm"> Azure SQL DB Name </td>
+                                    <td class="align-middle text-sm"> {{ settings.AZ_DB_NAME }} </td>
+                                </tr>
+                                <tr>
+                                    <td class="align-middle text-sm"> Azure SQL DB User </td>
+                                    <td class="align-middle text-sm"> {{ settings.AZ_DB_USER }} </td>
+                                </tr>
+                                <tr>
+                                    <td class="align-middle text-sm"> Azure DevOps Org Name </td>
+                                    <td class="align-middle text-sm"> {{ settings.DEVOPS_ORG_NAME }} </td>
+                                </tr>
+                                <tr>
+                                    <td class="align-middle text-sm"> Azure DevOps Project Name </td>
+                                    <td class="align-middle text-sm"> {{ settings.DEVOPS_PROJECT_NAME }} </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-lg-3">
+            <div class="position-sticky pb-lg-5 pb-3 mt-lg-0 mt-5 ps-2" style="top: 100px">
+                <h3>API Keys</h3>
+                <h6 class="text-secondary font-weight-normal pe-3">Overview of generated API keys and their
+                    expiration date <br>
+                    Delete or generate new keys</h6>
+            </div>
+        </div>
+        <div class="col-lg-9">
+            <div class="card">
+                <div class="card-header pb-0">
+                    <div class="row">
+                        <div class="col-lg-6 col-7">
+                            <form method="POST" action="/settings/key/create" style="color:white">
+                                <input class="btn btn-primary btn-sm" type="submit" value="Create key" />
+                            </form>
+                            <br>
+                            {% if new_key %}
+                            <span id="copykey" class="text-success">{{ new_key }}</span>
+                            <a id="copybtn" data-clipboard-action="copy" data-clipboard-target="#copykey" role="button"
+                                aria-label="Copied">
+                                <i id="copyicon" class="material-icons text-secondary">content_copy</i>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body px-4 pb-2">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>id</th>
+                                    <th>expiration</th>
+                                    <th>actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="table-body">
+                                {% if keys_td %}
+                                {% for item in keys_td %}
+                                <tr>
+                                    <td class="align-middle text-sm">
+                                        <p>{{ item.id }}</p>
+                                    </td>
+                                    {% if item.expiration > 30 %}
+                                    <td class="align-middle text-sm">
+                                        <span class="badge bg-gradient-success">{{item.expiration }} days</span>
+                                    </td>
+                                    {% elif item.expiration <= 0 %} <td class="align-middle text-sm">
+                                        <span class="badge bg-gradient-danger">expired</span>
+                                        </td>
+                                        {% elif item.expiration < 30 %} <td class="align-middle text-sm">
+                                            <span class="badge bg-gradient-warning">{{
+                                                item.expiration }} days</span>
+                                            </td>
+                                            {% endif %}
+
+                                            <td class="align-middle text-sm">
+                                                <span>
+                                                    <form method="POST" action="/settings/key/delete"
+                                                        style="color:white">
+                                                        <input class="btn btn-danger btn-sm" type="submit"
+                                                            name="{{ item.id }}" value="delete" style="margin: 0;" />
+                                                    </form>
+                                                </span>
+                                            </td>
+                                </tr>
+                                {% endfor %}
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+{% block javascripts %}
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.10/dist/clipboard.min.js" integrity="sha256-uv91Qb6cIPf5d/aZPOOc+pN6e95p22577ruPaDcmgqE=" crossorigin="anonymous"></script>
+{% if new_key %}
+<script>
+    var btn = document.getElementById('copybtn');
+    var clipboard = new ClipboardJS(btn);
+</script>
+
+<script>
+    $(document).ready(function() {
+      $('#copybtn').click(function() {
+        $('#copyicon').text('check');
+      });
+    }); 
+  </script>
+{% endif %}
+{% endblock javascripts %}
+
+{% endblock content %}

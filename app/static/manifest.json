@@ -1,0 +1,23 @@
+{
+    "name": "IntuneCD Monitor",
+    "short_name": "ICD Monitor",
+    "theme_color": "#F0F2F5",
+    "background_color": "#F0F2F5",
+    "display": "standalone",
+    "Scope": "/",
+    "orientation": "portrait",
+    "start_url": "/",
+    "icons": [
+      {
+        "src": "icon-72x72.png",
+        "sizes": "72x72",
+        "type": "image/png"
+      },
+      {
+        "src": "icon-144x144.png",
+        "sizes": "144x144",
+        "type": "image/png"
+      }
+    ],
+    "splash_pages": null
+  }

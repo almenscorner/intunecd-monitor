@@ -1,0 +1,12 @@
+{% extends "base/template.html" %}
+{% block title %}Error{% endblock %} 
+{% block content %}
+<div class="container-fluid py-4">
+  <div class="row mt-4">
+    <div class="col-8">
+  <h2>{{ result.get("error") }}</h2>
+    <p>{{ result.get("error_description") }}</p>
+</div>
+</div>
+</div>
+{% endblock %}

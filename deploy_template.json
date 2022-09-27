@@ -1,0 +1,294 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "IntuneCD Instance Name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 32
+        },
+        "IntuneCD Client ID": {
+            "type": "string",
+            "metadata": {
+                "description": "IntuneCD App Registration Client ID"
+            }
+        },
+        "IntuneCD Client Secret": {
+            "type": "securestring",
+            "metadata": {
+                "description": "IntuneCD App Registration Client Secret"
+            }
+        },
+        "IntuneCD DevOps Org Name": {
+            "type": "string",
+            "metadata": {
+                "description": "Org Name of the IntuneCD DevOps project"
+            }
+        },
+        "IntuneCD DevOps Project Name": {
+            "type": "string",
+            "metadata": {
+                "description": "Project Name of the IntuneCD DevOps project"
+            }
+        },
+        "IntuneCD Farm SKU": {
+            "type": "string",
+            "allowedValues": [
+                "Free",
+                "Shared",
+                "Basic",
+                "Standard"
+            ],
+            "defaultValue": "Free"
+        },
+        "IntuneCD DB Location": {
+            "type": "string",
+            "allowedValues": [
+                "Australia Central",
+                "Australia East",
+                "Australia Southeast",
+                "Brazil South",
+                "Canada Central",
+                "Canada East",
+                "Central India",
+                "Central US",
+                "East Asia",
+                "East US",
+                "East US 2",
+                "France Central",
+                "Germany West Central",
+                "Japan East",
+                "Japan West",
+                "Korea Central",
+                "Korea South",
+                "North Central US",
+                "North Europe",
+                "Norway East",
+                "South Africa North",
+                "South Central US",
+                "South India",
+                "Southeast Asia",
+                "Sweden Central",
+                "Switzerland North",
+                "UAE North",
+                "UK South",
+                "UK West",
+                "West Central US",
+                "West Europe",
+                "West India",
+                "West US",
+                "West US 2",
+                "West US 3"
+            ],
+            "defaultValue": "Central US"
+        },
+        "IntuneCD DB Name": {
+            "type": "string",
+            "minLength": 1
+        },
+        "IntuneCD DB Edition": {
+            "type": "string",
+            "defaultValue": "Basic",
+            "allowedValues": [
+                "Basic",
+                "Standard",
+                "Premium"
+            ]
+        },
+        "IntuneCD DB RequestedServiceObjectiveName": {
+            "type": "string",
+            "defaultValue": "Basic",
+            "allowedValues": [
+                "Basic",
+                "S0",
+                "S1",
+                "S2",
+                "P1",
+                "P2",
+                "P3"
+            ],
+            "metadata": {
+                "description": "Describes the performance level for Edition"
+            }
+        },
+        "IntuneCD DB AdminLogin": {
+            "type": "string",
+            "minLength": 1
+        },
+        "IntuneCD DB AdminLoginPassword": {
+            "type": "securestring"
+        }
+    },
+    "resources": [
+        /* SERVER FARM */
+        {
+            "name": "[parameters('IntuneCD Instance Name')]",
+            "type": "Microsoft.Web/serverfarms",
+            "location": "[resourceGroup().location]",
+            "kind": "app,linux",
+            "apiVersion": "2014-06-01",
+            "dependsOn": [],
+            "tags": {
+                "displayName": "IntuneCD"
+            },
+            "properties": {
+                "name": "[parameters('IntuneCD Instance Name')]",
+                "sku": "[parameters('IntuneCD Farm SKU')]",
+                "workerSize": 0,
+                "numberOfWorkers": 1,
+                "reserved": true
+            }
+        },
+        /* DATABASE */
+        {
+            "name": "[variables('IntuneCDdbName')]",
+            "type": "Microsoft.Sql/servers",
+            "location": "[parameters('IntuneCD DB Location')]",
+            "apiVersion": "2014-04-01-preview",
+            "dependsOn": [],
+            "tags": {
+                "displayName": "IntuneCD"
+            },
+            "properties": {
+                "administratorLogin": "[parameters('IntuneCD DB AdminLogin')]",
+                "administratorLoginPassword": "[parameters('IntuneCD DB AdminLoginPassword')]"
+            },
+            "resources": [
+                {
+                    "name": "AllowAllWindowsAzureIps",
+                    "type": "firewallrules",
+                    "location": "[resourceGroup().location]",
+                    "apiVersion": "2014-04-01-preview",
+                    "dependsOn": [
+                        "[concat('Microsoft.Sql/servers/', variables('IntuneCDdbName'))]"
+                    ],
+                    "properties": {
+                        "startIpAddress": "0.0.0.0",
+                        "endIpAddress": "0.0.0.0"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "[variables('fullyQualifiedIntuneCDdbName')]",
+            "type": "Microsoft.Sql/servers/databases",
+            "location": "[parameters('IntuneCD DB Location')]",
+            "apiVersion": "2014-04-01-preview",
+            "dependsOn": [
+                "[resourceId('Microsoft.Sql/servers', variables('IntuneCDdbName'))]"
+            ],
+            "tags": {
+                "displayName": "IntuneCD"
+            },
+            "properties": {
+                "collation": "SQL_Latin1_General_CP1_CI_AS",
+                "edition": "[parameters('IntuneCD DB Edition')]",
+                "maxSizeBytes": "1073741824",
+                "requestedServiceObjectiveName": "[parameters('IntuneCD DB RequestedServiceObjectiveName')]"
+            }
+        },
+        /* WEB APP */
+        {
+                "apiVersion": "2018-11-01",
+    "name": "[parameters('IntuneCD Instance Name')]",
+    "type": "Microsoft.Web/sites",
+    "location": "[resourceGroup().location]",
+    "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', variables('IntuneCDdbName'))]"
+    ],
+    "tags": {
+        "[concat('hidden-related:', resourceGroup().id, '/providers/Microsoft.Web/serverfarms/', parameters('IntuneCD Instance Name'))]": "Resource",
+        "displayName": "IntuneCD"
+    },
+    "properties": {
+        "name": "[parameters('IntuneCD Instance Name')]",
+        "siteConfig": {
+            "appSettings": [
+                {
+                    "name": "DOCKER_REGISTRY_SERVER_URL",
+                    "value": "https://ghcr.io"
+                },
+                {
+                    "name": "WEBSITES_ENABLE_APP_SERVICE_STORAGE",
+                    "value": "false"
+                },
+                {
+                    "name": "SERVER_NAME",
+                    "value": "[concat(variables('URL'), '.azurewebsites.net')]"
+                },
+                {
+                    "name": "REDIRECT_PATH",
+                    "value": "/auth/signin-oidc"
+                },
+                {
+                    "name": "ADMIN_ROLE",
+                    "value": "intunecd_admin"
+                },
+                {
+                    "name": "AZDBDRIVER",
+                    "value": "{ODBC Driver 17 for SQL Server}"
+                },
+                {
+                    "name": "AZDBNAME",
+                    "value": "[parameters('IntuneCD DB Name')]"
+                },
+                {
+                    "name": "AZDBUSER",
+                    "value": "[parameters('IntuneCD DB AdminLogin')]"
+                },
+                {
+                    "name": "AZDBPW",
+                    "value": "[parameters('IntuneCD DB AdminLoginPassword')]"
+                },
+                {
+                    "name": "AZDBSERVER",
+                    "value": "[concat(variables('IntuneCDdbName'), '.database.windows.net')]"
+                },
+                {
+                    "name": "AZUREAD_ID",
+                    "value": "[subscription().tenantId]"
+                },
+                {
+                    "name": "CLIENT_ID",
+                    "value": "[parameters('IntuneCD Client ID')]"
+                },
+                {
+                    "name": "CLIENT_SECRET",
+                    "value": "[parameters('IntuneCD Client Secret')]"
+                },
+                {
+                    "name": "DEVOPS_ORG_NAME",
+                    "value": "[parameters('IntuneCD DevOps Org Name')]"
+                },
+                {
+                    "name": "DEVOPS_PROJECT_NAME",
+                    "value": "[parameters('IntuneCD DevOps Project Name')]"
+                },
+                {
+                    "name": "SCOPE",
+                    "value": "[[\"499b84ac-1321-427f-aa17-267ca6975798/.default\"]"
+                },
+                {
+                    "name": "SECRET_KEY",
+                    "value": "[uniqueString(resourceGroup().id)]"
+                },
+                {
+                    "name": "SESSION_LIFETIME_HOURS",
+                    "value": ""
+                }
+            ],
+            "linuxFxVersion": "COMPOSE|dmVyc2lvbjogIjMuOCIKCnNlcnZpY2VzOgoKICB3ZWI6CiAgICBpbWFnZTogZ2hjci5pby9hbG1lbnNjb3JuZXIvaW50dW5lY2QtbW9uaXRvcjpsYXRlc3QKICAgIHJlc3RhcnQ6IGFsd2F5cwogICAgY29tbWFuZDogZ3VuaWNvcm4gLS1iaW5kIDAuMC4wLjA6ODA4MCAtLXRocmVhZHMgMTAgcnVuOmFwcAogICAgZXhwb3NlOgogICAgICAtIDgwODA6ODA4MAogIAogIG5naW54OgogICAgaW1hZ2U6IGdoY3IuaW8vYWxtZW5zY29ybmVyL2ludHVuZWNkLW1vbml0b3Ivbmdpbng6bGF0ZXN0CiAgICByZXN0YXJ0OiBhbHdheXMKICAgIGNvbW1hbmQ6IFsiL2Jpbi9zaCIsICItYyIsICJlbnZzdWJzdCA8IC9ldGMvbmdpbngvY29uZi5kL25naW54LmNvbmYudGVtcGxhdGUgPiAvZXRjL25naW54L2NvbmYuZC9uZ2lueC5jb25mICYmIGV4ZWMgbmdpbnggLWcgJ2RhZW1vbiBvZmY7JyJdCiAgICBwb3J0czoKICAgICAgLSA4MDo4MA==",
+            "alwaysOn": false
+        },
+        "webSocketsEnabled": true,
+        "httpsOnly": true,
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms/', parameters('IntuneCD Instance Name'))]"
+    }
+        }
+    ],
+    "variables": {
+        "fullyQualifiedIntuneCDdbName": "[concat(variables('IntuneCDdbName'), '/', parameters('IntuneCD DB Name'))]",
+        "IntuneCDdbName": "[concat('intunecd', uniqueString(resourceGroup().id))]",
+        "URL": "[concat('https://', parameters('IntuneCD Instance Name'))]"
+    }
+}

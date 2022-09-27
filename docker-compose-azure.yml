@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+
+  web:
+    image: container_name.azurecr.io/intunecd-frontend_web:latest
+    restart: always
+    command: gunicorn --bind 0.0.0.0:8080 --threads 10 run:app
+    expose:
+      - 8080:8080
+  
+  nginx:
+    image: container_name.azurecr.io/intunecd-frontend_nginx:latest
+    restart: always
+    command: ["/bin/sh", "-c", "envsubst < /etc/nginx/conf.d/nginx.conf.template > /etc/nginx/conf.d/nginx.conf && exec nginx -g 'daemon off;'"]
+    ports:
+      - 80:80

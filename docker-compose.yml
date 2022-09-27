@@ -1,0 +1,19 @@
+version: "3.8"
+
+services:
+
+  web:
+    build: ./
+    container_name: intunecd
+    restart: always
+    command: gunicorn --bind :8080 --threads 100 run:app
+    expose:
+      - 8080
+  
+  nginx:
+    build: ./nginx
+    container_name: nginx
+    restart: always
+    command: ["/bin/sh", "-c", "envsubst < /etc/nginx/conf.d/nginx.conf.template > /etc/nginx/conf.d/nginx.conf && exec nginx -g 'daemon off;'"]
+    ports:
+      - 80:80

@@ -1,0 +1,83 @@
+trigger: none
+
+variables:
+  REPO_DIR: $(Build.SourcesDirectory)
+  TENANT_NAME: example.onmicrosoft.com
+  CLIENT_ID: 
+  FOLDER_ONE: $(REPO_DIR)/Backup
+  FOLDER_TWO: $(REPO_DIR)/Copy
+
+jobs:
+
+  - job: copy
+    displayName: Copy
+    pool:
+      vmImage: ubuntu-latest
+    
+    steps:
+    - checkout: self
+      persistCredentials: true
+    - script: |
+        git config --global user.name $(USER_NAME)
+        git config --global user.email $(USER_EMAIL)
+    - script: |
+        cp -R $(FOLDER_ONE)/* $(FOLDER_TWO)
+
+    - script: |
+        cd $(REPO_DIR)
+        git add --all
+        git commit -a -m "Copy current"
+        git push origin HEAD:main
+      displayName: Commit changes
+
+
+  - job: backup
+    displayName: Backup
+    dependsOn: copy
+    pool:
+      vmImage: ubuntu-latest
+
+    steps:
+    - checkout: self
+      persistCredentials: true
+    - script: pip3 install IntuneCD
+      displayName: Install IntuneCD
+    - script: |
+          git config --global user.name $(USER_NAME)
+          git config --global user.email $(USER_EMAIL)
+      displayName: Configure Git
+    - script: |
+          git pull origin HEAD:main
+    - script: IntuneCD-startbackup -o yaml -p $(REPO_DIR)/One -f https://{instance}.azurewebsites.net
+      env:
+        REPO_DIR: $(REPO_DIR)/One
+        DEV_TENANT_NAME: $(TENANT_NAME)
+        DEV_CLIENT_ID: $(CLIENT_ID)
+        DEV_CLIENT_SECRET: $(DEV_CLIENT_SECRET)
+        API_KEY: $(API_KEY)
+      displayName: Run IntuneCD backup
+    - script: |
+        cd $(REPO_DIR)
+        git add --all
+        git commit -a -m "Updated configurations"
+        git push origin HEAD:main
+      displayName: Commit changes
+      
+  - job: frontend
+    displayName: Frontend
+    dependsOn: backup
+    pool:
+      vmImage: ubuntu-latest
+    
+    steps:
+    - checkout: self
+      persistCredentials: true
+
+    - script: |
+          git pull origin HEAD:main
+          pip3 install deepdiff
+          python3 $(REPO_DIR)/update_frontend.py
+      env:
+        BACKUP_PATH_ONE: $(FOLDER_ONE)
+        BACKUP_PATH_TWO: $(FOLDER_TWO)
+        API_KEY: $(API_KEY)
