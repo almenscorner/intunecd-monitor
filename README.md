@@ -64,7 +64,7 @@ Navigate to [Azure AD Enterprise Applications](https://portal.azure.com/#view/Mi
 
 That's it. After a successful deployment you will be able to navigate to **https://{your_app_service_name}.azurewebsites.net** and see this window,
 
-![icdm_1](https://user-images.githubusercontent.com/78877636/187682744-aa066822-7eb5-4c6f-a80f-27ceb39dd971.jpg)
+![icdm_1](https://user-images.githubusercontent.com/78877636/204646110-6cef01cd-070c-45f4-8705-eff3e27c5533.png)
 
 ## Configure pipelines
 To update IntuneCD Monitor with data from the pipelines, you will have to:
@@ -104,15 +104,14 @@ An example Copy/Backup pipeline can be found [here](./example_pipeline.yml).
 ## Dashboard
 The dashboard is where you get a full picture of configurations tracked, differences found etc. From the dashboard you also get information on the pipelines used with IntuneCD, it is also possible to kick off a pipeline run.
 
-![icdm_2](https://user-images.githubusercontent.com/78877636/187682846-9ac9d868-d6b0-473a-ad1f-2c590be04234.jpg)
-![icdm_3](https://user-images.githubusercontent.com/78877636/187682865-d5c388b4-052a-4800-a9f9-5d55c778e216.jpg)
+![icdm_2](https://user-images.githubusercontent.com/78877636/204646551-4a2540ab-b69c-489d-a463-e335ff0f52cb.png)
 
 ## Settings
 On the settings page you can find information on the ENV variables used for IntuneCD Monitor to work, not all variables are shown here only some essentials. From here you also generate the API Key that the IntuneCD package will use to update the frontend. The API Key is valid for 90 days after which you have to generate a new key. If a key is compromised it can also be deleted.
 
-![icdm_4](https://user-images.githubusercontent.com/78877636/187682925-b9a35286-7504-4582-a991-4264ee56868a.jpg)
+![icdm_3](https://user-images.githubusercontent.com/78877636/204646598-3c41ebca-0609-4adc-bb9a-b1e34f250da8.png)
 
 ## Profile
 Displays some basic profile info and which role your account is assigned.
 
-![icdm_5](https://user-images.githubusercontent.com/78877636/187683005-b7d57801-c3c6-4bc4-a9c9-4e8e28c9b587.jpg)
+![icdm_4](https://user-images.githubusercontent.com/78877636/204646670-8dc81fdf-79b2-40b2-84af-c4b67650e6f2.png)
