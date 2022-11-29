@@ -20,7 +20,7 @@ def pipelinestatus_html(data):
                 <form method="POST" action="/pipelines/run">
                 <div class="row mt-3">
                     <div class="col">
-                    <input class="btn btn-sm btn-primary" type="submit" name="{item['id']}" value="Run" />
+                    <input class="btn btn-sm bg-gradient-primary" type="submit" name="{item['id']}" value="Run" />
                     </div>
                 </div>
                 </form>
@@ -51,7 +51,7 @@ def pipelinestatus_html(data):
                 <form method="POST" action="/pipelines/run">
                 <div class="row mt-3">
                     <div class="col">
-                    <input class="btn btn-sm btn-primary" type="submit" name="{item['id']}" value="Run" />
+                    <input class="btn btn-sm bg-gradient-primary" type="submit" name="{item['id']}" value="Run" />
                     </div>
                 </div>
                 </form>
