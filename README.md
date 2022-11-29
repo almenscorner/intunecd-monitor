@@ -1,4 +1,6 @@
-![icdmlogo](https://user-images.githubusercontent.com/78877636/192271466-b95d55b4-dc2e-4848-8445-eb83684c72e0.png)
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/78877636/204297420-4b5373a8-4864-4710-a4a5-802ea4ec08d5.png" width="500" height="250">
+</p>
 
 # IntuneCD Monitor
 This app is a frontend solution to the [IntuneCD python package](https://github.com/almenscorner/intunecd) that allows you to easily monitor tracked configurations, trends over time, differences between configurations as well as your Azure DevOps pipeline status.
