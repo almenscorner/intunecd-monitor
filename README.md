@@ -76,6 +76,9 @@ To update IntuneCD Monitor with data from the pipelines, you will have to:
  - On the update pipeline configure the -f option like this `IntuneCD-startupdate -f https://{your_app_service_name}.azurewebsites.net`
 
 ### Not using the update pipeline
+
+**NOTE**, as of version 1.3.0 of IntuneCD, you can just use `-r` when running `IntuneCD-startupdate` instead.
+
 If you do not use IntuneCD to update configurations or if you do not have a DEV and PROD tenant, you can instead use [this script](./update_frontend.py) to update the frontend with changed values.
 
 Using the script method you will instead back up the same environment at different intervals to separate folders, take the below example
