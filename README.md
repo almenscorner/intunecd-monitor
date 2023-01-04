@@ -17,6 +17,8 @@ The API to the application is protected by an API Key that is generated from the
 ## What's new in 1.2.0
 - Added a new page for change summary. Now you can see which configs and what changes has been made to those configs in a list. See below example,
 
+![intunecd_changes](https://user-images.githubusercontent.com/78877636/210596785-54617b02-d43d-4ffc-b566-67e5058fc3c0.png)
+
 # Table of contents
 
 [Deploy this package](#deploy-this-package)
