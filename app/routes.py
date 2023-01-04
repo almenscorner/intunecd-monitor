@@ -1,12 +1,36 @@
 import msal
 import time
+import json
 import base64
 import secrets
 from app import app_config
-from flask import render_template, session, request, redirect, url_for, make_response, send_from_directory
-from app.auth import _build_auth_code_flow, _load_cache, _save_cache, _build_msal_app, _get_token_from_cache
+from flask import (
+    render_template,
+    session,
+    request,
+    redirect,
+    url_for,
+    make_response,
+    send_from_directory,
+)
+from app.auth import (
+    _build_auth_code_flow,
+    _load_cache,
+    _save_cache,
+    _build_msal_app,
+    _get_token_from_cache,
+)
 from app import app, db, sock
-from app.models import summary_config_count, summary_match_count, summary_diff_count, summary_average_diffs, api_key, backup_feed, update_feed
+from app.models import (
+    summary_config_count,
+    summary_match_count,
+    summary_diff_count,
+    summary_average_diffs,
+    api_key,
+    backup_feed,
+    update_feed,
+    summary_changes,
+)
 from app.decorators import require_appkey, login_required, admin_required, role_required
 from app.devops_api import get_pipeline_data, run_pipeline
 from app.sock_pipelinestatus import pipelinestatus_html
@@ -15,7 +39,7 @@ from datetime import datetime, timedelta
 
 @app.context_processor
 def inject_now():
-    return {'now': datetime.utcnow()}
+    return {"now": datetime.utcnow()}
 
 
 @app.route("/")
@@ -39,7 +63,7 @@ def home():
     else:
         count_data = None
         trackedCount = 0
-    
+
     # Get the last diff count from db
     if diff_count_data:
         diff_data = summary_diff_count.query.all()[-1]
@@ -64,7 +88,7 @@ def home():
     if bfeed:
         # Decode feed from base64 and split into list
         for feed in bfeed:
-            feed_backup = base64.b64decode(feed.feed).decode('utf-8').splitlines()
+            feed_backup = base64.b64decode(feed.feed).decode("utf-8").splitlines()
     # if feed is empty, set feed to no data
     else:
         feed_backup = ["No data"]
@@ -74,7 +98,7 @@ def home():
     if ufeed:
         # Decode feed from base64 and split into list
         for feed in ufeed:
-            feed_update = base64.b64decode(feed.feed).decode('utf-8').splitlines()
+            feed_update = base64.b64decode(feed.feed).decode("utf-8").splitlines()
             for line in feed_update:
                 # Renmove lines only containg '-' from feed_update
                 if line == "-" * 90:
@@ -87,7 +111,9 @@ def home():
     # Get authentication token from cache
     token = _get_token_from_cache(app_config.SCOPE)
     # Get pipeline data from devops api using token and env variables
-    pipelines = get_pipeline_data(app_config.DEVOPS_ORG_NAME, app_config.DEVOPS_PROJECT_NAME, token)
+    pipelines = get_pipeline_data(
+        app_config.DEVOPS_ORG_NAME, app_config.DEVOPS_PROJECT_NAME, token
+    )
 
     # If pipeline stats is not completed, set web socket to true
     if [item for item in pipelines if item["status"] != "completed"]:
@@ -139,33 +165,58 @@ def home():
         labelsAverage = "null"
         average_diffs = 0
 
-    return render_template('pages/home.html', user=session["user"],
-                           version=msal.__version__,
-                           backup_feed=feed_backup,
-                           update_feed=feed_update,
-                           count_data=count_data,
-                           diff_data=diff_data,
-                           match_data=match_data,
-                           matchCount=matchCount,
-                           diffCount=diffCount,
-                           trackedCount=trackedCount,
-                           pipelines=pipelines,
-                           labelsDiff=labelsDiff,
-                           labelsConfig=labelsConfig,
-                           diffs=diffs,
-                           config_counts=config_counts,
-                           labelsAverage=labelsAverage,
-                           average_diffs=average_diffs,
-                           diff_data_len=len(line_data_diff),
-                           segment=segment,
-                           sock=sock)
+    return render_template(
+        "pages/home.html",
+        user=session["user"],
+        version=msal.__version__,
+        backup_feed=feed_backup,
+        update_feed=feed_update,
+        count_data=count_data,
+        diff_data=diff_data,
+        match_data=match_data,
+        matchCount=matchCount,
+        diffCount=diffCount,
+        trackedCount=trackedCount,
+        pipelines=pipelines,
+        labelsDiff=labelsDiff,
+        labelsConfig=labelsConfig,
+        diffs=diffs,
+        config_counts=config_counts,
+        labelsAverage=labelsAverage,
+        average_diffs=average_diffs,
+        diff_data_len=len(line_data_diff),
+        segment=segment,
+        sock=sock,
+    )
 
 
-@app.route('/sw.js')
+@app.route("/sw.js")
 def sw():
-    response = make_response(send_from_directory('static', 'sw.js'))
-    response.headers['cache-control'] = 'no-cache'
+    response = make_response(send_from_directory("static", "sw.js"))
+    response.headers["cache-control"] = "no-cache"
     return response
+
+
+@app.route("/changes")
+@login_required
+@admin_required
+def changes():
+    segment = get_segment(request)
+
+    # Get last 30 changes from DB
+    changes = summary_changes.query.all()[-30:]
+
+    for change in changes:
+        change.diffs = change.diffs.replace("'", '"')
+        change.diffs = json.loads(change.diffs)
+
+    return render_template(
+        "pages/changes.html",
+        user=session["user"],
+        changes=changes,
+        segment=segment,
+        version=msal.__version__,
+    )
 
 
 @app.route("/settings")
@@ -189,50 +240,61 @@ def settings():
         key = True
         now = datetime.now()
         for key in keys:
-            k = {'id': key.id, 'expiration': (key.key_expiration - now).days}
+            k = {"id": key.id, "expiration": (key.key_expiration - now).days}
             keys_td.append(k)
 
-    return render_template("pages/settings.html", user=session["user"],
-                           version=msal.__version__,
-                           settings=app_config,
-                           key=key,
-                           keys_td=keys_td,
-                           new_key=new_key,
-                           segment=segment)
+    return render_template(
+        "pages/settings.html",
+        user=session["user"],
+        version=msal.__version__,
+        settings=app_config,
+        key=key,
+        keys_td=keys_td,
+        new_key=new_key,
+        segment=segment,
+    )
 
 
 @app.route("/profile")
 @login_required
 def profile():
     segment = get_segment(request)
-    return render_template('pages/profile.html', user=session["user"], segment=segment)
+    return render_template("pages/profile.html", user=session["user"], segment=segment)
 
 
 @sock.route("/pipelinestatus")
 def pipelinestatus(ws):
     token = _get_token_from_cache(app_config.SCOPE)
-    pipelines = get_pipeline_data(app_config.DEVOPS_ORG_NAME, app_config.DEVOPS_PROJECT_NAME, token)
+    pipelines = get_pipeline_data(
+        app_config.DEVOPS_ORG_NAME, app_config.DEVOPS_PROJECT_NAME, token
+    )
 
     with app.app_context():
-        pipelines = get_pipeline_data(app_config.DEVOPS_ORG_NAME, app_config.DEVOPS_PROJECT_NAME, token)
+        pipelines = get_pipeline_data(
+            app_config.DEVOPS_ORG_NAME, app_config.DEVOPS_PROJECT_NAME, token
+        )
         while [item for item in pipelines if item["status"] != "completed"]:
             time.sleep(30)
-            pipelines = get_pipeline_data(app_config.DEVOPS_ORG_NAME, app_config.DEVOPS_PROJECT_NAME, token)
+            pipelines = get_pipeline_data(
+                app_config.DEVOPS_ORG_NAME, app_config.DEVOPS_PROJECT_NAME, token
+            )
             html = pipelinestatus_html(pipelines)
             ws.send(html)
 
 
-@app.route("/pipelines/run", methods=['POST'])
+@app.route("/pipelines/run", methods=["POST"])
 @login_required
 def pipelines_run():
-    if request.method == 'POST':
+    if request.method == "POST":
         token = _get_token_from_cache(app_config.SCOPE)
         for id in request.form:
-            run_pipeline(app_config.DEVOPS_ORG_NAME, app_config.DEVOPS_PROJECT_NAME, id, token)
+            run_pipeline(
+                app_config.DEVOPS_ORG_NAME, app_config.DEVOPS_PROJECT_NAME, id, token
+            )
         return redirect(url_for("home"))
 
 
-@app.route("/settings/key/create", methods=['POST'])
+@app.route("/settings/key/create", methods=["POST"])
 @login_required
 @admin_required
 def create_key():
@@ -244,12 +306,12 @@ def create_key():
     db.session.add(create_key)
     db.session.commit()
 
-    session['new_key'] = new_key
+    session["new_key"] = new_key
 
     return redirect(url_for("settings"))
 
 
-@app.route("/settings/key/delete", methods=['POST'])
+@app.route("/settings/key/delete", methods=["POST"])
 @login_required
 @admin_required
 def delete_key():
@@ -261,70 +323,79 @@ def delete_key():
     return redirect(url_for("settings"))
 
 
-@app.route("/api/overview/summary", methods=['POST'])
+@app.route("/api/overview/summary", methods=["POST"])
 @require_appkey
 def update_summary():
     data = request.get_json()
 
     # Config count
-    if data['type'] == 'config_count':
-        numbers = summary_config_count(config_count=data['config_count'],
-                                       last_update=str(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+    if data["type"] == "config_count":
+        numbers = summary_config_count(
+            config_count=data["config_count"],
+            last_update=str(datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
+        )
         db.session.add(numbers)
 
     # Diff count
-    if data['type'] == 'diff_count':
-        numbers = summary_diff_count(diff_count=data['diff_count'],
-                                     last_update=str(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+    if data["type"] == "diff_count":
+        numbers = summary_diff_count(
+            diff_count=data["diff_count"],
+            last_update=str(datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
+        )
         db.session.add(numbers)
 
     # Match count
     current_config_count = summary_config_count.query.all()
     current_diff_count = summary_diff_count.query.all()
 
-    if ((current_config_count) and (current_diff_count)):
+    if (current_config_count) and (current_diff_count):
         # Add match count
         current_config_count = summary_config_count.query.all()[-1].config_count
         current_diff_count = summary_diff_count.query.all()[-1].diff_count
 
-        numbers = summary_match_count(match_count=current_config_count - current_diff_count,
-                                      last_update=str(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        numbers = summary_match_count(
+            match_count=current_config_count - current_diff_count,
+            last_update=str(datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
+        )
         db.session.add(numbers)
 
         # Add average diffs
         records = summary_diff_count.query.all()[-30:]
         count = 0
-        for record in records : count += record.diff_count
+        for record in records:
+            count += record.diff_count
         average_count = int(count / len(records))
-        average = summary_average_diffs(average_diffs=average_count,
-                                        last_update=str(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        average = summary_average_diffs(
+            average_diffs=average_count,
+            last_update=str(datetime.now().strftime("%Y-%m-%d %H:%M:%S")),
+        )
 
         db.session.add(average)
-        
+
     db.session.commit()
 
     return data
 
 
-@app.route("/api/feed/update", methods=['POST'])
+@app.route("/api/feed/update", methods=["POST"])
 @require_appkey
 def update_feed_data():
     data = request.get_json()
 
-    if data['type'] == 'backup':
-        output = backup_feed(feed=data['feed'])
+    if data["type"] == "backup":
+        output = backup_feed(feed=data["feed"])
         db.session.add(output)
         current_backup_feed = backup_feed.query.get(1)
         if current_backup_feed:
-            current_backup_feed.feed = data['feed']
+            current_backup_feed.feed = data["feed"]
             db.session.add(current_backup_feed)
 
-    if data['type'] == 'update':
-        output = update_feed(feed=data['feed'])
+    if data["type"] == "update":
+        output = update_feed(feed=data["feed"])
         db.session.add(output)
         current_update_feed = update_feed.query.get(1)
         if current_update_feed:
-            current_update_feed.feed = data['feed']
+            current_update_feed.feed = data["feed"]
             db.session.add(current_update_feed)
 
     db.session.commit()
@@ -332,20 +403,43 @@ def update_feed_data():
     return data
 
 
+@app.route("/api/changes/summary", methods=["POST"])
+@require_appkey
+def update_changes_summary():
+    data = request.get_json()
+
+    for change in data:
+        output = summary_changes(
+            name=change["name"], type=change["type"], diffs=str(change["diffs"])
+        )
+        db.session.add(output)
+
+    db.session.commit()
+
+    return json.dumps(data)
+
+
 @app.route("/login")
 def login():
     # Technically we could use empty list [] as scopes to do just sign in,
     # here we choose to also collect end user consent upfront
     session["flow"] = _build_auth_code_flow(scopes=app_config.SCOPE)
-    return render_template("pages/login.html", auth_url=session["flow"]["auth_uri"], version=msal.__version__)
+    return render_template(
+        "pages/login.html",
+        auth_url=session["flow"]["auth_uri"],
+        version=msal.__version__,
+    )
 
 
-@app.route(app_config.REDIRECT_PATH)  # Its absolute URL must match your app's redirect_uri set in AAD
+@app.route(
+    app_config.REDIRECT_PATH
+)  # Its absolute URL must match your app's redirect_uri set in AAD
 def authorized():
     try:
         cache = _load_cache()
         result = _build_msal_app(cache=cache).acquire_token_by_auth_code_flow(
-            session.get("flow", {}), request.args)
+            session.get("flow", {}), request.args
+        )
         if "error" in result:
             return render_template("pages/auth_error.html", result=result)
         session["user"] = result.get("id_token_claims")
@@ -359,15 +453,18 @@ def authorized():
 def logout():
     session.clear()  # Wipe out user and its token cache from session
     return redirect(  # Also logout from your tenant's web session
-        app_config.AUTHORITY + "/oauth2/v2.0/logout" +
-        "?post_logout_redirect_uri=" + url_for("login", _external=True))
+        app_config.AUTHORITY
+        + "/oauth2/v2.0/logout"
+        + "?post_logout_redirect_uri="
+        + url_for("login", _external=True)
+    )
 
 
 def get_segment(r):
     try:
-        segment = r.path.split('/')[-1]
-        if segment == '':
-            segment = 'home'
+        segment = r.path.split("/")[-1]
+        if segment == "":
+            segment = "home"
 
         return segment
 
@@ -375,4 +472,6 @@ def get_segment(r):
         return None
 
 
-app.jinja_env.globals.update(_build_auth_code_flow=_build_auth_code_flow)  # Used in template
+app.jinja_env.globals.update(
+    _build_auth_code_flow=_build_auth_code_flow
+)  # Used in template
