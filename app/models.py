@@ -25,6 +25,13 @@ class summary_average_diffs(db.Model):
     last_update = db.Column(db.String, unique=False)
 
 
+class summary_changes(db.Model):
+    id = db.Column(db.Integer, primary_key=True, unique=True)
+    name = db.Column(db.String, unique=False)
+    type = db.Column(db.String, unique=False)
+    diffs = db.Column(db.String, unique=False)
+
+
 class backup_feed(db.Model):
     id = db.Column(db.Integer, primary_key=True, unique=True)
     feed = db.Column(db.String)
@@ -46,7 +53,7 @@ class api_key(db.Model):
 
     @key.setter
     def key(self, plain_text_key):
-        self.key_hash = bcrypt.generate_password_hash(plain_text_key).decode('utf-8')
+        self.key_hash = bcrypt.generate_password_hash(plain_text_key).decode("utf-8")
 
     def check_key_correction(self, attempted_key):
         return bcrypt.check_password_hash(self.key_hash, attempted_key)

@@ -14,6 +14,11 @@ The API to the application is protected by an API Key that is generated from the
 
 **Note:** While the IntuneCD package can run in either Azure DevOps pipelines or GitHub Actions, **only Azure DevOps pipelines** can be monitored using this application.
 
+## What's new in 1.2.0
+- Added a new page for change summary. Now you can see which configs and what changes has been made to those configs in a list. See below example,
+
+![intunecd_changes](https://user-images.githubusercontent.com/78877636/210596785-54617b02-d43d-4ffc-b566-67e5058fc3c0.png)
+
 # Table of contents
 
 [Deploy this package](#deploy-this-package)
@@ -73,6 +78,9 @@ To update IntuneCD Monitor with data from the pipelines, you will have to:
  - On the update pipeline configure the -f option like this `IntuneCD-startupdate -f https://{your_app_service_name}.azurewebsites.net`
 
 ### Not using the update pipeline
+
+**NOTE**, as of version 1.3.0 of IntuneCD, you can just use `-r` when running `IntuneCD-startupdate` instead.
+
 If you do not use IntuneCD to update configurations or if you do not have a DEV and PROD tenant, you can instead use [this script](./update_frontend.py) to update the frontend with changed values.
 
 Using the script method you will instead back up the same environment at different intervals to separate folders, take the below example
@@ -110,6 +118,11 @@ The dashboard is where you get a full picture of configurations tracked, differe
 On the settings page you can find information on the ENV variables used for IntuneCD Monitor to work, not all variables are shown here only some essentials. From here you also generate the API Key that the IntuneCD package will use to update the frontend. The API Key is valid for 90 days after which you have to generate a new key. If a key is compromised it can also be deleted.
 
 ![icdm_3](https://user-images.githubusercontent.com/78877636/204646598-3c41ebca-0609-4adc-bb9a-b1e34f250da8.png)
+
+## Changes
+This page lets you review the last 30 records of changes made to configurations. When a configuration is clicked, details about the new and old values are revealed along with the date the change was reported.
+
+![intunecd_changes](https://user-images.githubusercontent.com/78877636/210596785-54617b02-d43d-4ffc-b566-67e5058fc3c0.png)
 
 ## Profile
 Displays some basic profile info and which role your account is assigned.
