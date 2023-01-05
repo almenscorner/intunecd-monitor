@@ -119,6 +119,11 @@ On the settings page you can find information on the ENV variables used for Intu
 
 ![icdm_3](https://user-images.githubusercontent.com/78877636/204646598-3c41ebca-0609-4adc-bb9a-b1e34f250da8.png)
 
+## Changes
+This page lets you review the last 30 records of changes made to configurations. When a configuration is clicked, details about the new and old values are revealed along with the date the change was reported.
+
+![intunecd_changes](https://user-images.githubusercontent.com/78877636/210596785-54617b02-d43d-4ffc-b566-67e5058fc3c0.png)
+
 ## Profile
 Displays some basic profile info and which role your account is assigned.
 
