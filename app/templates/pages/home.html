@@ -128,8 +128,9 @@
         </div>
         <div class="card mb-5">
           <div class="card-body table-responsive" style="height: 515px;">
+            <input class="form-control" id="updateSearch" type="text" placeholder="Search..">
             <table class="table table-hover">
-              <tbody>
+              <tbody id="updateTable">
                 {% for item in update_feed %}
                 <tr>
                   <td>
@@ -164,8 +165,9 @@
         </div>
         <div class="card mb-5">
           <div class="card-body table-responsive" style="height: 515px;">
+            <input class="form-control" id="backupSearch" type="text" placeholder="Search..">
             <table class="table table-hover">
-              <tbody>
+              <tbody id="backupTable">
                 {% for item in backup_feed %}
                 <tr>
                   <td>
@@ -199,6 +201,8 @@ crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.js"
 integrity="sha256-gjQYlCMM/HIX3lODQvv5er+D4m6hfcSetDqlGj8FGj0="
 crossorigin="anonymous"></script>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
 
 {% if sock is true %}
 <script>
@@ -449,6 +453,28 @@ crossorigin="anonymous"></script>
   }
 
   window.addEventListener('load', count);
+</script>
+
+<script>
+  $(document).ready(function(){
+    $("#updateSearch").on("keyup", function() {
+      var value = $(this).val().toLowerCase();
+      $("#updateTable tr").filter(function() {
+        $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+      });
+    });
+  });
+</script>
+
+<script>
+  $(document).ready(function(){
+    $("#backupSearch").on("keyup", function() {
+      var value = $(this).val().toLowerCase();
+      $("#backupTable tr").filter(function() {
+        $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+      });
+    });
+  });
 </script>
 
 <style>
