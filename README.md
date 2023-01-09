@@ -14,6 +14,11 @@ The API to the application is protected by an API Key that is generated from the
 
 **Note:** While the IntuneCD package can run in either Azure DevOps pipelines or GitHub Actions, **only Azure DevOps pipelines** can be monitored using this application.
 
+## What's new in 1.2.1
+- It is now possible to search update and backup feed tables for specific configurations to be able to quickly check the config of interest instead of scrolling through all configs.
+
+![Screenshot 2023-01-09 at 13 54 24](https://user-images.githubusercontent.com/78877636/211315009-760cedca-b3d2-42e0-bec5-0d624954bd3d.png)
+
 ## What's new in 1.2.0
 - Added a new page for change summary. Now you can see which configs and what changes has been made to those configs in a list. See below example,
 
