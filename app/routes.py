@@ -212,6 +212,7 @@ def sw():
 
 @app.route("/changes")
 @login_required
+@role_required
 def changes():
     segment = get_segment(request)
 
