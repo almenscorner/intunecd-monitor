@@ -40,6 +40,8 @@ Overall, this update brings several exciting improvements and features to Intune
 
 [Overview](#overview)
  - [Dashboard](#dashboard)
+ - [Changes](#changes)
+ - [Documentation](#documentation)
  - [Settings](#settings)
  - [Profile](#profile)
 
