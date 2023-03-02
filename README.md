@@ -21,7 +21,7 @@ Firstly, the update removes the requirement for an admin role to access the chan
 
 Furthermore, the update includes alerts for expiring API keys, ensuring that administrators are notified on the dashboard if an API key is expiring within 30 days.
 
-Regarding the documentation section, a new page has been added that allows users to configure an Azure Storage account Container and Blob to pull documentation from in HTML format and display it in IntuneCD Monitor. To enable this feature, users must set the DOCUMENTATION_ACTIVE environment variable to true and provide the AZURE_CONNECTION_STRING, AZURE_CONTAINER, and DOCUMENTATION_FILE_NAME variables.
+Regarding the documentation section, a new page has been added that allows users to configure an Azure Storage account Container and Blob to pull documentation from in HTML format and display it in IntuneCD Monitor. To enable this feature, users must set the `DOCUMENTATION_ACTIVE` environment variable to true and provide the `AZURE_CONNECTION_STRING`, `AZURE_CONTAINER`, and `DOCUMENTATION_FILE_NAME` variables.
 
 Overall, this update brings several exciting improvements and features to IntuneCD Monitor, making it more accessible and user-friendly for all users.
 
@@ -40,6 +40,8 @@ Overall, this update brings several exciting improvements and features to Intune
 
 [Overview](#overview)
  - [Dashboard](#dashboard)
+ - [Changes](#changes)
+ - [Documentation](#documentation)
  - [Settings](#settings)
  - [Profile](#profile)
 
@@ -132,6 +134,8 @@ This page lets you review the last 30 records of changes made to configurations.
 
 ## Documentation
 If activated and configured, shows the documentation from HTML output stored on Azure Storage.
+
+![icdm_documentation](https://user-images.githubusercontent.com/78877636/222262629-1e2bbc02-adb3-4947-835c-adb88726d13f.png)
 
 ## Settings
 On the settings page you can find information on the ENV variables used for IntuneCD Monitor to work, not all variables are shown here only some essentials. From here you also generate the API Key that the IntuneCD package will use to update the frontend. The API Key is valid for 90 days after which you have to generate a new key. If a key is compromised it can also be deleted.
