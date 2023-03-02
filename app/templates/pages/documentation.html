@@ -1,0 +1,32 @@
+{% extends "base/template.html" %}
+
+{% block title %} Documentation {% endblock title %}
+
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block content %}
+<div class="col-lg-11">
+    <div class="card">
+        <div class="card-body px-4 pb-2">
+            <div class="table-responsive">
+                {% if active == true %}
+                    {% include 'include/documentation.html' %}
+                {% else %}
+                    <p>Documentation is not active or file could not be found</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block javascripts %}
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+
+<script>
+    $('table').each(function(i){
+        $(this).addClass('table table-hover',i);
+    });
+</script>
+{% endblock javascripts %}
+
+{% endblock content %}
