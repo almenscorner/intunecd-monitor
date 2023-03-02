@@ -259,6 +259,7 @@ def documentation():
         """Returns the current documentation from the blob storage."""
         try:
             local_path = "/intunecd/app/templates/include"
+            data = ""
             download_file_path = os.path.join(local_path, 'documentation.html')
             blob_client = az_blob_client(connection_string, container_name, file_name)
 
@@ -267,13 +268,18 @@ def documentation():
                 data = blob_data.readall()
                 _f.write(data)
 
+            if data == "":
+                return False
+            else:
+                return True
+
         except Exception as ex:
             print("Error: " + str(ex))
     
-    get_documentation_blob(app_config.AZURE_CONNECTION_STRING, app_config.AZURE_CONTAINER_NAME, app_config.DOCUMENTATION_FILE_NAME)
+    blob_data = get_documentation_blob(app_config.AZURE_CONNECTION_STRING, app_config.AZURE_CONTAINER_NAME, app_config.DOCUMENTATION_FILE_NAME)
 
     active = False
-    if os.path.exists(f"/intunecd/app/templates/include/documentation.html"):
+    if blob_data:
         active = True
         
     return render_template(
