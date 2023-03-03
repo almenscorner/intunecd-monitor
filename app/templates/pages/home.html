@@ -7,19 +7,6 @@
 
 {% block content %}
   <div class="container-fluid py-4">
-    {% if alert_api_keys == true %}
-    <div class="row">
-      <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 mb-5">
-        <div class="alert alert-warning alert-dismissible text-white fade show" role="alert" style="align-items: right;">
-          <span class="alert-icon align-middle"></span>
-          <span class="alert-text"><strong>Warning!</strong> There are API Keys expiring. Make sure to replace them!</span>
-          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close">
-          <span aria-hidden="true">×</span>
-          </button>
-        </div>
-      </div>
-    </div>
-    {% endif %}
     <!--- Pipeline -->
     {% include "include/pipelinestatus.html" %}
     <!--- End Pipeline -->
