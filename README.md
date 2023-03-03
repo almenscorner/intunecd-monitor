@@ -21,7 +21,7 @@ Firstly, the update removes the requirement for an admin role to access the chan
 
 Furthermore, the update includes alerts for expiring API keys, ensuring that administrators are notified on the dashboard if an API key is expiring within 30 days.
 
-Regarding the documentation section, a new page has been added that allows users to configure an Azure Storage account Container and Blob to pull documentation from in HTML format and display it in IntuneCD Monitor. To enable this feature, users must set the `DOCUMENTATION_ACTIVE` environment variable to true and provide the `AZURE_CONNECTION_STRING`, `AZURE_CONTAINER`, and `DOCUMENTATION_FILE_NAME` variables.
+Regarding the documentation section, a new page has been added that allows users to configure an Azure Storage account Container and Blob to pull documentation from in HTML format and display it in IntuneCD Monitor. To enable this feature, users must set the `DOCUMENTATION_ACTIVE` environment variable to true and provide the `AZURE_CONNECTION_STRING`, `AZURE_CONTAINER_NAME`, and `DOCUMENTATION_FILE_NAME` variables.
 
 Overall, this update brings several exciting improvements and features to IntuneCD Monitor, making it more accessible and user-friendly for all users.
 
