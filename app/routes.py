@@ -238,6 +238,7 @@ def documentation():
     """Returns the current documentation from the blob storage."""
     app.jinja_env.cache = {}
     segment = get_segment(request)
+    blob_data = ""
 
     def az_blob_client(connection_string, container_name, file_name):
         """Create a blob client to get the file from the container."""
@@ -276,7 +277,8 @@ def documentation():
         except Exception as ex:
             print("Error: " + str(ex))
     
-    blob_data = get_documentation_blob(app_config.AZURE_CONNECTION_STRING, app_config.AZURE_CONTAINER_NAME, app_config.DOCUMENTATION_FILE_NAME)
+    if app_config.DOCUMENTATION:
+        blob_data = get_documentation_blob(app_config.AZURE_CONNECTION_STRING, app_config.AZURE_CONTAINER_NAME, app_config.DOCUMENTATION_FILE_NAME)
 
     active = False
     if blob_data:
