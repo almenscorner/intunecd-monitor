@@ -14,15 +14,21 @@ The API to the application is protected by an API Key that is generated from the
 
 **Note:** While the IntuneCD package can run in either Azure DevOps pipelines or GitHub Actions, **only Azure DevOps pipelines** can be monitored using this application.
 
+## What's new in 1.2.2
+This update introduces exciting new features to the documentation section of the IntuneCD tool, along with several other improvements.
+
+Firstly, the update removes the requirement for an admin role to access the change overview, making it more accessible to all users. Additionally, the change record count has been increased from 30 to 180 records, providing users with greater visibility into their system.
+
+Furthermore, the update includes alerts for expiring API keys, ensuring that administrators are notified on the dashboard if an API key is expiring within 30 days.
+
+Regarding the documentation section, a new page has been added that allows users to configure an Azure Storage account Container and Blob to pull documentation from in HTML format and display it in IntuneCD Monitor. To enable this feature, users must set the `DOCUMENTATION_ACTIVE` environment variable to true and provide the `AZURE_CONNECTION_STRING`, `AZURE_CONTAINER`, and `DOCUMENTATION_FILE_NAME` variables.
+
+Overall, this update brings several exciting improvements and features to IntuneCD Monitor, making it more accessible and user-friendly for all users.
+
 ## What's new in 1.2.1
 - It is now possible to search update and backup feed tables for specific configurations to be able to quickly check the config of interest instead of scrolling through all configs.
 
 ![Screenshot 2023-01-09 at 13 54 24](https://user-images.githubusercontent.com/78877636/211315009-760cedca-b3d2-42e0-bec5-0d624954bd3d.png)
-
-## What's new in 1.2.0
-- Added a new page for change summary. Now you can see which configs and what changes has been made to those configs in a list. See below example,
-
-![intunecd_changes](https://user-images.githubusercontent.com/78877636/210596785-54617b02-d43d-4ffc-b566-67e5058fc3c0.png)
 
 # Table of contents
 
@@ -34,6 +40,8 @@ The API to the application is protected by an API Key that is generated from the
 
 [Overview](#overview)
  - [Dashboard](#dashboard)
+ - [Changes](#changes)
+ - [Documentation](#documentation)
  - [Settings](#settings)
  - [Profile](#profile)
 
@@ -119,15 +127,20 @@ The dashboard is where you get a full picture of configurations tracked, differe
 
 ![icdm_2](https://user-images.githubusercontent.com/78877636/204646551-4a2540ab-b69c-489d-a463-e335ff0f52cb.png)
 
-## Settings
-On the settings page you can find information on the ENV variables used for IntuneCD Monitor to work, not all variables are shown here only some essentials. From here you also generate the API Key that the IntuneCD package will use to update the frontend. The API Key is valid for 90 days after which you have to generate a new key. If a key is compromised it can also be deleted.
-
-![icdm_3](https://user-images.githubusercontent.com/78877636/204646598-3c41ebca-0609-4adc-bb9a-b1e34f250da8.png)
-
 ## Changes
 This page lets you review the last 30 records of changes made to configurations. When a configuration is clicked, details about the new and old values are revealed along with the date the change was reported.
 
 ![intunecd_changes](https://user-images.githubusercontent.com/78877636/210596785-54617b02-d43d-4ffc-b566-67e5058fc3c0.png)
+
+## Documentation
+If activated and configured, shows the documentation from HTML output stored on Azure Storage.
+
+![icdm_documentation](https://user-images.githubusercontent.com/78877636/222262629-1e2bbc02-adb3-4947-835c-adb88726d13f.png)
+
+## Settings
+On the settings page you can find information on the ENV variables used for IntuneCD Monitor to work, not all variables are shown here only some essentials. From here you also generate the API Key that the IntuneCD package will use to update the frontend. The API Key is valid for 90 days after which you have to generate a new key. If a key is compromised it can also be deleted.
+
+![icdm_3](https://user-images.githubusercontent.com/78877636/204646598-3c41ebca-0609-4adc-bb9a-b1e34f250da8.png)
 
 ## Profile
 Displays some basic profile info and which role your account is assigned.

@@ -10,11 +10,17 @@
             <h6 class="font-weight-bolder mb-0">Dashboard</h6>
           {% endif %}
 
-          {% if 'changes' in segment %}
+        {% if 'changes' in segment %}
           <li class="breadcrumb-item text-sm text-dark active" aria-current="page">Changes</li>
           </ol>
           <h6 class="font-weight-bolder mb-0">Changes</h6>
         {% endif %}
+
+        {% if 'documentation' in segment %}
+        <li class="breadcrumb-item text-sm text-dark active" aria-current="page">Documentation</li>
+        </ol>
+        <h6 class="font-weight-bolder mb-0">Documentation</h6>
+      {% endif %}
 
         {% if 'settings' in segment %}
           <li class="breadcrumb-item text-sm text-dark active" aria-current="page">Settings</li>
