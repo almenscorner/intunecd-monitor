@@ -1,4 +1,3 @@
-import os
 import msal
 import time
 import json
@@ -36,7 +35,7 @@ from app.decorators import require_appkey, login_required, admin_required, role_
 from app.devops_api import get_pipeline_data, run_pipeline
 from app.sock_pipelinestatus import pipelinestatus_html
 from datetime import datetime, timedelta
-from azure.storage.blob import BlobServiceClient
+
 
 @app.context_processor
 def inject_now():
@@ -166,17 +165,6 @@ def home():
         labelsAverage = "null"
         average_diffs = 0
 
-    # Get all API keys from db
-    api_keys = api_key.query.all()
-    alert_api_keys = False
-    # Check if there are any API keys expiring in the next 30 days
-    for key in api_keys:
-        # Get the expiration date of the key
-        expiration = key.key_expiration
-        # If the expiration date is within 30 days, set the key to expire
-        if expiration < datetime.now() + timedelta(days=30) and app_config.ADMIN_ROLE in session["user"]["roles"]:
-            alert_api_keys = True
-
     return render_template(
         "pages/home.html",
         user=session["user"],
@@ -197,7 +185,6 @@ def home():
         labelsAverage=labelsAverage,
         average_diffs=average_diffs,
         diff_data_len=len(line_data_diff),
-        alert_api_keys=alert_api_keys,
         segment=segment,
         sock=sock,
     )
@@ -212,12 +199,12 @@ def sw():
 
 @app.route("/changes")
 @login_required
-@role_required
+@admin_required
 def changes():
     segment = get_segment(request)
 
-    # Get last 180 changes from DB
-    changes = summary_changes.query.all()[-180:]
+    # Get last 30 changes from DB
+    changes = summary_changes.query.all()[-30:]
 
     for change in changes:
         change.diffs = change.diffs.replace("'", '"')
@@ -228,65 +215,6 @@ def changes():
         user=session["user"],
         changes=changes,
         segment=segment,
-        version=msal.__version__,
-    )
-
-@app.route("/documentation")
-@login_required
-@admin_required
-def documentation():
-    """Returns the current documentation from the blob storage."""
-    app.jinja_env.cache = {}
-    segment = get_segment(request)
-
-    def az_blob_client(connection_string, container_name, file_name):
-        """Create a blob client to get the file from the container."""
-        try:
-            blob_service_client = BlobServiceClient.from_connection_string(
-                connection_string
-            )
-
-            blob_client = blob_service_client.get_blob_client(
-                container=container_name, blob=file_name
-            )
-
-            return blob_client
-
-        except Exception as ex:
-            print("Error: " + str(ex))
-
-    def get_documentation_blob(connection_string, container_name, file_name):
-        """Returns the current documentation from the blob storage."""
-        try:
-            local_path = "/intunecd/app/templates/include"
-            data = ""
-            download_file_path = os.path.join(local_path, 'documentation.html')
-            blob_client = az_blob_client(connection_string, container_name, file_name)
-
-            with open(download_file_path, "wb") as _f:
-                blob_data = blob_client.download_blob()
-                data = blob_data.readall()
-                _f.write(data)
-
-            if data == "":
-                return False
-            else:
-                return True
-
-        except Exception as ex:
-            print("Error: " + str(ex))
-    
-    blob_data = get_documentation_blob(app_config.AZURE_CONNECTION_STRING, app_config.AZURE_CONTAINER_NAME, app_config.DOCUMENTATION_FILE_NAME)
-
-    active = False
-    if blob_data:
-        active = True
-        
-    return render_template(
-        "pages/documentation.html",
-        user=session["user"],
-        segment=segment,
-        active=active,
         version=msal.__version__,
     )
 

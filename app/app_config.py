@@ -60,18 +60,6 @@ if SCOPE:
 else:
     raise ValueError("Need to define SCOPE environment variable")
 
-DOCUMENTATION = os.getenv("DOCUMENTATION_ACTIVE")
-if DOCUMENTATION:
-    AZURE_CONNECTION_STRING = os.getenv("AZURE_CONNECTION_STRING")
-    if not AZURE_CONNECTION_STRING:
-        raise ValueError("Need to define AZURE_CONNECTION_STRING environment variable")
-    AZURE_CONTAINER_NAME = os.getenv("AZURE_CONTAINER_NAME")
-    if not AZURE_CONTAINER_NAME:
-        raise ValueError("Need to define AZURE_CONTAINER_NAME environment variable")
-    DOCUMENTATION_FILE_NAME = os.getenv("DOCUMENTATION_FILE_NAME")
-    if not DOCUMENTATION_FILE_NAME:
-        raise ValueError("Need to define DOCUMENTATION_FILE_NAME environment variable")
-
 SESSION_LIFETIME_HOURS = os.getenv("SESSION_LIFETIME_HOURS")
 if SESSION_LIFETIME_HOURS:
     PERMANENT_SESSION_LIFETIME = timedelta(hours=SESSION_LIFETIME_HOURS)
