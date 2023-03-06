@@ -20,7 +20,13 @@
         <li class="breadcrumb-item text-sm text-dark active" aria-current="page">Documentation</li>
         </ol>
         <h6 class="font-weight-bolder mb-0">Documentation</h6>
-      {% endif %}
+        {% endif %}
+
+        {% if 'assignments' in segment %}
+        <li class="breadcrumb-item text-sm text-dark active" aria-current="page">Assignments</li>
+        </ol>
+        <h6 class="font-weight-bolder mb-0">Assignments</h6>
+        {% endif %}
 
         {% if 'settings' in segment %}
           <li class="breadcrumb-item text-sm text-dark active" aria-current="page">Settings</li>

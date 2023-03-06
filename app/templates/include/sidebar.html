@@ -39,6 +39,15 @@
         </a>
       </li>
       <li class="nav-item">
+        <a class="nav-link text-white {% if 'assignments' in segment %} active bg-gradient-primary {% endif %}"
+          href="{{ url_for('assignments') }}">
+          <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
+            <i class="material-icons opacity-10">group</i>
+          </div>
+          <span class="nav-link-text ms-1">Assignments</span>
+        </a>
+      </li>
+      <li class="nav-item">
         <a class="nav-link text-white {% if 'settings' in segment %} active bg-gradient-primary {% endif %}"
           href="{{ url_for('settings') }}">
           <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">

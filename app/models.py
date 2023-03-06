@@ -31,6 +31,13 @@ class summary_changes(db.Model):
     type = db.Column(db.String, unique=False)
     diffs = db.Column(db.String, unique=False)
 
+class summary_assignments(db.Model):
+    id = db.Column(db.Integer, primary_key=True, unique=True)
+    name = db.Column(db.String, unique=False)
+    type = db.Column(db.String, unique=False)
+    membership_rule = db.Column(db.String, unique=False)
+    assigned_to = db.Column(db.String, unique=False)
+
 
 class backup_feed(db.Model):
     id = db.Column(db.Integer, primary_key=True, unique=True)
