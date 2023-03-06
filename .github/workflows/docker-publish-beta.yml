@@ -8,7 +8,7 @@ name: Docker-Beta
 on:
   push:
     branches:
-      - dev
+      - 'dev'
     
 env:
   # Use docker.io for Docker Hub if empty
