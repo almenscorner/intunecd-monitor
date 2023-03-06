@@ -6,8 +6,9 @@ name: Docker-Beta
 # documentation.
 
 on:
-  release:
-    types: [prereleased]
+  push:
+    branches:
+      - dev
     
 env:
   # Use docker.io for Docker Hub if empty
