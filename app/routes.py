@@ -31,6 +31,7 @@ from app.models import (
     backup_feed,
     update_feed,
     summary_changes,
+    summary_assignments,
 )
 from app.decorators import require_appkey, login_required, admin_required, role_required
 from app.devops_api import get_pipeline_data, run_pipeline
@@ -293,6 +294,28 @@ def documentation():
     )
 
 
+@app.route("/assignments")
+@login_required
+@role_required
+def assignments():
+    segment = get_segment(request)
+
+    # Get last 180 changes from DB
+    assignments = summary_assignments.query.all()
+
+    for assignment in assignments:
+        assignment.assigned_to = assignment.assigned_to.replace("'", '"')
+        assignment.assigned_to = json.loads(assignment.assigned_to)
+
+    return render_template(
+        "pages/assignments.html",
+        user=session["user"],
+        assignments=assignments,
+        segment=segment,
+        version=msal.__version__,
+    )
+
+
 @app.route("/settings")
 @login_required
 @admin_required
@@ -492,6 +515,25 @@ def update_changes_summary():
 
     return json.dumps(data)
 
+@app.route("/api/assignments/summary", methods=["POST"])
+@require_appkey
+def update_assignments_summary():
+    data = request.get_json()
+    # Clear table
+    summary_assignments.query.delete()
+
+    for assignment in data:
+        output = summary_assignments(
+            name=assignment["groupName"], 
+            type=assignment["groupType"], 
+            assigned_to=str(assignment["assignedTo"]),
+            membership_rule=assignment["membershipRule"]
+        )
+        db.session.add(output)
+
+    db.session.commit()
+
+    return json.dumps(data)
 
 @app.route("/login")
 def login():
