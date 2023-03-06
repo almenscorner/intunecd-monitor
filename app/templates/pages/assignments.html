@@ -52,7 +52,7 @@
                                                     <td>{{ payload }}</td>
                                                     <td>
                                                         <ul>
-                                                        {% for item in payload %}
+                                                        {% for item in assignment.assigned_to[payload] %}
                                                             <p>{{ item }}</p>
                                                         {% endfor %}
                                                         </ul>
