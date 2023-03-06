@@ -79,14 +79,22 @@
 
 {% block javascripts %}
 <script>
-    $(document).ready(function(){
-      $("#assignmentSearch").on("keyup", function() {
-        var value = $(this).val().toLowerCase();
-        $("#accordionFlush p").filter(function() {
-          $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+    (function(){
+        var searchTerm, panelContainerId;
+        // Create a new contains that is case insensitive
+        $.expr[':'].containsCaseInsensitive = function (n, i, m) {
+          return jQuery(n).text().toUpperCase().indexOf(m[3].toUpperCase()) >= 0;
+        };
+        
+        $('#assignmentSearch').on('change keyup paste click', function () {
+          searchTerm = $(this).val();
+          $('#accordionFlush > .accordion').each(function () {
+            accordionContainerId = '#' + $(this).attr('id');
+            $(accordionContainerId + ':not(:containsCaseInsensitive(' + searchTerm + '))').hide();
+            $(accordionContainerId + ':containsCaseInsensitive(' + searchTerm + ')').show();
+          });
         });
-      });
-    });
+      }());
   </script>
 {% endblock javascripts %}
 
