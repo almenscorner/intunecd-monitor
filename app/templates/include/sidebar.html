@@ -6,10 +6,11 @@
       aria-hidden="true" id="iconSidenav"></i>
     {% if company_name %}
     <a class="navbar-brand m-0" href=" {{ url_for('home') }} " target="_blank">
-      <span class="font-weight-bold text-white">{{ company_name }}</span>
+      <span class="ms-1 font-weight-bold text-white">{{ company_name }}</span>
       <br>
-      <span class="text-white">IntuneCD Monitor</span>
-    { % else %  }
+      <span class="ms-1 text-white">IntuneCD Monitor</span>
+    </a>
+    {% else %}
     <a class="navbar-brand m-0" href=" https://github.com/almenscorner/intunecd " target="_blank">
       <span class="ms-1 font-weight-bold text-white">IntuneCD Monitor</span>
     </a>
