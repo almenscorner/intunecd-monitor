@@ -47,7 +47,9 @@ def inject_now():
 @app.context_processor
 def inject_company_name():
     if app_config.COMPANY_NAME:
-        return {"company_name": app_config.COMPANY_NAME}
+        return dict(company_name=app_config.COMPANY_NAME)
+    else:
+        return dict(company_name=None)
     
 
 @app.route("/")
