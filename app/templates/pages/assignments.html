@@ -21,7 +21,7 @@
                     <div class="accordion accordion-flush" id="accordionFlush">
                         {% if assignments %}
                         {% for assignment in assignments %}
-                        <div class="accordion-item" id="{{ assignment.name }}">
+                        <div class="accordion-item">
                             <h2 class="accordion-header" id="flush-{{ assignment.id }}">
                                 <button class="accordion-button collapsed" type="button"
                                     data-bs-toggle="collapse" data-bs-target="#flush-collapse-{{ assignment.id }}"
@@ -82,21 +82,22 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
 
 <script>
-    (function(){
-        var searchTerm, panelContainerId;
-        // Create a new contains that is case insensitive
-        $.expr[':'].containsCaseInsensitive = function (n, i, m) {
-            return jQuery(n).text().toUpperCase().indexOf(m[3].toUpperCase()) >= 0;
-        };
+    const searchInput = $('#assignmentSearch');
+    const accordion = $('#accordionFlush');
+
+    searchInput.on('keyup', (event) => {
+        const searchTerm = event.target.value.toLowerCase();
+        const accordionItems = accordion.find('.accordion-item');
         
-        $('#assignmentSearch').on('change keyup paste click', function () {
-            searchTerm = $(this).val();
-            $('#accordionFlush > .accordion-item').each(function () {
-            accordionContainerId = '#' + $(this).attr('id');
-            $(accordionContainerId + ':not(:containsCaseInsensitive(' + searchTerm + '))').hide();
-            $(accordionContainerId + ':containsCaseInsensitive(' + searchTerm + ')').show();
-            });
+        accordionItems.each(function() {
+        const itemName = $(this).find('.accordion-header p').text().toLowerCase();
+        
+        if (itemName.includes(searchTerm)) {
+            $(this).css('display', 'block');
+        } else {
+            $(this).css('display', 'none');
+        }
         });
-        }());
+    });
 </script>
 {% endblock javascripts %}
