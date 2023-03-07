@@ -44,6 +44,12 @@ def inject_now():
     return {"now": datetime.utcnow()}
 
 
+@app.context_processor
+def inject_company_name():
+    if app_config.COMPANY_NAME:
+        return {"company_name": app_config.COMPANY_NAME}
+    
+
 @app.route("/")
 @app.route("/home")
 @login_required
