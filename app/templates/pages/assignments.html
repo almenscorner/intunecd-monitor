@@ -21,7 +21,7 @@
                     <div class="accordion accordion-flush" id="accordionFlush">
                         {% if assignments %}
                         {% for assignment in assignments %}
-                        <div class="accordion-item">
+                        <div class="accordion-item" id="{{ assignment.name }}">
                             <h2 class="accordion-header" id="flush-{{ assignment.id }}">
                                 <button class="accordion-button collapsed" type="button"
                                     data-bs-toggle="collapse" data-bs-target="#flush-collapse-{{ assignment.id }}"
@@ -88,7 +88,7 @@
         
         $('#assignmentSearch').on('change keyup paste click', function () {
           searchTerm = $(this).val();
-          $('#accordionFlush > .accordion').each(function () {
+          $('#accordionFlush > .accordion-item').each(function () {
             accordionContainerId = '#' + $(this).attr('id');
             $(accordionContainerId + ':not(:containsCaseInsensitive(' + searchTerm + '))').hide();
             $(accordionContainerId + ':containsCaseInsensitive(' + searchTerm + ')').show();
