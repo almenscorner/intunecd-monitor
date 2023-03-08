@@ -1,6 +1,6 @@
 {% extends "base/template.html" %}
 
-{% block title %} Changes {% endblock title %}
+{% block title %} Assignments {% endblock title %}
 
 {% block stylesheets %}{% endblock stylesheets %}
 
@@ -9,50 +9,54 @@
     <div class="row mt-4">
         <div class="col-lg-2">
             <div class="position-sticky pb-lg-5 pb-3 mt-lg-0 mt-5 ps-2" style="top: 100px">
-                <h3>Change summary</h3>
-                <h6 class="text-secondary font-weight-normal pe-3">Summary of changes from last 180 records</h6>
+                <h3>Assignment summary</h3>
+                <h6 class="text-secondary font-weight-normal pe-3">Summary of assignments in Intune</h6>
             </div>
         </div>
         <div class="col-lg-9">
 
             <div class="card">
                 <div class="card-body px-4 pb-2" style="height: calc(100vh - 360px); overflow: auto;">
-                    <input class="form-control" id="changeSearch" type="text" placeholder="Search..">
+                    <input class="form-control" id="assignmentSearch" type="text" placeholder="Search..">
                     <div class="accordion accordion-flush" id="accordionFlush">
-                        {% if changes %}
-                        {% for change in changes %}
+                        {% if assignments %}
+                        {% for assignment in assignments %}
                         <div class="accordion-item">
-                            <h2 class="accordion-header" id="flush-{{ change.id }}">
+                            <h2 class="accordion-header" id="flush-{{ assignment.id }}">
                                 <button class="accordion-button collapsed" type="button"
-                                    data-bs-toggle="collapse" data-bs-target="#flush-collapse-{{ change.id }}"
-                                    aria-expanded="false" aria-controls="flush-collapse-{{ change.id }}">
+                                    data-bs-toggle="collapse" data-bs-target="#flush-collapse-{{ assignment.id }}"
+                                    aria-expanded="false" aria-controls="flush-collapse-{{ assignment.id }}">
                                     <p>
-                                        <strong>Name: </strong> {{ change.name }}
+                                        <strong>Name: </strong> {{ assignment.name }}
                                         <br>
-                                        <strong>Type: </strong> {{ change.type }}
+                                        <strong>Type: </strong> {{ assignment.type }}
+                                        <br>
+                                        <strong>Membership Rule: </strong> {{ assignment.membership_rule }}
                                     </p>
                                 </button>
                             </h2>
-                            <div id="flush-collapse-{{ change.id }}" class="accordion-collapse collapse"
-                                aria-labelledby="flush-{{ change.id }}" data-bs-parent="#accordionFlush">
+                            <div id="flush-collapse-{{ assignment.id }}" class="accordion-collapse collapse"
+                                aria-labelledby="flush-{{ assignment.id }}" data-bs-parent="#accordionFlush">
                                 <div class="accordion-body">
                                     <div class="table-responsive">
                                         <table class="table table-hover">
                                             <thead>
                                                 <tr>
-                                                    <th>Setting</th>
-                                                    <th>New value</th>
-                                                    <th>Old value</th>
-                                                    <th>Date</th>
+                                                    <th>Configuration Type</th>
+                                                    <th>Name</th>
                                                 </tr>
                                             </thead>
                                             <tbody class="table-body">
-                                            {% for diff in change.diffs %}
+                                            {% for payload in assignment.assigned_to %}
                                                 <tr>
-                                                    <td class="align-middle text-m">{{ diff.setting }}</td>
-                                                    <td class="align-middle text-m">{{ diff.new_val }}</td>
-                                                    <td class="align-middle text-m">{{ diff.old_val }}</td>
-                                                    <td class="align-middle text-m">{{ diff.change_date }}</td>
+                                                    <td>{{ payload }}</td>
+                                                    <td>
+                                                        <ul>
+                                                        {% for item in assignment.assigned_to[payload] %}
+                                                            <p>{{ item }}</p>
+                                                        {% endfor %}
+                                                        </ul>
+                                                    </td>
                                                 </tr>
                                             {% endfor %}
                                             </tbody>
@@ -64,7 +68,7 @@
                         </div>
                         {% endfor %}
                         {% else %}
-                        <p>No changes found</p>
+                        <p>No assignments found</p>
                         {% endif %}
                     </div>
                 </div>
@@ -74,12 +78,11 @@
     </div>
 </div>
 {% endblock content %}
-
 {% block javascripts %}
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
 
 <script>
-    const searchInput = $('#changeSearch');
+    const searchInput = $('#assignmentSearch');
     const accordion = $('#accordionFlush');
 
     searchInput.on('keyup', (event) => {
