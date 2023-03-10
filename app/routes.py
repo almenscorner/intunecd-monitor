@@ -308,12 +308,26 @@ def documentation():
 def assignments():
     segment = get_segment(request)
 
-    # Get last 180 changes from DB
-    assignments = summary_assignments.query.all()
+    # Get all assignments from DB
+    assignment_data = summary_assignments.query.all()
 
-    for assignment in assignments:
-        assignment.assigned_to = assignment.assigned_to.replace("'", '"')
-        assignment.assigned_to = json.loads(assignment.assigned_to)
+    assignments = []
+
+    for assignment in assignment_data:
+        data = {
+            "id": assignment.id,
+            "name": assignment.name,
+            "type": assignment.type,
+            "membership_rule": assignment.membership_rule,
+            "assigned_to": assignment.assigned_to,
+        }
+
+        data["assigned_to"] = (
+            data["assigned_to"].replace("'", '"').replace("\\", "\\\\")
+        )
+        data["assigned_to"] = json.loads(data["assigned_to"])
+
+        assignments.append(data)
 
     return render_template(
         "pages/assignments.html",
