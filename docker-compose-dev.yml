@@ -1,0 +1,50 @@
+version: "3.8"
+
+services:
+
+  web:
+    build: ./
+    container_name: intunecd
+    restart: always
+    entrypoint: ./server-entrypoint.sh
+    env_file:
+      - .env
+    expose:
+      - 8080
+    environment:
+      - TZ=Europe/Stockholm
+
+  redis:
+      image: "redis:6.0.5-buster"
+
+  worker:
+    build: ./
+    entrypoint: celery
+    command: -A app.celery worker -l info
+    depends_on:
+      - "redis"
+    env_file:
+      - .env
+    environment:
+      - TZ=Europe/Stockholm
+
+  beat:
+    build: ./
+    entrypoint: celery
+    command: -A app.celery beat -S sqlalchemy_celery_beat.schedulers:DatabaseScheduler -l info
+    depends_on:
+      - "redis"
+    env_file:
+      - .env
+    environment:
+      - TZ=Europe/Stockholm
+  
+  nginx:
+    build: ./nginx-dev
+    container_name: nginx
+    restart: always
+    command: ["/bin/sh", "-c", "envsubst < /etc/nginx/conf.d/nginx.conf.template > /etc/nginx/conf.d/nginx.conf && exec nginx -g 'daemon off;'"]
+    environment:
+      - SERVER_NAME=http://localhost
+    ports:
+      - 80:80
