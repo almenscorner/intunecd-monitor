@@ -3,14 +3,40 @@ version: "3.8"
 services:
 
   web:
-    image: container_name.azurecr.io/intunecd-frontend_web:latest
+    image: ghcr.io/almenscorner/intunecd-monitor-closed:latest
     restart: always
-    command: gunicorn --bind 0.0.0.0:8080 --threads 10 run:app
+    entrypoint: ./server-entrypoint.sh
     expose:
       - 8080:8080
+    volumes:
+      - ${WEBAPP_STORAGE_HOME}/db:/intunecd/db
+
+  redis:
+    image: ghcr.io/almenscorner/intunecd-monitor-closed/redis:latest
+    restart: always
+
+  worker:
+    image: ghcr.io/almenscorner/intunecd-monitor-closed/worker:latest
+    restart: always
+    entrypoint: celery
+    command: -A app.celery worker -l info
+    depends_on:
+      - "redis"
+    volumes:
+      - ${WEBAPP_STORAGE_HOME}/db:/intunecd/db
+
+  beat:
+    image: ghcr.io/almenscorner/intunecd-monitor-closed/beat:latest
+    restart: always
+    entrypoint: celery
+    command: -A app.celery beat -S sqlalchemy_celery_beat.schedulers:DatabaseScheduler -l info
+    depends_on:
+      - "worker"
+    volumes:
+      - ${WEBAPP_STORAGE_HOME}/db:/intunecd/db
   
   nginx:
-    image: container_name.azurecr.io/intunecd-frontend_nginx:latest
+    image: ghcr.io/almenscorner/intunecd-monitor-closed/nginx:latest
     restart: always
     command: ["/bin/sh", "-c", "envsubst < /etc/nginx/conf.d/nginx.conf.template > /etc/nginx/conf.d/nginx.conf && exec nginx -g 'daemon off;'"]
     ports:
