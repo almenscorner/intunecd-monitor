@@ -21,8 +21,41 @@
     </div>
     {% endif %}
     <!--- Pipeline -->
-    {% include "include/pipelinestatus.html" %}
+    {% include "include/tenantstatus.html" %}
     <!--- End Pipeline -->
+
+    <!--- Tenant selection -->
+    <ul>
+      <li class="nav-item dropdown d-flex">
+        <a href="#" class="btn btn-dark btn-sm mb-3 me-3 dropdown-toggle " data-bs-toggle="dropdown" id="dropdownMenuButton" aria-expanded="false">
+          {{ selected_tenant_name }}
+        </a>
+        <ul class="dropdown-menu px-2 py-3 me-sm-n4" aria-labelledby="dropdownMenuButton">
+          <li class="mb-2">
+            {% if tenant_data %}
+            <li>
+              {% for tenant in tenants %}
+                {% if tenant.baseline == "true" %}
+                  {% if tenant.id == selected_tenant %}
+                    <a class="dropdown-item text-bold text-warning" href="/home/tenant/{{ tenant.id }}">{{ tenant.display_name }}</a>
+                  {% else %}
+                    <a class="dropdown-item text-warning" href="/home/tenant/{{ tenant.id }}">{{ tenant.display_name }}</a>
+                  {% endif %}
+                {% else %}
+                  {% if tenant.id == selected_tenant %}
+                  <a class="dropdown-item text-bold" href="/home/tenant/{{ tenant.id }}">{{ tenant.display_name }}</a>
+                  {% else %}
+                    <a class="dropdown-item" href="/home/tenant/{{ tenant.id }}">{{ tenant.display_name }}</a>
+                  {% endif %}
+                {% endif %}
+              {% endfor %}
+            </li>
+            {% endif %}
+          </li>
+        </ul>
+      </li>
+    </ul>
+    <!--- end tenant selection -->
 
     <!--- Trends -->
     <div class="row mt-4">
@@ -106,7 +139,7 @@
           </div>
           <div class="card-footer d-flex">
               <i class="material-icons position-relative ms-auto text-lg me-1 my-auto">access_time</i>
-              <p class="font-weight-normal my-auto">Updated on: {{ match_data.last_update }}</p>
+              <p class="font-weight-normal my-auto">Updated on: {{ count_data.last_update }}</p>
             </div>
         </div>
       </div>
@@ -487,6 +520,89 @@ crossorigin="anonymous"></script>
         $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
       });
     });
+  });
+</script>
+
+<script>
+  function getStatus(tasks) {
+    if (!tasks || !Array.isArray(tasks)) return;
+
+    tasks.forEach(task => {
+        const { task_id, tenant_id, task_type } = task;
+        if (!task_id || !tenant_id || !task_type) return;
+    
+        const endpoint = task_type === 'backup' ? `/intunecd/backup/status/${task_id}` : `/intunecd/update/status/${task_id}`;
+        fetch(endpoint, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+        })
+        .then(response => response.json())
+        .then(res => {
+          const el = document.getElementById("current-message-"+res.tenant_id)
+          el.innerText = res.task_message;
+          const ls = document.getElementById("last-status-"+res.tenant_id)
+          if (res.task_status === 'success') {
+            ls.innerText = 'Success';
+            ls.classList.add('text-success');
+            ls.classList.remove('text-danger');
+            ls.classList.remove('text-warning');
+            removeTaskFromSessionStorage(task_id, tenant_id, task_type);
+          } else if (res.task_status === 'error') {
+            ls.innerText = 'Error';
+            ls.classList.add('text-danger');
+            ls.classList.remove('text-success');
+            ls.classList.remove('text-warning');
+            removeTaskFromSessionStorage(task_id, tenant_id, task_type);
+          } else {
+            ls.innerText = 'In progress...';
+            ls.classList.remove('text-success');
+            ls.classList.remove('text-danger');
+            ls.classList.add('text-warning');
+            setTimeout(function() {
+              getStatus([{ task_id, tenant_id, task_type }]);
+            }, 5000);
+          }
+        })
+        .catch(err => {
+          console.log(err);
+          removeTaskFromSessionStorage(task_id, tenant_id, task_type);
+        });
+    });
+  }
+
+  function removeTaskFromSessionStorage(task_id, tenant_id, task_type) {
+    const tasks = JSON.parse(sessionStorage.getItem('tasks')) || [];
+    const updatedTasks = tasks.filter(task => {
+      return task.task_id !== task_id || task.tenant_id !== tenant_id || task.task_type !== task_type;
+    });
+    sessionStorage.setItem('tasks', JSON.stringify(updatedTasks));
+  }
+
+  function handleTaskClick(tenant_id, task_type) {
+    const endpoint = task_type === 'backup' ? '/intunecd/backup' : '/intunecd/update';
+    fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ tenant_id: tenant_id }),
+    })
+    .then(response => response.json())
+    .then(data => {
+      const tasks = JSON.parse(sessionStorage.getItem('tasks')) || [];
+      tasks.push({ task_id: data.task_id, tenant_id: tenant_id, task_type: task_type });
+      sessionStorage.setItem('tasks', JSON.stringify(tasks));
+      getStatus(tasks);
+    });
+  }
+
+  window.addEventListener('pageshow', function(event) {
+    const tasks = JSON.parse(sessionStorage.getItem('tasks'));
+    if (tasks && Array.isArray(tasks) && tasks.length > 0) {
+      getStatus(tasks);
+    }
   });
 </script>
 
