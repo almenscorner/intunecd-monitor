@@ -1,0 +1,183 @@
+{% extends "base/template.html" %}
+
+{% block title %} Tenants {% endblock title %}
+
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Add New Modal -->
+    <div class="modal fade" id="new-tenant-form" tabindex="-1" role="dialog" aria-labelledby="modal-form" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
+            <div class="modal-content">
+            <div class="modal-body p-0">
+                <div class="card card-plain">
+                <div class="card-header pb-0 text-left">
+                    <h5 class="">Add new tenant</h5>
+                </div>
+                <div class="card-body">
+                    <form role="form text-left" action="/tenants/add" method="post">
+                        <div class="input-group input-group-outline my-3">
+                            <label class="form-label">Display Name</label>
+                            <input type="text" name="tenant_display_name" class="form-control" onfocus="focused(this)" onfocusout="defocused(this)" required>
+                        </div>
+                        <div class="input-group input-group-outline my-3">
+                            <label class="form-label">Tenant domain</label>
+                            <input type="text" name="tenant_name" class="form-control" onfocus="focused(this)" onfocusout="defocused(this)" required>
+                        </div>
+                        <div class="input-group input-group-outline my-3">
+                            <label class="form-label">Git Repo URL</label>
+                            <input type="text" name="tenant_repo" class="form-control" onfocus="focused(this)" onfocusout="defocused(this)">
+                        </div>
+                        <div class="input-group input-group-outline my-3">
+                            <label class="form-label">PAT token</label>
+                            <input type="password" name="tenant_pat" class="form-control" onfocus="focused(this)" onfocusout="defocused(this)">
+                        </div>
+                        <div class="input-group input-group-outline my-3">
+                            <label class="form-label">Update Args</label>
+                            <input type="text" name="tenant_update_args" class="form-control" onfocus="focused(this)" onfocusout="defocused(this)">
+                        </div>
+                        <div class="input-group input-group-outline my-3">
+                            <label class="form-label">Backup Args</label>
+                            <input type="text" name="tenant_backup_args" class="form-control" onfocus="focused(this)" onfocusout="defocused(this)">
+                        </div>
+                        <div class="form-check my-3" style="padding-left: 0;">
+                            {% if baseline %}
+                                <input class="form-check-input" type="checkbox" id="baselineCheck" name="tenant_baseline" value="false" onclick="updateValue(this)" disabled>
+                                <label class="custom-control-label" for="baselineCheck">Baseline tenant - already set</label>
+                            {% else %}
+                                <input class="form-check-input" type="checkbox" id="baselineCheck" name="tenant_baseline" value="false" onclick="updateValue(this)">
+                                <label class="custom-control-label" for="baselineCheck">Baseline tenant</label>
+                            {% endif %}
+                        </div>
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-round bg-gradient-primary btn-lg w-100 mt-4 mb-0">Save</button>
+                        </div>
+                    </form>
+                </div>
+                </div>
+            </div>
+            </div>
+        </div>
+    </div>
+    <!-- End Add New Modal -->
+    <div class="row mt-4">
+        <div class="col-lg-2">
+            <div class="position-sticky pb-lg-5 pb-3 mt-lg-0 mt-5 ps-2" style="top: 100px">
+                <h3>Tenants</h3>
+                <h6 class="text-secondary font-weight-normal pe-3">Overview of added tenants
+            </div>
+        </div>
+        <div class="col-lg-9">
+            <div class="card" style="max-width: 70rem;">
+                <div class="card-header pb-0">
+                    <div class="row">
+                        <div class="col-lg-6 col-7">
+                            <button type="button" class="btn btn-link text-dark text-gradient px-3 mb-0" data-bs-toggle="modal" data-bs-target="#new-tenant-form">
+                                <i class="material-icons text-sm me-2" type="submit">add</i>new tenant
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body px-4 pb-2">
+                    {% if tenants %}
+                    {% for tenant in tenants %}
+                    {% if edit_id and tenant.id == edit_id %}
+                        <div class="d-flex flex-column border-0 p-4 mb-2 bg-gray-100 border-radius-lg">
+                            {% if tenant.baseline == "true" %}
+                            <h6 class="mb-3 text-sm text-warning">{{ tenant.display_name }}</h6>
+                            {% else %}
+                            <h6 class="mb-3 text-sm">{{ tenant.display_name }}</h6>
+                            {% endif %}
+                            <form role="form text-left" action="/tenants/edit/{{ tenant.id }}/save" method="post">
+                                <span class="mb-2 text-xs">Tenant Display Name:
+                                    <div class="input-group input-group-dynamic mb-4">
+                                    <input type="text" class="form-control" name="tenant_display_name" value="{{ tenant.display_name }}">
+                                    </div>
+                                </span>
+                                <span class="mb-2 text-xs">Tenant Name:
+                                    <div class="input-group input-group-dynamic mb-4">
+                                    <input type="text" class="form-control" name="tenant_name" value="{{ tenant.name }}" disabled>
+                                    </div>
+                                </span>
+                                <span class="mb-2 text-xs">Tenant Repo:
+                                    <div class="input-group input-group-dynamic mb-4">
+                                    <input type="text" class="form-control" name="tenant_repo" value="{{ tenant.repo }}">
+                                    </div>
+                                </span>
+                                <span class="mb-2 text-xs">Update Args:
+                                    <div class="input-group input-group-dynamic mb-4">
+                                    <input type="text" class="form-control" name="tenant_update_args" value="{{ tenant.update_args }}">
+                                    </div>
+                                </span>
+                                <span class="mb-2 text-xs">Backup Args:
+                                    <div class="input-group input-group-dynamic mb-4">
+                                    <input type="text" class="form-control" name="tenant_backup_args" value="{{ tenant.backup_args }}">
+                                    </div>
+                                </span>
+                                <div class="form-check my-3" style="padding-left: 0;">
+                                    {% if tenant.baseline == "true" %}
+                                    <input class="form-check-input" type="checkbox" id="baselineCheck" name="tenant_baseline" value="true" onclick="updateValue(this)" checked>
+                                    {% else %}
+                                    <input class="form-check-input" type="checkbox" id="baselineCheck" name="tenant_baseline" value="false" onclick="updateValue(this)">
+                                    {% endif %}
+                                    <label class="form-check-label" for="baselineCheck">Baseline tenant</label>
+                                </div>
+                                <div class="ms-auto text-end">
+                                    <button type="submit" class="btn btn-link text-dark text-gradient px-3 mb-0">
+                                        <i class="material-icons text-sm me-2" type="submit">save</i>Save
+                                    </button>
+                                    <button type="button" class="btn btn-link text-danger text-gradient px-3 mb-0">
+                                        <a href="{{ url_for('tenants') }}"><i class="material-icons text-sm me-2" type="submit">cancel</i>Cancel</a>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                      {% else %}
+                        <ul class="list-group">
+                        <li class="list-group-item border-0 d-flex p-4 mb-2 bg-gray-100 border-radius-lg">
+                            <div class="d-flex flex-column">
+                            {% if tenant.baseline == "true" %}
+                            <h6 class="mb-3 text-sm text-warning">{{ tenant.display_name }}</h6>
+                            {% else %}
+                            <h6 class="mb-3 text-sm">{{ tenant.display_name }}</h6>
+                            {% endif %}
+                            <span class="mb-2 text-xs">Tenant name: <span class="text-dark font-weight-bold ms-sm-2">{{ tenant.name }}</span></span>
+                            <span class="mb-2 text-xs">Tenant repo: <span class="text-dark ms-sm-2 font-weight-bold">{{ tenant.repo }}</span></span>
+                            <span class="mb-2 text-xs">Update args: <span class="text-dark ms-sm-2 font-weight-bold">{{ tenant.update_args }}</span></span>
+                            <span class="mb-2 text-xs">Backup args: <span class="text-dark ms-sm-2 font-weight-bold">{{ tenant.backup_args }}</span></span>
+                            {% if tenant.baseline == "true" %}
+                            <div class="form-check my-1" style="padding-left: 0;">
+                                <input class="form-check-input" type="checkbox" value="true" checked disabled>
+                                <label class="custom-control-label text-sm">Baseline tenant</label>
+                            </div>
+                            {% endif %}
+                            </div>
+                            <div class="ms-auto text-end">
+                                <a class="btn btn-link text-danger text-gradient px-3 mb-0" href="/tenants/delete/{{ tenant.id }}"><i
+                                    class="material-icons text-sm me-2" type="submit">delete</i>Delete</a>
+                                <a class="btn btn-link text-dark text-gradient px-3 mb-0" href="/tenants/edit/{{ tenant.id }}"><i
+                                    class="material-icons text-sm me-2" type="submit">edit</i>Edit</a>
+                            </div>
+                        </ul>
+                    {% endif %}
+                    {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block javascripts %}
+    <script>
+        function updateValue(checkbox) {
+            if (checkbox.checked) {
+              checkbox.value = "true";
+            } else {
+              checkbox.value = "false";
+            }
+          }
+    </script>
+{% endblock javascripts %}
