@@ -130,3 +130,6 @@ dmypy.json
 
 .idea/
 .DS_Store
+
+#flask
+flask_session/
