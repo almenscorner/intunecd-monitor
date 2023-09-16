@@ -6,9 +6,26 @@ services:
     build: ./
     container_name: intunecd
     restart: always
-    command: gunicorn --bind :8080 --threads 100 run:app
+    entrypoint: ./server-entrypoint.sh
     expose:
       - 8080
+
+  redis:
+      image: "redis:6.0.5-buster"
+
+  worker:
+    build: ./
+    entrypoint: celery
+    command: -A app.celery worker -l info
+    depends_on:
+      - "redis"
+
+  beat:
+    build: ./
+    entrypoint: celery
+    command: -A app.celery beat -S sqlalchemy_celery_beat.schedulers:DatabaseScheduler -l info
+    depends_on:
+      - "redis"
   
   nginx:
     build: ./nginx
