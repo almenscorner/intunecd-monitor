@@ -9,6 +9,7 @@ on:
     push:
       branches:
         - 'dev'
+    workflow-dispatch:
     
 env:
   # Use docker.io for Docker Hub if empty
