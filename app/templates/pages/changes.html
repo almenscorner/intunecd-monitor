@@ -5,11 +5,13 @@
 {% block stylesheets %}{% endblock stylesheets %}
 
 {% block content %}
+{% for tenant in tenant_changes %}
+{% if tenant.data.changes %}
 <div class="container-fluid py-4">
     <div class="row mt-4">
         <div class="col-lg-2">
             <div class="position-sticky pb-lg-5 pb-3 mt-lg-0 mt-5 ps-2" style="top: 100px">
-                <h3>Change summary</h3>
+                <h3>{{ tenant.name }}</h3>
                 <h6 class="text-secondary font-weight-normal pe-3">Summary of changes from last 180 records</h6>
             </div>
         </div>
@@ -19,8 +21,7 @@
                 <div class="card-body px-4 pb-2" style="height: calc(100vh - 360px); overflow: auto;">
                     <input class="form-control" id="changeSearch" type="text" placeholder="Search..">
                     <div class="accordion accordion-flush" id="accordionFlush">
-                        {% if changes %}
-                        {% for change in changes %}
+                        {% for change in tenant.data.changes %}
                         <div class="accordion-item">
                             <h2 class="accordion-header" id="flush-{{ change.id }}">
                                 <button class="accordion-button collapsed" type="button"
@@ -63,9 +64,6 @@
                             <hr class="hr" />
                         </div>
                         {% endfor %}
-                        {% else %}
-                        <p>No changes found</p>
-                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -73,6 +71,8 @@
         </div>
     </div>
 </div>
+{% endif %}
+{% endfor %}
 {% endblock content %}
 
 {% block javascripts %}
