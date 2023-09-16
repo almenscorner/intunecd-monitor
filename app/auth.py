@@ -17,14 +17,17 @@ def _save_cache(cache):
 
 def _build_msal_app(cache=None, authority=None):
     return msal.ConfidentialClientApplication(
-        app_config.CLIENT_ID, authority=authority or app_config.AUTHORITY,
-        client_credential=app_config.CLIENT_SECRET, token_cache=cache)
+        app_config.AZURE_CLIENT_ID,
+        authority=authority or app_config.AUTHORITY,
+        client_credential=app_config.AZURE_CLIENT_SECRET,
+        token_cache=cache,
+    )
 
 
 def _build_auth_code_flow(authority=None, scopes=None):
     return _build_msal_app(authority=authority).initiate_auth_code_flow(
-        scopes or [],
-        redirect_uri=url_for("authorized", _external=True))
+        scopes or [], redirect_uri=url_for("authorized", _external=True)
+    )
 
 
 def _get_token_from_cache(scope=None):
