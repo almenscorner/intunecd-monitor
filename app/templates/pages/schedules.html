@@ -1,0 +1,216 @@
+{% extends "base/template.html" %}
+
+{% block title %} Schedules {% endblock title %}
+
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Add New Modal -->
+    <div class="modal fade" id="new-schedule-form" tabindex="-1" role="dialog" aria-labelledby="modal-form" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
+            <div class="modal-content">
+            <div class="modal-body p-0">
+                <div class="card card-plain">
+                <div class="card-header pb-0 text-left">
+                    <h5 class="">Add new schedule</h5>
+                </div>
+                <div class="card-body">
+                    <form role="form text-left" action="/schedules/add" method="post">
+                        <div class="input-group input-group-outline my-3">
+                            <label class="form-label">Display Name</label>
+                            <input type="text" name="display_name" class="form-control" onfocus="focused(this)" onfocusout="defocused(this)" required>
+                        </div>
+                        <div class="form-check my-3" style="padding-left: 0;">
+                            <input class="form-check-input" type="checkbox" id="hourlyCheck" name="schedule_hourly" value="false" onclick="toggleOptions(); updateValue(this)">
+                            <label class="custom-control-label" for="hourlyCheck">Run hourly</label>
+                        </div>
+                        <div class="form-check my-3" style="padding-left: 0;">
+                            <input class="form-check-input" type="checkbox" id="dailyCheck" name="schedule_daily" value="false" onclick="toggleOptions(); updateValue(this)">
+                            <label class="custom-control-label" for="dailyCheck">Run daily</label>
+                        </div>
+                        <div class="form-check my-3" style="padding-left: 0;">
+                            <input class="form-check-input" type="checkbox" id="weeklyCheck" name="schedule_weekly" value="false" onclick="toggleOptions(); updateValue(this)">
+                            <label class="custom-control-label" for="weeklyCheck">Run weekly</label>
+                        </div>
+                          
+                        <div id="weeklyOptions" style="display: none;">
+                            <label for="dayOfWeek">Day of week:</label>
+                            <select name="dayOfWeek" id="dayOfWeek">
+                                <option value="0">Sunday</option>
+                                <option value="1">Monday</option>
+                                <option value="2">Tuesday</option>
+                                <option value="3">Wednesday</option>
+                                <option value="4">Thursday</option>
+                                <option value="5">Friday</option>
+                                <option value="6">Saturday</option>
+                            </select>
+                        </div>
+                        <div id="timeOptions" style="display: none">
+                            <label for="timeOfDay">Time of day:</label>
+                            <input type="time" id="timeOfDay" name="timeOfDay" value="12:00">
+                        </div>
+                        <div id="timeOptionsHourly" style="display: none">
+                            <label for="timeOfDayHourly">Start minute:</label>
+                            <select name="timeOfDayHourly" id="timeOfDayHourly">
+                                <option value="00">00</option>
+                                <option value="15">15</option>
+                                <option value="30">30</option>
+                                <option value="45">45</option>
+                            </select>
+                        </div>
+
+                        <h6 class="mt-4">Tenant</h6>
+                        <label for="tenant">Select a tenant:</label>
+                        <select name="schedule_tenant" id="tenant" onchange="toggleTypes()">
+                            {% for tenant in tenants %}
+                                <option value="{{ tenant.id }}">{{ tenant.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <h6 class="mt-4">Type</h6>
+                        <label for="type">Select a type:</label>
+                        <select name="schedule_type" id="type">
+                        </select>
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-round bg-gradient-primary btn-lg w-100 mt-4 mb-0">Save</button>
+                        </div>
+                    </form>
+                </div>
+                </div>
+            </div>
+            </div>
+        </div>
+    </div>
+    <!-- End Add New Modal -->
+    <div class="row mt-4">
+        <div class="col-lg-2">
+            <div class="position-sticky pb-lg-5 pb-3 mt-lg-0 mt-5 ps-2" style="top: 100px">
+                <h3>Schedules</h3>
+                <h6 class="text-secondary font-weight-normal pe-3">Overview of added scheduless
+            </div>
+        </div>
+        <div class="col-lg-9">
+            <div class="card" style="max-width: 70rem;">
+                <div class="card-header pb-0">
+                    <div class="row">
+                        <div class="col-lg-6 col-7">
+                            <button type="button" class="btn btn-link text-dark text-gradient px-3 mb-0" data-bs-toggle="modal" data-bs-target="#new-schedule-form" onclick="toggleTypes()">
+                                <i class="material-icons text-sm me-2" type="submit">add</i>new schedule
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body px-4 pb-2">
+                    {% if schedules %}
+                    {% for schedule in schedules %}
+                        <ul class="list-group">
+                        <li class="list-group-item border-0 d-flex p-4 mb-2 bg-gray-100 border-radius-lg">
+                            <div class="d-flex flex-column">
+                            <h6 class="mb-3 text-sm">{{ schedule.name }}</h6>
+                            <span class="mb-2 text-xs">Type: <span class="text-dark ms-sm-2">{{ schedule.task }}</span></span>
+                            <span class="mb-2 text-xs">Tenant: <span class="text-dark ms-sm-2">{{ schedule.tenant }}</span></span>
+                            <span class="mb-2 text-xs">When: <span class="text-dark ms-sm-2">{{ schedule.run_when }}</span></span>
+                            <span class="mb-2 text-xs">Run count: <span class="text-dark ms-sm-2">{{ schedule.run_count }}</span></span>
+                            </div>
+                            <div class="ms-auto text-end">
+                                <a class="btn btn-link text-danger text-gradient px-3 mb-0" href="/schedules/delete/{{ schedule.name }}"><i
+                                    class="material-icons text-sm me-2" type="submit">delete</i>Delete</a>
+                            </div>
+                        </ul>
+                    {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block javascripts %}
+<script>
+    function updateValue(checkbox) {
+        if (checkbox.checked) {
+            checkbox.value = "true";
+            var checkboxes = document.querySelectorAll("input[name^='schedule_']");
+            for (var i = 0; i < checkboxes.length; i++) {
+                if (checkboxes[i] != checkbox) {
+                    checkboxes[i].checked = false;
+                    checkboxes[i].value = "false";
+                    toggleOptions();
+                }
+            }
+        } else {
+            checkbox.value = "false";
+        }
+    }
+</script>
+
+<script>
+    function toggleOptions() {
+        var hourlyCheck = document.getElementById("hourlyCheck");
+        var dailyCheck = document.getElementById("dailyCheck");
+        var weeklyCheck = document.getElementById("weeklyCheck");
+        var weeklyOptions = document.getElementById("weeklyOptions");
+        var timeOptions = document.getElementById("timeOptions");
+        
+        if (weeklyCheck.checked) {
+            weeklyOptions.style.display = "block";
+            timeOptions.style.display = "block";
+            timeOptionsHourly.style.display = "none";
+
+        } 
+        else if (dailyCheck.checked) {
+            timeOptions.style.display = "block";
+            timeOptionsHourly.style.display = "none";
+            weeklyOptions.style.display = "none";
+        }
+        else if (hourlyCheck.checked) {
+            timeOptions.style.display = "none";
+            weeklyOptions.style.display = "none";
+            timeOptionsHourly.style.display = "block";
+        }
+        else {
+            timeOptions.style.display = "none";
+            weeklyOptions.style.display = "none";
+            timeOptionsHourly.style.display = "none";
+        }
+    }
+</script>
+
+<script>
+    function toggleTypes() {
+        // get the selected value
+        var selectedTenant = document.getElementById("tenant").value;
+        var typeSelect = document.getElementById("type");
+        // clear existing options
+        typeSelect.innerHTML = "";
+        var tenants = JSON.parse('{{ tenants_toggle|safe }}');
+        var option1 = document.createElement("option");
+        var option2 = document.createElement("option");
+        for (var i = 0; i < tenants.length; i++) {
+            if (tenants[i].id == selectedTenant) {
+                if (tenants[i].repo) {
+                    // add backup options
+                    option1.value = "backup";
+                    option1.text = "Backup";
+                    typeSelect.add(option1);
+                    option2.value = "update";
+                    option2.text = "Update";
+                    typeSelect.add(option2);
+                }
+                else {
+                    // add update option
+                    option1.value = "update";
+                    option1.text = "Update";
+                    typeSelect.add(option1);
+                }
+                break;
+            }
+        }
+    }
+    
+    window.onload = function() {
+        toggleTypes();
+    };
+</script>
+{% endblock javascripts %}
