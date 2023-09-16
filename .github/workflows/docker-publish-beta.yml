@@ -6,10 +6,10 @@ name: Docker
 # documentation.
 
 on:
-    push:
-      branches:
-        - 'dev'
-    workflow-dispatch:
+  workflow_dispatch: 
+  push:
+    branches:
+      - 'dev'
     
 env:
   # Use docker.io for Docker Hub if empty
