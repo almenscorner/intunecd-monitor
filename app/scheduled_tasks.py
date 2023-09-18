@@ -26,7 +26,7 @@ def add_scheduled_task(CRON, NAME, TASK, ARGS):
         schedule_model=schedule,
         name=NAME,
         task=TASK,
-        args=json.dumps([str(ARGS)]),
+        args=json.dumps(ARGS),
     )
 
     schedule_session.add(task)
