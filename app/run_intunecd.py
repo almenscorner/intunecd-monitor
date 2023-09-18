@@ -286,7 +286,8 @@ def run_intunecd_backup(TENANT_ID, NEW_BRANCH=None):
         # Commit and push changes
         repo = Repo(local_path)
         diff = repo.git.diff()
-        if diff:
+        untracked_files = repo.untracked_files
+        if diff or untracked_files:
             repo.git.add("--all", ":^backup_summary.json")
             # repo.index.add(["--all", ":^backup_summary.json"])
             if NEW_BRANCH:
