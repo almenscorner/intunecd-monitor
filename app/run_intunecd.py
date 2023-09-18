@@ -190,7 +190,7 @@ def run_intunecd_update(TENANT_ID):
 
 
 @shared_task(ignore_result=False)
-def run_intunecd_backup(TENANT_ID):
+def run_intunecd_backup(TENANT_ID, NEW_BRANCH=None):
     REPO_URL, AAD_TENANT_NAME = get_connection_info(TENANT_ID)
 
     os.environ["TENANT_NAME"] = AAD_TENANT_NAME
@@ -287,10 +287,20 @@ def run_intunecd_backup(TENANT_ID):
         repo = Repo(local_path)
         diff = repo.git.diff()
         if diff:
-            repo.git.add("--all")
-            repo.index.commit("Changes pushed by IntuneCD")
-            origin = repo.remote(name="origin")
-            origin.push(refspec="HEAD")
+            repo.git.add("--all", ":^backup_summary.json")
+            # repo.index.add(["--all", ":^backup_summary.json"])
+            if NEW_BRANCH:
+                date = get_now()
+                clean_date = date.replace(" ", "-").replace(":", "-")
+                branch = repo.create_head(f"intunecd-backup-{clean_date}")
+                branch.checkout()
+                repo.index.commit("Changes pushed by IntuneCD")
+                origin = repo.remote(name="origin")
+                origin.push(refspec=f"HEAD:intunecd-backup-{clean_date}")
+            else:
+                repo.index.commit("Changes pushed by IntuneCD")
+                origin = repo.remote(name="origin")
+                origin.push(refspec="HEAD")
 
         shutil.rmtree(local_path)
 
