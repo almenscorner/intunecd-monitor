@@ -54,6 +54,7 @@ class intunecd_tenants(db.Model):
     last_update_status = db.Column(db.String, unique=False)
     last_update_message = db.Column(db.String, unique=False)
     last_task_id = db.Column(db.String, unique=False)
+    new_branch = db.Column(db.String, unique=False)
 
 
 class api_key(db.Model):
