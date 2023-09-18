@@ -581,6 +581,7 @@ def backup_intunecd():
 
     result = run_intunecd_backup.delay(
         tenant_id,
+        tenant.new_branch,
     )
 
     tenant.last_task_id = result.id
@@ -719,6 +720,7 @@ def add_tenant():
     tenant_update_args = request.form.get("tenant_update_args")
     tenant_backup_args = request.form.get("tenant_backup_args")
     tenant_baseline = request.form.get("tenant_baseline")
+    tenant_new_branch = request.form.get("tenant_new_branch")
 
     if tenant_repo and tenant_pat:
         # check if url contains https:// or http:// and remove it
@@ -749,6 +751,7 @@ def add_tenant():
         backup_args=tenant_backup_args,
         baseline=tenant_baseline,
         last_update_status="unknown",
+        new_branch=tenant_new_branch,
     )
 
     db.session.add(add_tenant)
@@ -810,6 +813,11 @@ def save_tenant(id):
     tenant.update_args = request.form.get("tenant_update_args")
     tenant.backup_args = request.form.get("tenant_backup_args")
     tenant_baseline = request.form.get("tenant_baseline")
+    tenant.new_branch = request.form.get("tenant_new_branch")
+    tenant_pat = request.form.get("tenant_pat")
+
+    credential = DefaultAzureCredential()
+    client = SecretClient(app_config.AZURE_VAULT_URL, credential)
 
     if tenant_baseline == "true":
         # Get the current baseline tenant
@@ -823,6 +831,10 @@ def save_tenant(id):
             tenant.baseline = "true"
     else:
         tenant.baseline = ""
+
+    if tenant.repo and tenant_pat and tenant.vault_name:
+        # add update PAT to vault
+        client.set_secret(tenant.vault_name, tenant_pat)
 
     db.session.commit()
 
@@ -864,7 +876,14 @@ def add_schedule():
         # Set crontab to selected time and once a week
         schedule_cron = {"minute": f"{time[1]}", "hour": f"{time[0]}", "day_of_week": f"{schedule_day}"}
 
-    add_scheduled_task(schedule_cron, schedule_name, schedule_task, schedule_tenant)
+    # get tenant by id
+    tenant = intunecd_tenants.query.get(schedule_tenant)
+    if tenant.new_branch == "true":
+        schedule_tenant_args = [schedule_tenant, tenant.new_branch]
+    else:
+        schedule_tenant_args = [schedule_tenant, ""]
+
+    add_scheduled_task(schedule_cron, schedule_name, schedule_task, schedule_tenant_args)
 
     return redirect(url_for("schedules"))
 
@@ -893,6 +912,7 @@ class TenantSchema(Schema):
     backup_args = fields.String()
     baseline = fields.String()
     last_update_status = fields.String()
+    pat = fields.String()
 
 
 class ChangeSchema(Schema):
@@ -1048,11 +1068,12 @@ def get_tenant(id):
 
     if request.method == "POST":
         data = request.get_json()
-        tenant.display_name = data["display_name"]
-        tenant.repo = data["repo"]
-        tenant.update_args = data["update_args"]
-        tenant.backup_args = data["backup_args"]
-        tenant_baseline = data["baseline"]
+        tenant.display_name = data[0]["display_name"]
+        tenant.repo = data[0]["repo"]
+        tenant.update_args = data[0]["update_args"]
+        tenant.backup_args = data[0]["backup_args"]
+        tenant_baseline = data[0]["baseline"]
+        tenant_pat = data[0]["pat"]
 
         if tenant_baseline == "true":
             # Get the current baseline tenant
@@ -1066,6 +1087,12 @@ def get_tenant(id):
                 tenant.baseline = "true"
         else:
             tenant.baseline = ""
+
+        if tenant_pat and tenant.vault_name:
+            credential = DefaultAzureCredential()
+            client = SecretClient(app_config.AZURE_VAULT_URL, credential)
+            # add update PAT to vault
+            client.set_secret(tenant.vault_name, tenant_pat)
 
         db.session.commit()
 
