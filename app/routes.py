@@ -429,7 +429,9 @@ def schedules():
         tenant = ""
         target_tenant = json.loads(schedule.args)
         if target_tenant:
-            tenant = intunecd_tenants.query.get(target_tenant[0]).display_name
+            tenant = intunecd_tenants.query.get(target_tenant[0])
+        if tenant:
+            tenant = tenant.display_name
 
         if schedule.task == "app.run_intunecd.run_intunecd_backup":
             task = "Backup"
