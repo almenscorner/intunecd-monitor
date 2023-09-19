@@ -23,7 +23,13 @@ from app.models import (
 from app import db
 
 
-def get_now():
+def get_now() -> str:
+    """Returns current date in the Timezone specified in
+       ENV vars. If nothing is specifiec UTC is used.
+
+    Returns:
+        str: current date
+    """
     tz = pytz.timezone(os.environ.get("TIMEZONE", "UTC"))
     now = datetime.now(tz)
     date_now = now.strftime("%Y-%m-%d %H:%M:%S")
@@ -31,7 +37,15 @@ def get_now():
     return date_now
 
 
-def get_connection_info(TENANT_ID):
+def get_connection_info(TENANT_ID) -> tuple:
+    """Gets the connection info for the tenant from the database.
+
+    Args:
+        TENANT_ID (int): ID of the tenant to get info for.
+
+    Returns:
+        tuple: returns a tuple containing the repo url and the tenant name
+    """
     credential = DefaultAzureCredential()
     client = SecretClient(app_config.AZURE_VAULT_URL, credential)
     tenant = intunecd_tenants.query.get(TENANT_ID)
@@ -51,7 +65,15 @@ def get_connection_info(TENANT_ID):
 
 
 @shared_task(ignore_result=False)
-def run_intunecd_update(TENANT_ID):
+def run_intunecd_update(TENANT_ID) -> dict:
+    """Runs the IntuneCD-startupdate command for the specified tenant.
+
+    Args:
+        TENANT_ID (int): ID of the tenant to run the update for.
+
+    Returns:
+        dict: returns a dict containing the status, message and date of the update.
+    """
     REPO_URL, AAD_TENANT_NAME = get_connection_info(TENANT_ID)
 
     os.environ["TENANT_NAME"] = AAD_TENANT_NAME
@@ -190,7 +212,16 @@ def run_intunecd_update(TENANT_ID):
 
 
 @shared_task(ignore_result=False)
-def run_intunecd_backup(TENANT_ID, NEW_BRANCH=None):
+def run_intunecd_backup(TENANT_ID, NEW_BRANCH=None) -> dict:
+    """Runs the IntuneCD-startbackup command for the specified tenant.
+
+    Args:
+        TENANT_ID (int): ID of the tenant to run the backup for.
+        NEW_BRANCH (str, optional): if configured, creates a new branch. Defaults to None.
+
+    Returns:
+        dict: returns a dict containing the status, message and date of the backup.
+    """
     REPO_URL, AAD_TENANT_NAME = get_connection_info(TENANT_ID)
 
     os.environ["TENANT_NAME"] = AAD_TENANT_NAME
@@ -289,7 +320,6 @@ def run_intunecd_backup(TENANT_ID, NEW_BRANCH=None):
         untracked_files = repo.untracked_files
         if diff or untracked_files:
             repo.git.add("--all", ":^backup_summary.json")
-            # repo.index.add(["--all", ":^backup_summary.json"])
             if NEW_BRANCH:
                 date = get_now()
                 clean_date = date.replace(" ", "-").replace(":", "-")
