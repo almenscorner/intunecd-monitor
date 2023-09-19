@@ -99,5 +99,5 @@ REMEMBER_COOKIE_HTTPONLY = True
 COMPANY_NAME = os.getenv("COMPANY_NAME")
 CELERY_BROKER_URL = "redis://redis:6379/0"
 RESULT_BACKEND = "redis://redis:6379/0"
-TIMEZONE = "Europe/Stockholm"
+TIMEZONE = os.getenv("TIMEZONE")
 BEAT_DB_URI = os.getenv("BEAT_DB_URI")
