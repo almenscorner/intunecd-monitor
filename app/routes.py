@@ -79,7 +79,7 @@ def tenant_data():
 
 @app.context_processor
 def inject_version():
-    return dict(version=app.config["APP_VERSION"])
+    return dict(app_version=app.config["APP_VERSION"])
 
 
 # endregion
