@@ -77,6 +77,11 @@ def tenant_data():
         return {"tenant_data": ""}
 
 
+@app.context_processor
+def inject_version():
+    return dict(version=app_config["APP_VERSION"])
+
+
 # endregion
 
 
@@ -140,10 +145,14 @@ def home():
         diffCount = 0
 
     # Get the last match count from db
-    current_config_count = summary_config_count.query.filter_by(tenant=baseline_id).all()
+    current_config_count = summary_config_count.query.filter_by(
+        tenant=baseline_id
+    ).all()
     current_diff_count = summary_diff_count.query.filter_by(tenant=id).all()
     if current_config_count and current_diff_count:
-        matchCount = current_config_count[-1].config_count - current_diff_count[-1].diff_count
+        matchCount = (
+            current_config_count[-1].config_count - current_diff_count[-1].diff_count
+        )
     else:
         matchCount = 0
 
@@ -179,7 +188,9 @@ def home():
     # Trends
     # Get the last 30 config and diff counts from db
     line_data_diff = summary_diff_count.query.filter_by(tenant=id).all()[-30:]
-    line_data_config = summary_config_count.query.filter_by(tenant=baseline_id).all()[-30:]
+    line_data_config = summary_config_count.query.filter_by(tenant=baseline_id).all()[
+        -30:
+    ]
     line_data_average = summary_average_diffs.query.filter_by(tenant=id).all()[-30:]
 
     # If we have diffs in the db, create a list with last upate date and diff count
@@ -228,12 +239,17 @@ def home():
         # Get the expiration date of the key
         expiration = key.key_expiration
         # If the expiration date is within 30 days, set the key to expire
-        if expiration < datetime.now() + timedelta(days=30) and app_config.ADMIN_ROLE in session["user"]["roles"]:
+        if (
+            expiration < datetime.now() + timedelta(days=30)
+            and app_config.ADMIN_ROLE in session["user"]["roles"]
+        ):
             alert_api_keys = True
 
     tenants = intunecd_tenants.query.all()
     if id:
-        selected_tenant_name = intunecd_tenants.query.filter_by(id=id).first().display_name
+        selected_tenant_name = (
+            intunecd_tenants.query.filter_by(id=id).first().display_name
+        )
     else:
         selected_tenant_name = "Tenants"
 
@@ -278,6 +294,7 @@ def home_tenant(id):
 @login_required
 @role_required
 def changes():
+    """Displays changes for each tenant"""
     segment = get_segment(request)
 
     # Get last 180 changes from DB for each tenant
@@ -322,9 +339,13 @@ def documentation():
     def az_blob_client(connection_string, container_name, file_name):
         """Create a blob client to get the file from the container."""
         try:
-            blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+            blob_service_client = BlobServiceClient.from_connection_string(
+                connection_string
+            )
 
-            blob_client = blob_service_client.get_blob_client(container=container_name, blob=file_name)
+            blob_client = blob_service_client.get_blob_client(
+                container=container_name, blob=file_name
+            )
 
             return blob_client
 
@@ -376,6 +397,7 @@ def documentation():
 @login_required
 @role_required
 def assignments():
+    """Displays the assignemnts for each tenant backed up"""
     segment = get_segment(request)
 
     # Get all assignments from DB
@@ -394,7 +416,9 @@ def assignments():
                 "assigned_to": assignment.assigned_to,
             }
 
-            data["assigned_to"] = data["assigned_to"].replace("'", '"').replace("\\", "\\\\")
+            data["assigned_to"] = (
+                data["assigned_to"].replace("'", '"').replace("\\", "\\\\")
+            )
             data["assigned_to"] = json.loads(data["assigned_to"])
             tenant_data["data"]["assignments"].append(data)
 
@@ -413,6 +437,7 @@ def assignments():
 @login_required
 @admin_required
 def schedules():
+    """Displays added schedules that will be run by Celery"""
     segment = get_segment(request)
 
     # Get all schedules from DB
@@ -423,7 +448,15 @@ def schedules():
     for tenant in tenants:
         tenants_toggle.append({"id": tenant.id, "repo": tenant.repo})
 
-    days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+    days = [
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+    ]
 
     for schedule in db_schedules:
         tenant = ""
@@ -443,9 +476,13 @@ def schedules():
         # convert to human readable format
         if crontab.hour == "*" and crontab.minute != "*":
             run_when = f"Run every hour at {crontab.minute} minutes past the hour"
-        elif crontab.hour != "*" and crontab.minute != "*" and crontab.day_of_week == "*":
+        elif (
+            crontab.hour != "*" and crontab.minute != "*" and crontab.day_of_week == "*"
+        ):
             run_when = f"Run every day at {crontab.hour}:{crontab.minute}"
-        elif crontab.day_of_week != "*" and crontab.minute != "*" and crontab.hour != "*":
+        elif (
+            crontab.day_of_week != "*" and crontab.minute != "*" and crontab.hour != "*"
+        ):
             run_when = f"Run every week on {days[int(crontab.day_of_week)]} at {crontab.hour}:{crontab.minute}"
 
         if schedule.name != "celery.backend_cleanup":
@@ -474,6 +511,7 @@ def schedules():
 @login_required
 @admin_required
 def settings():
+    """Displays current configured env vars and the option to create an API key"""
     segment = get_segment(request)
     # If new_key is in the session then set new_key to the new key
     if "new_key" in session:
@@ -510,6 +548,7 @@ def settings():
 @login_required
 @admin_required
 def tenants():
+    """Displays all added tenants with ability to edit them"""
     segment = get_segment(request)
 
     tenant_list = ""
@@ -545,6 +584,8 @@ def profile():
 @login_required
 @admin_required
 def create_key():
+    """Creates a new API key in the database"""
+
     new_key = secrets.token_urlsafe()
     date = datetime.now()
     expiration = date + timedelta(days=90)
@@ -562,6 +603,7 @@ def create_key():
 @login_required
 @admin_required
 def delete_key():
+    """Deletes an API key from the database"""
     for id in request.form:
         delete = api_key.query.get(id)
         db.session.delete(delete)
@@ -763,7 +805,9 @@ def add_tenant():
     client_ID = app_config.AZURE_CLIENT_ID
     scope = "https://graph.microsoft.com/.default"
     redirect_uri = f"{os.getenv('SERVER_NAME')}/tenants"
-    consent_url = f"{base_url}?client_id={client_ID}&scope={scope}&redirect_uri={redirect_uri}"
+    consent_url = (
+        f"{base_url}?client_id={client_ID}&scope={scope}&redirect_uri={redirect_uri}"
+    )
 
     return redirect(consent_url)
 
@@ -876,7 +920,11 @@ def add_schedule():
         schedule_cron = {"minute": f"{time[1]}", "hour": f"{time[0]}"}
     elif schedule_weekly == "true":
         # Set crontab to selected time and once a week
-        schedule_cron = {"minute": f"{time[1]}", "hour": f"{time[0]}", "day_of_week": f"{schedule_day}"}
+        schedule_cron = {
+            "minute": f"{time[1]}",
+            "hour": f"{time[0]}",
+            "day_of_week": f"{schedule_day}",
+        }
 
     # get tenant by id
     tenant = intunecd_tenants.query.get(schedule_tenant)
@@ -885,7 +933,9 @@ def add_schedule():
     else:
         schedule_tenant_args = [schedule_tenant, ""]
 
-    add_scheduled_task(schedule_cron, schedule_name, schedule_task, schedule_tenant_args)
+    add_scheduled_task(
+        schedule_cron, schedule_name, schedule_task, schedule_tenant_args
+    )
 
     return redirect(url_for("schedules"))
 
@@ -953,7 +1003,14 @@ class ScheduleSchema(Schema):
 
 
 def headerDoc():
-    params = {"X-API-Key": {"description": "API Key for the API", "in": "header", "type": "string", "required": "true"}}
+    params = {
+        "X-API-Key": {
+            "description": "API Key for the API",
+            "in": "header",
+            "type": "string",
+            "required": "true",
+        }
+    }
 
     return params
 
@@ -985,7 +1042,11 @@ def get_assignments():
 
 @app.route("/api/v1/assignments/<int:id>", methods=["GET"])
 @require_appkey
-@doc(description="Get all assignments for a specific tenant", tags=["assignments"], params=headerDoc())
+@doc(
+    description="Get all assignments for a specific tenant",
+    tags=["assignments"],
+    params=headerDoc(),
+)
 @marshal_with(AssignmentSchema(many=True))
 def get_assignments_tenant(id):
     assignments = summary_assignments.query.filter_by(tenant=id).all()
@@ -1043,7 +1104,9 @@ def get_tenants():
 
 @app.route("/api/v1/tenants/<int:id>", methods=["GET", "POST", "DELETE"])
 @require_appkey
-@doc(description="Get and update a specific tenant", tags=["tenants"], params=headerDoc())
+@doc(
+    description="Get and update a specific tenant", tags=["tenants"], params=headerDoc()
+)
 @marshal_with(TenantSchema)
 def get_tenant(id):
     tenant = intunecd_tenants.query.get(id)
@@ -1159,7 +1222,11 @@ def get_changes():
 
 @app.route("/api/v1/changes/<int:id>", methods=["GET"])
 @require_appkey
-@doc(description="Get all changes for a specific tenant", tags=["changes"], params=headerDoc())
+@doc(
+    description="Get all changes for a specific tenant",
+    tags=["changes"],
+    params=headerDoc(),
+)
 @marshal_with(ChangeSchema(many=True))
 def get_changes_tenant(id):
     data = []
@@ -1281,11 +1348,15 @@ def login():
     )
 
 
-@app.route(app_config.REDIRECT_PATH)  # Its absolute URL must match your app's redirect_uri set in AAD
+@app.route(
+    app_config.REDIRECT_PATH
+)  # Its absolute URL must match your app's redirect_uri set in AAD
 def authorized():
     try:
         cache = _load_cache()
-        result = _build_msal_app(cache=cache).acquire_token_by_auth_code_flow(session.get("flow", {}), request.args)
+        result = _build_msal_app(cache=cache).acquire_token_by_auth_code_flow(
+            session.get("flow", {}), request.args
+        )
         if "error" in result:
             return render_template("pages/auth_error.html", result=result)
         session["user"] = result.get("id_token_claims")
@@ -1299,7 +1370,10 @@ def authorized():
 def logout():
     session.clear()  # Wipe out user and its token cache from session
     return redirect(  # Also logout from your tenant's web session
-        app_config.AUTHORITY + "/oauth2/v2.0/logout" + "?post_logout_redirect_uri=" + url_for("login", _external=True)
+        app_config.AUTHORITY
+        + "/oauth2/v2.0/logout"
+        + "?post_logout_redirect_uri="
+        + url_for("login", _external=True)
     )
 
 
@@ -1318,4 +1392,6 @@ def get_segment(r):
         return None
 
 
-app.jinja_env.globals.update(_build_auth_code_flow=_build_auth_code_flow)  # Used in template
+app.jinja_env.globals.update(
+    _build_auth_code_flow=_build_auth_code_flow
+)  # Used in template
