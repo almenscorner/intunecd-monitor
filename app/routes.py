@@ -38,7 +38,7 @@ from app.decorators import (
     admin_required,
     role_required,
 )
-from .run_intunecd import run_intunecd_backup, run_intunecd_update
+from .run_intunecd import run_intunecd_backup, run_intunecd_update, get_branches
 from datetime import datetime, timedelta, date
 from azure.storage.blob import BlobServiceClient
 from azure.identity import DefaultAzureCredential
@@ -796,6 +796,7 @@ def add_tenant():
         baseline=tenant_baseline,
         last_update_status="unknown",
         new_branch=tenant_new_branch,
+        update_branch="main"
     )
 
     db.session.add(add_tenant)
@@ -845,8 +846,12 @@ def edit_tenant(id):
     edit_id = tenant.id
 
     tenants = intunecd_tenants.query.all()
+    
+    branches = get_branches(id)
+    if "HEAD" in branches:
+        branches.remove("HEAD")
 
-    return render_template("pages/tenants.html", edit_id=edit_id, tenants=tenants)
+    return render_template("pages/tenants.html", edit_id=edit_id, tenants=tenants, branches=branches)
 
 
 @app.route("/tenants/edit/<int:id>/save", methods=["POST"])
@@ -861,6 +866,7 @@ def save_tenant(id):
     tenant_baseline = request.form.get("tenant_baseline")
     tenant.new_branch = request.form.get("tenant_new_branch")
     tenant_pat = request.form.get("tenant_pat")
+    tenant.update_branch = request.form.get("tenant_update_branch")
 
     credential = DefaultAzureCredential()
     client = SecretClient(app_config.AZURE_VAULT_URL, credential)
@@ -885,7 +891,6 @@ def save_tenant(id):
     db.session.commit()
 
     return redirect(url_for("tenants"))
-
 
 # endregion
 
