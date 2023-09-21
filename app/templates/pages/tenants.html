@@ -125,6 +125,19 @@
                                     <input type="text" class="form-control" name="tenant_backup_args" value="{{ tenant.backup_args }}">
                                     </div>
                                 </span>
+                                <div id="branches">
+                                    <label for="branch">Update from branch:</label>
+                                    <select name="tenant_update_branch" id="tenant_update_branch">
+                                        <option value=""></option>
+                                        {% for branch in branches %}
+                                            {% if branch == tenant.update_branch %}
+                                                <option value="{{ branch }}" selected>{{ branch }}</option>
+                                            {% else %}
+                                                <option value="{{ branch }}">{{ branch }}</option>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                </div>
                                 {% if tenant.baseline or tenant.repo %}
                                 <div class="form-check my-3" style="padding-left: 0;">
                                     {% if tenant.new_branch == "true" %}
@@ -168,6 +181,11 @@
                             <span class="mb-2 text-xs">Tenant repo: <span class="text-dark ms-sm-2 font-weight-bold">{{ tenant.repo }}</span></span>
                             <span class="mb-2 text-xs">Update args: <span class="text-dark ms-sm-2 font-weight-bold">{{ tenant.update_args }}</span></span>
                             <span class="mb-2 text-xs">Backup args: <span class="text-dark ms-sm-2 font-weight-bold">{{ tenant.backup_args }}</span></span>
+                            {% if tenant.update_branch %}
+                            <span class="mb-2 text-xs">Update from branch: <span class="text-dark ms-sm-2 font-weight-bold">{{ tenant.update_branch }}</span></span>
+                            {% else %}
+                            <span class="mb-2 text-xs">Update from branch: <span class="text-dark ms-sm-2 font-weight-bold">main</span></span>
+                            {% endif %}
                             {% if tenant.repo %}
                             <div class="form-check my-3" style="padding-left: 0;">
                                 {% if tenant.new_branch == "true" %}
