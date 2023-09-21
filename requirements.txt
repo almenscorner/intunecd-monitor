@@ -28,7 +28,7 @@ wsproto==1.2.0
 gunicorn==21.2.0
 python-dateutil==2.8.2
 azure-storage-blob==12.17.0
-IntuneCD==2.0.0b2
+IntuneCD==2.0.0b3
 flask-migrate==4.0.4
 gitpython==3.1.35
 azure-identity==1.14.0
