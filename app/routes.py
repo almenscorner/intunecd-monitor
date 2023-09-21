@@ -970,6 +970,7 @@ class TenantSchema(Schema):
     baseline = fields.String()
     last_update_status = fields.String()
     pat = fields.String()
+    update_branch = fields.String()
 
 
 class ChangeSchema(Schema):
@@ -1098,6 +1099,7 @@ def get_tenants():
                 "backup_args": tenant.backup_args,
                 "baseline": tenant.baseline,
                 "last_update_status": tenant.last_update_status,
+                "update_branch": tenant.update_branch,
             }
         )
 
@@ -1107,7 +1109,7 @@ def get_tenants():
     return response
 
 
-@app.route("/api/v1/tenants/<int:id>", methods=["GET", "POST", "DELETE"])
+@app.route("/api/v1/tenants/<int:id>", methods=["GET", "PATCH", "DELETE"])
 @require_appkey
 @doc(
     description="Get and update a specific tenant", tags=["tenants"], params=headerDoc()
@@ -1125,6 +1127,7 @@ def get_tenant(id):
             "backup_args": tenant.backup_args,
             "baseline": tenant.baseline,
             "last_update_status": tenant.last_update_status,
+            "update_branch": tenant.update_branch,
         }
 
         if not data:
@@ -1136,7 +1139,7 @@ def get_tenant(id):
             response.status_code = 200
             return response
 
-    if request.method == "POST":
+    if request.method == "PATCH":
         data = request.get_json()
         tenant.display_name = data[0]["display_name"]
         tenant.repo = data[0]["repo"]
