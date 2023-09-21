@@ -11,7 +11,7 @@ from azure.identity import DefaultAzureCredential
 from azure.keyvault.secrets import SecretClient
 from celery import shared_task
 from datetime import datetime
-from git import Repo
+from git import Repo, Remote
 from app.models import (
     intunecd_tenants,
     summary_changes,
@@ -37,6 +37,51 @@ def get_now() -> str:
     return date_now
 
 
+def get_prefix_name(OPTIONS) -> str:
+    # Split the string into a list of words
+    args = OPTIONS.split(" ")
+    # Find the index of the "--prefix" word
+    if "--prefix" in args:
+        prefix_index = args.index("--prefix")
+        # Extract the name of the prefix from the next word in the list
+        prefix_name = args[prefix_index + 1].strip('"')
+
+        return prefix_name
+
+
+def get_branches(TENANT_ID) -> list:
+    """Gets the branches from the repository.
+
+    Args:
+        repo_url (str): URL of the repository
+
+    Returns:
+        list: returns a list of branches
+    """
+    repo_url, _ = get_connection_info(TENANT_ID)
+
+    folder_name = f"tmp{random.randint(100000, 999999)}"
+    local_path = f"/intunecd/git/{folder_name}"
+    if os.path.exists(local_path):
+        shutil.rmtree(local_path)
+
+    try:
+        Repo.clone_from(repo_url, local_path)
+    except Exception as e:
+        print(f"Failed to clone repository: {e}")
+        return []
+
+    repo = Repo(local_path)
+    remote = Remote(repo, "origin")
+    branches = []
+    for branch in remote.refs:
+        branches.append(branch.name.split("/")[1])
+
+    shutil.rmtree(local_path)
+
+    return branches
+
+
 def get_connection_info(TENANT_ID) -> tuple:
     """Gets the connection info for the tenant from the database.
 
@@ -52,8 +97,10 @@ def get_connection_info(TENANT_ID) -> tuple:
     baseline = intunecd_tenants.query.filter_by(baseline="true").first()
 
     if not tenant.repo or tenant.baseline == "true":
-        baseline = intunecd_tenants.query.filter_by(baseline="true").first()
         repo_url_base = baseline.repo
+        pat = client.get_secret(baseline.vault_name).value
+    elif tenant.repo and tenant.name == baseline.name and not tenant.baseline:
+        repo_url_base = tenant.repo
         pat = client.get_secret(baseline.vault_name).value
     else:
         repo_url_base = tenant.repo
@@ -111,6 +158,10 @@ def run_intunecd_update(TENANT_ID) -> dict:
             shutil.rmtree(local_path)
 
         Repo.clone_from(REPO_URL, local_path)
+        repo = Repo(local_path)
+        
+        if intunecd_tenant.update_branch != "main":
+            repo.git.checkout(intunecd_tenant.update_branch)
 
     except:
         intunecd_tenant.last_update = date_now
@@ -228,8 +279,9 @@ def run_intunecd_backup(TENANT_ID, NEW_BRANCH=None) -> dict:
     os.environ["CLIENT_ID"] = app_config.AZURE_CLIENT_ID
     os.environ["CLIENT_SECRET"] = app_config.AZURE_CLIENT_SECRET
 
-    intunecd_tenant = intunecd_tenants.query.filter_by(name=AAD_TENANT_NAME).first()
+    intunecd_tenant = intunecd_tenants.query.filter_by(id=TENANT_ID).first()
     assignment_summary = {}
+    prefix_name = ""
 
     date_now = get_now()
 
@@ -241,6 +293,7 @@ def run_intunecd_backup(TENANT_ID, NEW_BRANCH=None) -> dict:
             shutil.rmtree(local_path)
 
         Repo.clone_from(REPO_URL, local_path)
+        repo = Repo(local_path)
     except:
         intunecd_tenant.last_update = date_now
         intunecd_tenant.last_update_message = "Could not clone repository"
@@ -259,7 +312,11 @@ def run_intunecd_backup(TENANT_ID, NEW_BRANCH=None) -> dict:
     # Get tenant args
     if intunecd_tenant.backup_args:
         OPTIONS = intunecd_tenant.backup_args.split(" ")
+        prefix_name = get_prefix_name(intunecd_tenant.backup_args)
         cmd += OPTIONS
+        
+        if prefix_name and prefix_name in Remote(repo, "origin").refs:
+            repo.git.checkout(prefix_name)
 
     cmd = " ".join(cmd)
     backup = subprocess.run(cmd, shell=True)
@@ -315,7 +372,6 @@ def run_intunecd_backup(TENANT_ID, NEW_BRANCH=None) -> dict:
             db.session.commit()
 
         # Commit and push changes
-        repo = Repo(local_path)
         diff = repo.git.diff()
         untracked_files = repo.untracked_files
         if diff or untracked_files:
@@ -323,11 +379,21 @@ def run_intunecd_backup(TENANT_ID, NEW_BRANCH=None) -> dict:
             if NEW_BRANCH:
                 date = get_now()
                 clean_date = date.replace(" ", "-").replace(":", "-")
-                branch = repo.create_head(f"intunecd-backup-{clean_date}")
-                branch.checkout()
-                repo.index.commit("Changes pushed by IntuneCD")
-                origin = repo.remote(name="origin")
-                origin.push(refspec=f"HEAD:intunecd-backup-{clean_date}")
+                if prefix_name:
+                    branch_name = prefix_name
+                else:
+                    branch_name = f"intunecd-backup-{clean_date}"
+                # check if branch exists
+                if branch_name in Remote(repo, "origin").refs:
+                    repo.git.pull()
+                    repo.index.commit("Changes pushed by IntuneCD")
+                    repo.git.push()
+                else:
+                    branch = repo.create_head(branch_name)
+                    branch.checkout()
+                    repo.index.commit("Changes pushed by IntuneCD")
+                    origin = repo.remote(name="origin")
+                    origin.push(refspec=f"HEAD:{branch_name}")
             else:
                 repo.index.commit("Changes pushed by IntuneCD")
                 origin = repo.remote(name="origin")
