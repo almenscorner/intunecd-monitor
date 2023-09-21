@@ -128,7 +128,6 @@
                                 <div id="branches">
                                     <label for="branch">Update from branch:</label>
                                     <select name="tenant_update_branch" id="tenant_update_branch">
-                                        <option value=""></option>
                                         {% for branch in branches %}
                                             {% if branch == tenant.update_branch %}
                                                 <option value="{{ branch }}" selected>{{ branch }}</option>
