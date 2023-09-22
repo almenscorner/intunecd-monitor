@@ -11,6 +11,8 @@ server {
 
     listen 80;
     server_name ${SERVER_NAME};
+    error_page 502 @html502error;
+    proxy_intercept_errors on;
 
     location / {
         add_header 'Access-Control-Allow-Origin' '*' always;
@@ -39,6 +41,11 @@ server {
         proxy_redirect off;
 
         proxy_pass http://app;
+    }
+        
+    location @html502error {
+        root /var/html;
+        try_files /error502.html 502;
     }
 
 }
