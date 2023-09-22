@@ -68,6 +68,34 @@
       Scrollbar.init(document.querySelector('#sidenav-scrollbar'), options);
     }
   </script>
+  <script type="text/javascript">
+    document.addEventListener("DOMContentLoaded", function(){
+      
+      el_autohide = document.querySelector('.autohide');
+      
+      // add padding-top to bady (if necessary)
+      navbar_height = document.querySelector('.mobile-nav').offsetHeight;
+      document.body.style.paddingTop = navbar_height + 'px';
+  
+      if(el_autohide){
+        
+        var last_scroll_top = 0;
+        window.addEventListener('scroll', function() {
+               let scroll_top = window.scrollY;
+             if(scroll_top < last_scroll_top) {
+                  el_autohide.classList.remove('scrolled-down');
+                  el_autohide.classList.add('scrolled-up');
+              }
+              else {
+                  el_autohide.classList.remove('scrolled-up');
+                  el_autohide.classList.add('scrolled-down');
+              }
+              last_scroll_top = scroll_top;
+  
+        }); 
+      }
+    }); 
+  </script>
 
   <script async defer src="https://buttons.github.io/buttons.js"></script>
   <script src="{{ url_for('static', filename='assets/js/material-dashboard.min.js') }}?v=3.0.2"></script>

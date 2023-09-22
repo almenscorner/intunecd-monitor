@@ -27290,16 +27290,10 @@ pre[class*="language-"] {
 
 .mobile-nav {
   background: #F1F1F1;
-  position: fixed;
-  bottom: 1.5rem;
   height: 65px;
-  width: 90%;
   display: flex;
-  transform: translatex(-50%);
   justify-content: space-around;
-  z-index: 9998;
   border-radius: 0.75rem;
-  left: 50%;
 }
 
 .bloc-icon {
@@ -27316,5 +27310,21 @@ pre[class*="language-"] {
   .mobile-nav {
       display: none;
   }
+}
+
+.autohide {
+  position: fixed;
+  left: 50%;
+  bottom: 1.5rem;
+  width: 90%;
+  z-index: 9998;
+  margin-left: -45%;
+}
+
+.scrolled-down{
+  transform:translateY(200%); transition: all 0.3s ease-in-out;
+}
+.scrolled-up{
+  transform:translateY(0); transition: all 0.3s ease-in-out;
 }
 /*# sourceMappingURL=dashboard-free.css.map */
