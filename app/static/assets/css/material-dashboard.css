@@ -27291,12 +27291,15 @@ pre[class*="language-"] {
 .mobile-nav {
   background: #F1F1F1;
   position: fixed;
-  bottom: 0;
+  bottom: 1.5rem;
   height: 65px;
-  width: 100%;
+  width: 90%;
   display: flex;
+  transform: translatex(-50%);
   justify-content: space-around;
   z-index: 9998;
+  border-radius: 0.75rem;
+  left: 50%;
 }
 
 .bloc-icon {
