@@ -86,23 +86,23 @@
           var scrollDelta = currentScrollPos - prevScrollpos;
           scrollDistance += Math.abs(scrollDelta);
   
-          if (prevScrollpos > currentScrollPos && currentScrollPos > 0) {
+          if (prevScrollpos < currentScrollPos && currentScrollPos > 300 && currentScrollPos < (document.documentElement.scrollHeight - window.innerHeight)) {
+            // Scrolling down
+            if (!isMobileNavHidden) {
+              el_autohide.classList.remove('scrolled-up');
+              el_autohide.classList.add('scrolled-down');
+              isMobileNavHidden = true;
+            }
+          } else if (prevScrollpos > currentScrollPos && currentScrollPos > 0 && currentScrollPos < (document.documentElement.scrollHeight - window.innerHeight)) {
             // Scrolling up
             if (isMobileNavHidden) {
               el_autohide.classList.remove('scrolled-down');
               el_autohide.classList.add('scrolled-up');
               isMobileNavHidden = false;
             }
-          } else if (prevScrollpos < currentScrollPos && scrollDistance > 150) {
-            // Scrolling down
-            if (!isMobileNavHidden) {
-              el_autohide.classList.remove('scrolled-up');
-              el_autohide.classList.add('scrolled-down');
-              isMobileNavHidden = true;
-              scrollDistance = 0; // Reset scrollDistance
-            }
           }	
           prevScrollpos = currentScrollPos;
+          scrollDistance = 0; // Reset scrollDistance
         });
       }
     });
