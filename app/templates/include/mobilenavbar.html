@@ -1,0 +1,39 @@
+<!-- Mobile navbar -->
+<nav class="mobile-nav navbar">
+    <a href="{{ url_for('home') }}" class="bloc-icon">
+        {% if 'home' in segment %}
+        <i class="material-icons opacity-10 text-primary">dashboard</i>
+        {% else %}
+        <i class="material-icons opacity-10">dashboard</i>
+        {% endif %}
+    </a>
+    <a href="{{ url_for('changes') }}" class="bloc-icon">
+        {% if 'changes' in segment %}
+        <i class="material-icons opacity-10 text-primary">published_with_changes</i>
+        {% else %}
+        <i class="material-icons opacity-10">published_with_changes</i>
+        {% endif %}
+    </a>
+    <a href="{{ url_for('schedules') }}" class="bloc-icon">
+        {% if 'schedules' in segment %}
+        <i class="material-icons opacity-10 text-primary">calendar_month</i>
+        {% else %}
+        <i class="material-icons opacity-10">calendar_month</i>
+        {% endif %}
+    </a>
+    <a href="{{ url_for('settings') }}" class="bloc-icon">
+        {% if 'settings' in segment %}
+        <i class="material-icons opacity-10 text-primary">settings</i>
+        {% else %}
+        <i class="material-icons opacity-10">settings</i>
+        {% endif %}
+    </a>
+    <a href="{{ url_for('tenants') }}" class="bloc-icon">
+        {% if 'tenants' in segment %}
+        <i class="material-icons opacity-10 text-primary">account_tree</i>
+        {% else %}
+        <i class="material-icons opacity-10">account_tree</i>
+        {% endif %}
+    </a>
+</nav>
+<!-- Mobile navbar END -->

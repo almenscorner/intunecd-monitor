@@ -27287,4 +27287,31 @@ pre[class*="language-"] {
   }
 }
 
+
+.mobile-nav {
+  background: #F1F1F1;
+  position: fixed;
+  bottom: 0;
+  height: 65px;
+  width: 100%;
+  display: flex;
+  justify-content: space-around;
+  z-index: 9998;
+}
+
+.bloc-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.bloc-icon img {
+  width: 30px;
+}
+
+@media screen and (min-width: 600px) {
+  .mobile-nav {
+      display: none;
+  }
+}
 /*# sourceMappingURL=dashboard-free.css.map */
