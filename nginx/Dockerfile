@@ -4,5 +4,5 @@ FROM --platform=linux/amd64 nginx
 RUN rm /etc/nginx/conf.d/default.conf
 COPY ./nginx/nginx.conf.template /etc/nginx/conf.d
 RUN mkdir /var/html
-COPY .error502.html /var/html
+COPY ./nginx/error502.html /var/html
 ENV ESC='$'
