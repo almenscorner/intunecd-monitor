@@ -10191,7 +10191,7 @@ fieldset:disabled .btn {
 
 /* rtl:end:remove */
 .text-primary {
-  color: #e91e63 !important;
+  color: #9CFF87 !important;
 }
 
 .text-secondary {
@@ -25584,7 +25584,7 @@ p {
 }
 
 .text-gradient.text-primary {
-  background-image: linear-gradient(195deg, #1FD0E0, #D81B60);
+  background-image: linear-gradient(195deg, #9CFF87, #1FD0E0);
 }
 
 .text-gradient.text-info {

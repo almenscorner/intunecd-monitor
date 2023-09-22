@@ -2,35 +2,35 @@
 <nav class="mobile-nav navbar autohide">
     <a href="{{ url_for('home') }}" class="bloc-icon">
         {% if 'home' in segment %}
-        <i class="material-icons opacity-10 text-primary">dashboard</i>
+        <i class="material-icons opacity-10 text-primary text-gradient">dashboard</i>
         {% else %}
         <i class="material-icons opacity-10">dashboard</i>
         {% endif %}
     </a>
     <a href="{{ url_for('changes') }}" class="bloc-icon">
         {% if 'changes' in segment %}
-        <i class="material-icons opacity-10 text-primary">published_with_changes</i>
+        <i class="material-icons opacity-10 text-primary text-gradient">published_with_changes</i>
         {% else %}
         <i class="material-icons opacity-10">published_with_changes</i>
         {% endif %}
     </a>
     <a href="{{ url_for('schedules') }}" class="bloc-icon">
         {% if 'schedules' in segment %}
-        <i class="material-icons opacity-10 text-primary">calendar_month</i>
+        <i class="material-icons opacity-10 text-primary text-gradient">calendar_month</i>
         {% else %}
         <i class="material-icons opacity-10">calendar_month</i>
         {% endif %}
     </a>
     <a href="{{ url_for('settings') }}" class="bloc-icon">
         {% if 'settings' in segment %}
-        <i class="material-icons opacity-10 text-primary">settings</i>
+        <i class="material-icons opacity-10 text-primary text-gradient">settings</i>
         {% else %}
         <i class="material-icons opacity-10">settings</i>
         {% endif %}
     </a>
     <a href="{{ url_for('tenants') }}" class="bloc-icon">
         {% if 'tenants' in segment %}
-        <i class="material-icons opacity-10 text-primary">account_tree</i>
+        <i class="material-icons opacity-10 text-primary text-gradient">account_tree</i>
         {% else %}
         <i class="material-icons opacity-10">account_tree</i>
         {% endif %}
