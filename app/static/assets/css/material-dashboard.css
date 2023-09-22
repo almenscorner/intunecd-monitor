@@ -27316,9 +27316,9 @@ pre[class*="language-"] {
   position: fixed;
   left: 50%;
   bottom: 1.5rem;
-  width: 90%;
+  width: 80%;
   z-index: 9998;
-  margin-left: -45%;
+  margin-left: -40%;
 }
 
 .scrolled-down{
