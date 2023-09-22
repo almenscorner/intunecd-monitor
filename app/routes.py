@@ -86,6 +86,11 @@ def inject_version():
 
 
 # region Helper Functions
+@app.errorhandler(500)
+def internal_server_error(e):
+    return render_template("pages/error.html", error=e), 500
+
+
 @app.route("/sw.js")
 def sw():
     response = make_response(send_from_directory("static", "sw.js"))
