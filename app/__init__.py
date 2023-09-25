@@ -6,6 +6,7 @@ from flask_bcrypt import Bcrypt
 from flask_paranoid import Paranoid
 from flask_migrate import Migrate
 from flask_apispec import FlaskApiSpec
+from flask_socketio import SocketIO
 from werkzeug.middleware.proxy_fix import ProxyFix
 from celery import Celery, Task
 
@@ -32,6 +33,7 @@ with app.app_context():
     paranoid.redirect_view = "/login"
     app.wsgi_app = ProxyFix(app.wsgi_app)
     docs = FlaskApiSpec(app)
+    socketio = SocketIO(app, message_queue="redis://redis:6379/0")
 
     def celery_init_app(app: Flask) -> Celery:
         class FlaskTask(Task):
@@ -49,5 +51,6 @@ with app.app_context():
     celery = celery_init_app(app)
 
     celery.conf.update({"beat_dburi": app_config.BEAT_DB_URI})
+    celery.conf.update(result_extended=True)
 
     from app import routes
