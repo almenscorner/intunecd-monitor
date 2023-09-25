@@ -6,7 +6,7 @@ import base64
 import secrets
 import pytz
 
-from app import app, db, docs, app_config
+from app import app, db, docs, app_config, celery, socketio
 from flask import (
     render_template,
     session,
@@ -45,6 +45,7 @@ from azure.identity import DefaultAzureCredential
 from azure.keyvault.secrets import SecretClient
 from celery.result import AsyncResult
 from flask_apispec import doc, marshal_with
+from flask_socketio import emit
 from marshmallow import fields, Schema
 from .scheduled_tasks import (
     add_scheduled_task,
@@ -98,6 +99,10 @@ def sw():
     return response
 
 
+@socketio.on("connect")
+def connect():
+    emit("connected")
+    
 # endregion
 
 
@@ -621,17 +626,22 @@ def delete_key():
 
 
 # region intunecd
-@app.route("/intunecd/backup", methods=["POST"])
+@app.route("/intunecd/run", methods=["POST"])
 @login_required
 @admin_required
-def backup_intunecd():
+def run_intunecd():
     tenant_id = request.json["tenant_id"]
+    task_type = request.json["task_type"]
+    
     tenant = intunecd_tenants.query.get(tenant_id)
 
-    result = run_intunecd_backup.delay(
-        tenant_id,
-        tenant.new_branch,
-    )
+    if task_type == "backup":
+        result = run_intunecd_backup.delay(
+            tenant_id,
+            tenant.new_branch,
+        )
+    elif task_type == "update":
+        result = run_intunecd_update.delay(tenant_id)
 
     tenant.last_task_id = result.id
     tenant.last_update = str(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
@@ -641,12 +651,6 @@ def backup_intunecd():
 
     # return response
     return jsonify(data), 202
-
-
-@app.route("/intunecd/update", methods=["POST"])
-@login_required
-@admin_required
-def update_intunecd():
     tenant_id = request.json["tenant_id"]
     tenant = intunecd_tenants.query.get(tenant_id)
 
@@ -660,96 +664,6 @@ def update_intunecd():
 
     # return response
     return jsonify(data), 202
-
-
-@app.get("/intunecd/backup/status/<task_id>")
-@login_required
-@admin_required
-def backup_intunecd_status(task_id):
-    task_result = AsyncResult(task_id)
-    if task_result.status == "PENDING":
-        message = "Backup is pending..."
-        status = "pending"
-
-    if task_result.status == "STARTED":
-        message = "Backup is in progress..."
-        status = "started"
-
-    if task_result.status == "SUCCESS":
-        if task_result.result.get("status") == "error":
-            message = task_result.result.get("message")
-            status = "error"
-        else:
-            message = "Backup is complete."
-            status = "success"
-
-    if task_result.status == "FAILURE":
-        message = "Backup failed."
-        status = "error"
-
-    if task_result.result.get("status") == "error":
-        message = task_result.result.get("message")
-        status = "error"
-
-    tenant = intunecd_tenants.query.filter_by(last_task_id=task_id).first()
-    tenant_id = tenant.id
-    tenant.last_update_status = task_result.result.get("status", "unknown")
-    db.session.commit()
-
-    result = {
-        "task_id": task_id,
-        "task_status": status,
-        "task_message": message,
-        "tenant_id": tenant_id,
-    }
-
-    return jsonify(result), 200
-
-
-@app.get("/intunecd/update/status/<task_id>")
-@login_required
-@admin_required
-def update_intunecd_status(task_id):
-    task_result = AsyncResult(task_id)
-    if task_result.status == "PENDING":
-        message = "Update is pending..."
-        status = "pending"
-
-    if task_result.status == "STARTED":
-        message = "Update is in progress..."
-        status = "started"
-
-    if task_result.status == "SUCCESS":
-        if task_result.result.get("status") == "error":
-            message = task_result.result.get("message")
-            status = "error"
-        else:
-            message = "Update is complete."
-            status = "success"
-
-    if task_result.status == "FAILURE":
-        message = "Update failed."
-        status = "error"
-
-    if task_result.result.get("status") == "error":
-        message = task_result.result.get("message")
-        status = "error"
-
-    tenant = intunecd_tenants.query.filter_by(last_task_id=task_id).first()
-    tenant_id = tenant.id
-    tenant.last_update_status = task_result.result.get("status", "unknown")
-    tenant.last_update_message = task_result.result.get("message", "unknown")
-    db.session.commit()
-
-    result = {
-        "task_id": task_id,
-        "task_status": status,
-        "task_message": message,
-        "tenant_id": tenant_id,
-    }
-
-    return jsonify(result), 200
-
 
 # endregion
 
