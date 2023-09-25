@@ -250,18 +250,10 @@ crossorigin="anonymous"></script>
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
 
-{% if sock is true %}
-<script>
-  const update_status = (pipelines) => {
-    document.getElementById('pipelinestatus').innerHTML = pipelines;
-  };
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js" 
+integrity="sha512-zoJXRvW2gC8Z0Xo3lBbao5+AS3g6YWr5ztKqaicua11xHo+AvE1b0lT9ODgrHTmNUxeCw0Ry4BGRYZfXu70weg==" 
+crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
-  const socket = new WebSocket('wss://' + location.host + '/pipelinestatus');
-  socket.addEventListener('message', ev => {
-      update_status(ev.data);
-  });
-</script>
-{% endif %}
 
 <script>
   var ctx = document.getElementById("lineChartDiffs").getContext("2d");
@@ -524,84 +516,110 @@ crossorigin="anonymous"></script>
 </script>
 
 <script>
-  function getStatus(tasks) {
-    if (!tasks || !Array.isArray(tasks)) return;
-
-    tasks.forEach(task => {
-        const { task_id, tenant_id, task_type } = task;
-        if (!task_id || !tenant_id || !task_type) return;
-    
-        const endpoint = task_type === 'backup' ? `/intunecd/backup/status/${task_id}` : `/intunecd/update/status/${task_id}`;
-        fetch(endpoint, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-        })
-        .then(response => response.json())
-        .then(res => {
-          const el = document.getElementById("current-message-"+res.tenant_id)
-          el.innerText = res.task_message;
-          const ls = document.getElementById("last-status-"+res.tenant_id)
-          if (res.task_status === 'success') {
-            ls.innerText = 'Success';
-            ls.classList.add('text-success');
-            ls.classList.remove('text-danger');
-            ls.classList.remove('text-warning');
-            removeTaskFromSessionStorage(task_id, tenant_id, task_type);
-          } else if (res.task_status === 'error') {
-            ls.innerText = 'Error';
-            ls.classList.add('text-danger');
-            ls.classList.remove('text-success');
-            ls.classList.remove('text-warning');
-            removeTaskFromSessionStorage(task_id, tenant_id, task_type);
-          } else {
-            ls.innerText = 'In progress...';
-            ls.classList.remove('text-success');
-            ls.classList.remove('text-danger');
-            ls.classList.add('text-warning');
-            setTimeout(function() {
-              getStatus([{ task_id, tenant_id, task_type }]);
-            }, 5000);
-          }
-        })
-        .catch(err => {
-          console.log(err);
-          removeTaskFromSessionStorage(task_id, tenant_id, task_type);
-        });
-    });
-  }
-
-  function removeTaskFromSessionStorage(task_id, tenant_id, task_type) {
-    const tasks = JSON.parse(sessionStorage.getItem('tasks')) || [];
-    const updatedTasks = tasks.filter(task => {
-      return task.task_id !== task_id || task.tenant_id !== tenant_id || task.task_type !== task_type;
-    });
-    sessionStorage.setItem('tasks', JSON.stringify(updatedTasks));
-  }
-
   function handleTaskClick(tenant_id, task_type) {
-    const endpoint = task_type === 'backup' ? '/intunecd/backup' : '/intunecd/update';
+    const endpoint = 'intunecd/run';
     fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ tenant_id: tenant_id }),
-    })
-    .then(response => response.json())
-    .then(data => {
-      const tasks = JSON.parse(sessionStorage.getItem('tasks')) || [];
-      tasks.push({ task_id: data.task_id, tenant_id: tenant_id, task_type: task_type });
-      sessionStorage.setItem('tasks', JSON.stringify(tasks));
-      getStatus(tasks);
+      body: JSON.stringify({ tenant_id: tenant_id, task_type: task_type }),
     });
   }
 
-  window.addEventListener('pageshow', function(event) {
-    const tasks = JSON.parse(sessionStorage.getItem('tasks'));
-    if (tasks && Array.isArray(tasks) && tasks.length > 0) {
-      getStatus(tasks);
+  $(document).ready(function() {
+    var socket = io.connect();
+    var statusData = {};
+  
+    function updateUI(data) {
+      const { status, message, date, tenant_id } = data;
+      const el = document.getElementById(`current-message-${tenant_id}`);
+      const updateButton = document.getElementById(`update-${tenant_id}`);
+      const backupButton = document.getElementById(`backup-${tenant_id}`);
+      const ellipsis = document.getElementById(`ellipsis-${tenant_id}`);
+      const ls = document.getElementById(`last-status-${tenant_id}`);
+      const updateDate = document.getElementById(`updateDate-${tenant_id}`);
+  
+      el.innerText = message;
+      ls.innerText = status;
+      ls.classList.remove('text-success', 'text-danger', 'text-warning');
+      updateDate.innerText = date;
+  
+      if (backupButton) backupButton.style.removeProperty('display');
+      if (updateButton) updateButton.style.removeProperty('display');
+      if (ellipsis) ellipsis.style.display = 'none';
+  
+      if (status === 'error' || status === 'success') {
+        if (backupButton) backupButton.style.removeProperty('display');
+        if (updateButton) updateButton.style.removeProperty('display');
+        if (ellipsis) ellipsis.style.display = 'none';
+        if (status === 'error') {
+          ls.classList.add('text-danger');
+          ls.classList.remove('text-warning', 'text-success', 'text-info');
+        } else if (status === 'success') {
+          ls.classList.add('text-success');
+          ls.classList.remove('text-warning', 'text-danger', 'text-info');
+        }
+        else {
+          ls.classList.add('text-warning');
+          ls.classList.remove('text-success', 'text-danger', 'text-info');
+        }
+      } else {
+        if (!backupButton && ellipsis) {
+          if (updateButton.style.display != 'none' && ellipsis.style.display === 'none') {
+            ellipsis.style.display = 'inline-block';
+            ls.innerText = status;
+            ls.classList.add('text-info')
+            updateButton.style.display = 'none';
+          }
+        } else if (updateButton && backupButton && ellipsis) {
+          if (updateButton.style.display != 'none' && backupButton.style.display != 'none' && ellipsis.style.display === 'none') {
+            ellipsis.style.display = 'inline-block';
+            ls.innerText = status;
+            ls.classList.add('text-info')
+            updateButton.style.display = 'none';
+            backupButton.style.display = 'none';
+          }
+        }
+      }
+  
+      // Store the status data in local storage
+      statusData[tenant_id] = { status, message, date };
+      sessionStorage.setItem('statusData', JSON.stringify(statusData));
+    }
+  
+    socket.on('intunecdrun', function(data) {
+      updateUI(data);
+    });
+  
+    // Retrieve the status data from local storage when the page is loaded
+    var storedStatusData = sessionStorage.getItem('statusData');
+    if (storedStatusData) {
+      statusData = JSON.parse(storedStatusData);
+      Object.keys(statusData).forEach(function(tenant_id) {
+        const data = statusData[tenant_id];
+        const ls = document.getElementById(`last-status-${tenant_id}`);
+        const el = document.getElementById(`current-message-${tenant_id}`);
+
+        if (!ls) {
+          // The tenant is not on the page anymore so remove it from data
+          delete statusData[tenant_id];
+          sessionStorage.setItem('statusData', JSON.stringify(statusData));
+          return; // Exit the forEach loop for this tenant
+        }
+
+        const lastStatus = ls.innerText.toLowerCase();
+        const lastMessage = el.innerText;
+
+        if (data.status != lastStatus) {
+          data.status = lastStatus;
+        }
+        if (data.message != lastMessage) {
+          data.message = lastMessage;
+        }
+
+        updateUI({ ...data, tenant_id });
+      });
     }
   });
 </script>
