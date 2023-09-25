@@ -643,23 +643,6 @@ def run_intunecd():
     elif task_type == "update":
         result = run_intunecd_update.delay(tenant_id)
 
-    tenant.last_task_id = result.id
-    tenant.last_update = str(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-    db.session.commit()
-
-    data = {"task_id": result.id}
-
-    # return response
-    return jsonify(data), 202
-    tenant_id = request.json["tenant_id"]
-    tenant = intunecd_tenants.query.get(tenant_id)
-
-    result = run_intunecd_update.delay(tenant_id)
-
-    tenant.last_task_id = result.id
-    tenant.last_update = str(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-    db.session.commit()
-
     data = {"task_id": result.id}
 
     # return response
