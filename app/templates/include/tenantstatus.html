@@ -22,14 +22,20 @@
       </div>
       <hr class="dark horizontal my-0">
       <div class="card-footer d-flex">
-        <input type="button" class="btn btn-sm bg-gradient-primary my-auto" onclick="handleTaskClick({{ item.id }}, 'update')" value="Update" style="
+        <input type="button" class="btn btn-sm bg-gradient-primary my-auto" id="update-{{ item.id }}" onclick="handleTaskClick({{ item.id }}, 'update')" value="Update" style="
             width: 8rem;
             margin-right: 1.5rem;
         "/>
-        <input type="button" class="btn btn-sm bg-gradient-primary my-auto" onclick="handleTaskClick({{ item.id }}, 'backup')" value="Backup" style="
+        <input type="button" class="btn btn-sm bg-gradient-primary my-auto" id="backup-{{ item.id }}" onclick="handleTaskClick({{ item.id }}, 'backup')" value="Backup" style="
             width: 8rem;
             margin-right: 1.5rem;
         "/>
+        <div class="lds-ellipsis my-auto" id="ellipsis-{{ item.id }}" style="display: none;">
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+        </div>
         <i class="material-icons position-relative ms-auto text-lg me-1 my-auto">date_range</i>
         <span class="font-weight-normal my-auto">{{ item.last_update }}</span>
       </div>
@@ -57,18 +63,24 @@
       </div>
       <hr class="dark horizontal my-0">
       <div class="card-footer d-flex">
-        <input type="button" class="btn btn-sm bg-gradient-primary my-auto" onclick="handleTaskClick({{ item.id }}, 'update')" value="Update" style="
+        <input type="button" class="btn btn-sm bg-gradient-primary my-auto" id="update-{{ item.id }}" onclick="handleTaskClick({{ item.id }}, 'update')" value="Update" style="
             width: 8rem;
             margin-right: 1.5rem;
         "/>
         {% if item.repo %}
-        <input type="button" class="btn btn-sm bg-gradient-primary my-auto" onclick="handleTaskClick({{ item.id }}, 'backup')" value="Backup" style="
+        <input type="button" class="btn btn-sm bg-gradient-primary my-auto" id="backup-{{ item.id }}" onclick="handleTaskClick({{ item.id }}, 'backup')" value="Backup" style="
             width: 8rem;
             margin-right: 1.5rem;
         "/>
         {% endif %}
+        <div class="lds-ellipsis my-auto" id="ellipsis-{{ item.id }}" style="display: none;">
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+        </div>
         <i class="material-icons position-relative ms-auto text-lg me-1 my-auto">date_range</i>
-        <span class="font-weight-normal my-auto">{{ item.last_update }}</span>
+        <span class="font-weight-normal my-auto" id="updateDate-{{ item.id }}">{{ item.last_update }}</span>
       </div>
     </div>
     </div>
