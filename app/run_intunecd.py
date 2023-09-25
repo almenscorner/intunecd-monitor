@@ -23,6 +23,9 @@ from app.models import (
 )
 from app import db
 
+socket = SocketIO(message_queue="redis://redis:6379/0", broadcast=True, namespace="/")
+
+
 
 def get_now() -> str:
     """Returns current date in the Timezone specified in
@@ -121,9 +124,7 @@ def run_intunecd_update(TENANT_ID) -> dict:
 
     Returns:
         dict: returns a dict containing the status, message and date of the update.
-    """
-    socket = SocketIO(message_queue="redis://redis:6379/0", broadcast=True, namespace="/")
-    
+    """    
     REPO_URL, AAD_TENANT_NAME = get_connection_info(TENANT_ID)
 
     os.environ["TENANT_NAME"] = AAD_TENANT_NAME
@@ -292,10 +293,7 @@ def run_intunecd_backup(TENANT_ID, NEW_BRANCH=None) -> dict:
 
     Returns:
         dict: returns a dict containing the status, message and date of the backup.
-    """
-    
-    socket = SocketIO(message_queue="redis://redis:6379/0", broadcast=True, namespace="/")
-    
+    """    
     REPO_URL, AAD_TENANT_NAME = get_connection_info(TENANT_ID)
 
     os.environ["TENANT_NAME"] = AAD_TENANT_NAME
