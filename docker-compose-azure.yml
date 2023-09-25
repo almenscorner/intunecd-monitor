@@ -19,7 +19,7 @@ services:
     image: ghcr.io/almenscorner/intunecd-monitor/worker:beta
     restart: always
     entrypoint: celery
-    command: -A app.celery worker -l info
+    command: -A app.celery worker -l info --pool threads
     depends_on:
       - "redis"
     volumes:
