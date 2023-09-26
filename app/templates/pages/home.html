@@ -21,8 +21,41 @@
     </div>
     {% endif %}
     <!--- Pipeline -->
-    {% include "include/pipelinestatus.html" %}
+    {% include "include/tenantstatus.html" %}
     <!--- End Pipeline -->
+
+    <!--- Tenant selection -->
+    <ul>
+      <li class="nav-item dropdown d-flex">
+        <a href="#" class="btn btn-dark btn-sm mb-3 me-3 dropdown-toggle " data-bs-toggle="dropdown" id="dropdownMenuButton" aria-expanded="false">
+          {{ selected_tenant_name }}
+        </a>
+        <ul class="dropdown-menu px-2 py-3 me-sm-n4" aria-labelledby="dropdownMenuButton">
+          <li class="mb-2">
+            {% if tenant_data %}
+            <li>
+              {% for tenant in tenants %}
+                {% if tenant.baseline == "true" %}
+                  {% if tenant.id == selected_tenant %}
+                    <a class="dropdown-item text-bold text-warning" href="/home/tenant/{{ tenant.id }}">{{ tenant.display_name }}</a>
+                  {% else %}
+                    <a class="dropdown-item text-warning" href="/home/tenant/{{ tenant.id }}">{{ tenant.display_name }}</a>
+                  {% endif %}
+                {% else %}
+                  {% if tenant.id == selected_tenant %}
+                  <a class="dropdown-item text-bold" href="/home/tenant/{{ tenant.id }}">{{ tenant.display_name }}</a>
+                  {% else %}
+                    <a class="dropdown-item" href="/home/tenant/{{ tenant.id }}">{{ tenant.display_name }}</a>
+                  {% endif %}
+                {% endif %}
+              {% endfor %}
+            </li>
+            {% endif %}
+          </li>
+        </ul>
+      </li>
+    </ul>
+    <!--- end tenant selection -->
 
     <!--- Trends -->
     <div class="row mt-4">
@@ -106,7 +139,7 @@
           </div>
           <div class="card-footer d-flex">
               <i class="material-icons position-relative ms-auto text-lg me-1 my-auto">access_time</i>
-              <p class="font-weight-normal my-auto">Updated on: {{ match_data.last_update }}</p>
+              <p class="font-weight-normal my-auto">Updated on: {{ count_data.last_update }}</p>
             </div>
         </div>
       </div>
@@ -217,18 +250,10 @@ crossorigin="anonymous"></script>
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
 
-{% if sock is true %}
-<script>
-  const update_status = (pipelines) => {
-    document.getElementById('pipelinestatus').innerHTML = pipelines;
-  };
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js" 
+integrity="sha512-zoJXRvW2gC8Z0Xo3lBbao5+AS3g6YWr5ztKqaicua11xHo+AvE1b0lT9ODgrHTmNUxeCw0Ry4BGRYZfXu70weg==" 
+crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
-  const socket = new WebSocket('wss://' + location.host + '/pipelinestatus');
-  socket.addEventListener('message', ev => {
-      update_status(ev.data);
-  });
-</script>
-{% endif %}
 
 <script>
   var ctx = document.getElementById("lineChartDiffs").getContext("2d");
@@ -487,6 +512,115 @@ crossorigin="anonymous"></script>
         $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
       });
     });
+  });
+</script>
+
+<script>
+  function handleTaskClick(tenant_id, task_type) {
+    const endpoint = 'intunecd/run';
+    fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ tenant_id: tenant_id, task_type: task_type }),
+    });
+  }
+
+  $(document).ready(function() {
+    var socket = io.connect();
+    var statusData = {};
+  
+    function updateUI(data) {
+      const { status, message, date, tenant_id } = data;
+      const el = document.getElementById(`current-message-${tenant_id}`);
+      const updateButton = document.getElementById(`update-${tenant_id}`);
+      const backupButton = document.getElementById(`backup-${tenant_id}`);
+      const ellipsis = document.getElementById(`ellipsis-${tenant_id}`);
+      const ls = document.getElementById(`last-status-${tenant_id}`);
+      const updateDate = document.getElementById(`updateDate-${tenant_id}`);
+  
+      el.innerText = message;
+      ls.innerText = status;
+      ls.classList.remove('text-success', 'text-danger', 'text-warning');
+      updateDate.innerText = date;
+  
+      if (backupButton) backupButton.style.removeProperty('display');
+      if (updateButton) updateButton.style.removeProperty('display');
+      if (ellipsis) ellipsis.style.display = 'none';
+  
+      if (status === 'error' || status === 'success') {
+        if (backupButton) backupButton.style.removeProperty('display');
+        if (updateButton) updateButton.style.removeProperty('display');
+        if (ellipsis) ellipsis.style.display = 'none';
+        if (status === 'error') {
+          ls.classList.add('text-danger');
+          ls.classList.remove('text-warning', 'text-success', 'text-info');
+        } else if (status === 'success') {
+          ls.classList.add('text-success');
+          ls.classList.remove('text-warning', 'text-danger', 'text-info');
+        }
+        else {
+          ls.classList.add('text-warning');
+          ls.classList.remove('text-success', 'text-danger', 'text-info');
+        }
+      } else {
+        if (!backupButton && ellipsis) {
+          if (updateButton.style.display != 'none' && ellipsis.style.display === 'none') {
+            ellipsis.style.display = 'inline-block';
+            ls.innerText = status;
+            ls.classList.add('text-info')
+            updateButton.style.display = 'none';
+          }
+        } else if (updateButton && backupButton && ellipsis) {
+          if (updateButton.style.display != 'none' && backupButton.style.display != 'none' && ellipsis.style.display === 'none') {
+            ellipsis.style.display = 'inline-block';
+            ls.innerText = status;
+            ls.classList.add('text-info')
+            updateButton.style.display = 'none';
+            backupButton.style.display = 'none';
+          }
+        }
+      }
+  
+      // Store the status data in local storage
+      statusData[tenant_id] = { status, message, date };
+      sessionStorage.setItem('statusData', JSON.stringify(statusData));
+    }
+  
+    socket.on('intunecdrun', function(data) {
+      updateUI(data);
+    });
+  
+    // Retrieve the status data from local storage when the page is loaded
+    var storedStatusData = sessionStorage.getItem('statusData');
+    if (storedStatusData) {
+      statusData = JSON.parse(storedStatusData);
+      Object.keys(statusData).forEach(function(tenant_id) {
+        const data = statusData[tenant_id];
+        const ls = document.getElementById(`last-status-${tenant_id}`);
+        const el = document.getElementById(`current-message-${tenant_id}`);
+
+        if (!ls) {
+          // The tenant is not on the page anymore so remove it from data
+          delete statusData[tenant_id];
+          sessionStorage.setItem('statusData', JSON.stringify(statusData));
+          return; // Exit the forEach loop for this tenant
+        }
+
+        const lastStatus = ls.innerText.toLowerCase();
+        const lastMessage = el.innerText;
+
+        if (data.status != lastStatus) {
+          data.status = lastStatus;
+        }
+        if (data.message != lastMessage) {
+          data.message = lastMessage;
+        }
+
+        updateUI({ ...data, tenant_id });
+      });
+    }
   });
 </script>
 

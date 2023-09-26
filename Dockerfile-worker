@@ -38,4 +38,4 @@ ADD . /intunecd
 # create db folder
 RUN mkdir /intunecd/db
 
-ENTRYPOINT ["/bin/bash", "-c", "./server-entrypoint.sh"]
+ENTRYPOINT ["/bin/bash", "-c", "./worker-entrypoint.sh"]

@@ -24,7 +24,7 @@
 
   <!--     Fonts and icons     -->
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='icon-72x72.png') }}" />
-  <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Dosis:400,700,400italic,700italic" />
+  <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Dosis:300,400,700,300italic,400italic,700italic" />
   <link href="{{ url_for('static', filename='assets/css/nucleo-icons.css') }}" rel="stylesheet" />
   <link href="{{ url_for('static', filename='assets/css/nucleo-svg.css') }}" rel="stylesheet" />
     <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}"/>
@@ -51,6 +51,8 @@
 
       {% include 'include/footer.html' %}
 
+      {% include 'include/mobilenavbar.html' %}
+
   </main>
 
   {% include 'include/scripts.html' %}
@@ -65,6 +67,45 @@
       }
       Scrollbar.init(document.querySelector('#sidenav-scrollbar'), options);
     }
+  </script>
+  <script type="text/javascript">
+    document.addEventListener("DOMContentLoaded", function(){
+      el_autohide = document.querySelector('.autohide');
+      
+      // add padding-top to body (if necessary)
+      navbar_height = document.querySelector('.mobile-nav').offsetHeight;
+      document.body.style.paddingTop = navbar_height + 'px';
+  
+      if (el_autohide) {
+        var prevScrollpos = window.pageYOffset;
+        var isMobileNavHidden = false;
+        var scrollDistance = 0;
+  
+        window.addEventListener('scroll', function() {
+          var currentScrollPos = window.pageYOffset;
+          var scrollDelta = currentScrollPos - prevScrollpos;
+          scrollDistance += Math.abs(scrollDelta);
+  
+          if (prevScrollpos < currentScrollPos && currentScrollPos > 300 && currentScrollPos < (document.documentElement.scrollHeight - window.innerHeight)) {
+            // Scrolling down
+            if (!isMobileNavHidden) {
+              el_autohide.classList.remove('scrolled-up');
+              el_autohide.classList.add('scrolled-down');
+              isMobileNavHidden = true;
+            }
+          } else if (prevScrollpos > currentScrollPos && currentScrollPos > 0 && currentScrollPos < (document.documentElement.scrollHeight - window.innerHeight)) {
+            // Scrolling up
+            if (isMobileNavHidden) {
+              el_autohide.classList.remove('scrolled-down');
+              el_autohide.classList.add('scrolled-up');
+              isMobileNavHidden = false;
+            }
+          }	
+          prevScrollpos = currentScrollPos;
+          scrollDistance = 0; // Reset scrollDistance
+        });
+      }
+    });
   </script>
 
   <script async defer src="https://buttons.github.io/buttons.js"></script>

@@ -28,20 +28,24 @@
                             </thead>
                             <tbody class="table-body">
                                 <tr>
-                                    <td class="align-middle text-sm"> Client ID </td>
-                                    <td class="align-middle text-sm"> {{ settings.CLIENT_ID }} </td>
+                                    <td class="align-middle text-sm"> Version </td>
+                                    <td class="align-middle text-sm"> {{ app_version }} </td>
+                                </tr>
+                                <tr>
+                                    <td class="align-middle text-sm"> Admin Role </td>
+                                    <td class="align-middle text-sm"> {{ settings.ADMIN_ROLE }} </td>
                                 </tr>
                                 <tr>
                                     <td class="align-middle text-sm"> Authority </td>
                                     <td class="align-middle text-sm"> {{ settings.AUTHORITY }} </td>
                                 </tr>
                                 <tr>
-                                    <td class="align-middle text-sm"> Redirect path </td>
-                                    <td class="align-middle text-sm"> {{ settings.REDIRECT_PATH }} </td>
+                                    <td class="align-middle text-sm"> Azure Client ID </td>
+                                    <td class="align-middle text-sm"> {{ settings.AZURE_CLIENT_ID }} </td>
                                 </tr>
                                 <tr>
-                                    <td class="align-middle text-sm"> Scope </td>
-                                    <td class="align-middle text-sm"> {{ settings.SCOPE }} </td>
+                                    <td class="align-middle text-sm"> Azure Tenant ID </td>
+                                    <td class="align-middle text-sm"> {{ settings.AZURE_TENANT_ID }} </td>
                                 </tr>
                                 <tr>
                                     <td class="align-middle text-sm"> Azure SQL DB Driver </td>
@@ -60,12 +64,28 @@
                                     <td class="align-middle text-sm"> {{ settings.AZ_DB_USER }} </td>
                                 </tr>
                                 <tr>
-                                    <td class="align-middle text-sm"> Azure DevOps Org Name </td>
-                                    <td class="align-middle text-sm"> {{ settings.DEVOPS_ORG_NAME }} </td>
+                                    <td class="align-middle text-sm"> Company Name </td>
+                                    <td class="align-middle text-sm"> {{ settings.COMPANY_NAME }} </td>
                                 </tr>
                                 <tr>
-                                    <td class="align-middle text-sm"> Azure DevOps Project Name </td>
-                                    <td class="align-middle text-sm"> {{ settings.DEVOPS_PROJECT_NAME }} </td>
+                                    <td class="align-middle text-sm"> Documentation Active </td>
+                                    <td class="align-middle text-sm"> {{ settings.DOCUMENTATION}} </td>
+                                </tr>
+                                <tr>
+                                    <td class="align-middle text-sm"> Documentation Container Name </td>
+                                    <td class="align-middle text-sm"> {{ settings.AZURE_CONTAINER_NAME }} </td>
+                                </tr>
+                                <tr>
+                                    <td class="align-middle text-sm"> Documentation File Name </td>
+                                    <td class="align-middle text-sm"> {{ settings.DOCUMENTATION_FILE_NAME }} </td>
+                                </tr>
+                                <tr>
+                                    <td class="align-middle text-sm"> Redirect path </td>
+                                    <td class="align-middle text-sm"> {{ settings.REDIRECT_PATH }} </td>
+                                </tr>
+                                <tr>
+                                    <td class="align-middle text-sm"> Timezone </td>
+                                    <td class="align-middle text-sm"> {{ settings.TIMEZONE }} </td>
                                 </tr>
                             </tbody>
                         </table>
@@ -90,7 +110,9 @@
                     <div class="row">
                         <div class="col-lg-6 col-7">
                             <form method="POST" action="/settings/key/create" style="color:white">
-                                <input class="btn bg-gradient-primary btn-sm" type="submit" value="Create key" />
+                                <button type="submit" class="btn btn-link text-dark text-gradient px-3 mb-0">
+                                    <i class="material-icons text-sm me-2" type="submit">add</i>new key
+                                </button>
                             </form>
                             <br>
                             {% if new_key %}
@@ -137,8 +159,9 @@
                                                 <span>
                                                     <form method="POST" action="/settings/key/delete"
                                                         style="color:white">
-                                                        <input class="btn btn-danger btn-sm" type="submit"
-                                                            name="{{ item.id }}" value="delete" style="margin: 0;" />
+                                                        <button type="submit" class="btn btn-link text-danger text-gradient px-3 mb-0"  name="{{ item.id }}" value="delete">
+                                                            <i class="material-icons text-sm me-2" type="submit">delete</i>Delete
+                                                        </button>
                                                     </form>
                                                 </span>
                                             </td>

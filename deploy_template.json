@@ -13,33 +13,39 @@
                 "description": "IntuneCD App Registration Client ID"
             }
         },
+        "IntuneCD Client Object ID": {
+            "type": "string",
+            "metadata": {
+                "description": "IntuneCD App Registration Client Object ID"
+            }
+        },
         "IntuneCD Client Secret": {
             "type": "securestring",
             "metadata": {
                 "description": "IntuneCD App Registration Client Secret"
             }
         },
-        "IntuneCD DevOps Org Name": {
-            "type": "string",
-            "metadata": {
-                "description": "Org Name of the IntuneCD DevOps project"
-            }
-        },
-        "IntuneCD DevOps Project Name": {
-            "type": "string",
-            "metadata": {
-                "description": "Project Name of the IntuneCD DevOps project"
-            }
-        },
         "IntuneCD Farm SKU": {
             "type": "string",
             "allowedValues": [
-                "Free",
-                "Shared",
                 "Basic",
-                "Standard"
+                "Standard",
+                "Premium"
             ],
-            "defaultValue": "Free"
+            "defaultValue": "Basic"
+        },
+        "IntuneCD Farm SKU Code": {
+            "type": "string",
+            "allowedValues": [
+                "B1",
+                "B2",
+                "B3",
+                "S1",
+                "S2",
+                "S3",
+                "P1v3"
+            ],
+            "defaultValue": "B1"
         },
         "IntuneCD DB Location": {
             "type": "string",
@@ -117,26 +123,75 @@
         },
         "IntuneCD DB AdminLoginPassword": {
             "type": "securestring"
+        },
+        "Timezone": {
+            "type": "string",
+            "defaultValue": "UTC",
+            "metadata": {
+                "description": "Timezone for IntuneCD scheduled jobs"
+            }
         }
     },
     "resources": [
+         /* KEY VAULT */
+        {
+            "name": "[parameters('IntuneCD Instance Name')]",
+            "type": "Microsoft.KeyVault/vaults",
+            "location": "[resourceGroup().location]",
+            "apiVersion": "2021-10-01",
+            "tags": {
+                "[concat('hidden-related:', resourceGroup().id, '/providers/Microsoft.Web/serverfarms/', parameters('IntuneCD Instance Name'))]": "Resource",
+                "displayName": "IntuneCD"
+            },
+            "properties": {
+                "sku": {
+                    "name": "standard",
+                    "family": "A"
+                },
+                "tenantId": "[subscription().tenantId]",
+                "accessPolicies": [],
+                "enabledForDeployment": true,
+                "enabledForTemplateDeployment": true,
+                "enabledForDiskEncryption": true,
+                "enableRbacAuthorization": true
+            }
+        },
+        {
+            "type": "Microsoft.Authorization/roleAssignments",
+            "apiVersion": "2020-04-01-preview",
+            "name": "[guid(resourceGroup().id)]",
+            "dependsOn": [
+                "[concat('Microsoft.KeyVault/vaults/', parameters('IntuneCD Instance Name'))]"
+            ],
+            "properties": {
+                "roleDefinitionId": "/providers/Microsoft.Authorization/roleDefinitions/00482a5a-887f-4fb3-b363-3b7fe8e74483",
+                "principalId": "[parameters('IntuneCD Client Object ID')]",
+                "principalType": "ServicePrincipal",
+                "scope": "[concat('/subscriptions/', subscription().subscriptionId, '/resourcegroups/', resourceGroup().name)]"   
+            }
+        },
         /* SERVER FARM */
         {
             "name": "[parameters('IntuneCD Instance Name')]",
             "type": "Microsoft.Web/serverfarms",
             "location": "[resourceGroup().location]",
             "kind": "app,linux",
-            "apiVersion": "2014-06-01",
-            "dependsOn": [],
+            "apiVersion": "2018-11-01",
+            "dependsOn": [
+                "[resourceId('Microsoft.KeyVault/vaults', parameters('IntuneCD Instance Name'))]"
+            ],
             "tags": {
                 "displayName": "IntuneCD"
             },
             "properties": {
                 "name": "[parameters('IntuneCD Instance Name')]",
-                "sku": "[parameters('IntuneCD Farm SKU')]",
                 "workerSize": 0,
                 "numberOfWorkers": 1,
                 "reserved": true
+            },
+            "sku": {
+                "Tier": "[parameters('IntuneCD Farm SKU')]",
+                "Name": "[parameters('IntuneCD Farm SKU Code')]"
             }
         },
         /* DATABASE */
@@ -145,7 +200,9 @@
             "type": "Microsoft.Sql/servers",
             "location": "[parameters('IntuneCD DB Location')]",
             "apiVersion": "2014-04-01-preview",
-            "dependsOn": [],
+            "dependsOn": [
+				"[resourceId('Microsoft.Web/serverfarms', parameters('IntuneCD Instance Name'))]"
+			],
             "tags": {
                 "displayName": "IntuneCD"
             },
@@ -189,101 +246,105 @@
         },
         /* WEB APP */
         {
-                "apiVersion": "2018-11-01",
-    "name": "[parameters('IntuneCD Instance Name')]",
-    "type": "Microsoft.Web/sites",
-    "location": "[resourceGroup().location]",
-    "dependsOn": [
-        "[resourceId('Microsoft.Sql/servers', variables('IntuneCDdbName'))]"
-    ],
-    "tags": {
-        "[concat('hidden-related:', resourceGroup().id, '/providers/Microsoft.Web/serverfarms/', parameters('IntuneCD Instance Name'))]": "Resource",
-        "displayName": "IntuneCD"
-    },
-    "properties": {
-        "name": "[parameters('IntuneCD Instance Name')]",
-        "siteConfig": {
-            "appSettings": [
-                {
-                    "name": "DOCKER_REGISTRY_SERVER_URL",
-                    "value": "https://ghcr.io"
-                },
-                {
-                    "name": "WEBSITES_ENABLE_APP_SERVICE_STORAGE",
-                    "value": "false"
-                },
-                {
-                    "name": "SERVER_NAME",
-                    "value": "[concat(variables('URL'), '.azurewebsites.net')]"
-                },
-                {
-                    "name": "REDIRECT_PATH",
-                    "value": "/auth/signin-oidc"
-                },
-                {
-                    "name": "ADMIN_ROLE",
-                    "value": "intunecd_admin"
-                },
-                {
-                    "name": "AZDBDRIVER",
-                    "value": "{ODBC Driver 17 for SQL Server}"
-                },
-                {
-                    "name": "AZDBNAME",
-                    "value": "[parameters('IntuneCD DB Name')]"
-                },
-                {
-                    "name": "AZDBUSER",
-                    "value": "[parameters('IntuneCD DB AdminLogin')]"
-                },
-                {
-                    "name": "AZDBPW",
-                    "value": "[parameters('IntuneCD DB AdminLoginPassword')]"
-                },
-                {
-                    "name": "AZDBSERVER",
-                    "value": "[concat(variables('IntuneCDdbName'), '.database.windows.net')]"
-                },
-                {
-                    "name": "AZUREAD_ID",
-                    "value": "[subscription().tenantId]"
-                },
-                {
-                    "name": "CLIENT_ID",
-                    "value": "[parameters('IntuneCD Client ID')]"
-                },
-                {
-                    "name": "CLIENT_SECRET",
-                    "value": "[parameters('IntuneCD Client Secret')]"
-                },
-                {
-                    "name": "DEVOPS_ORG_NAME",
-                    "value": "[parameters('IntuneCD DevOps Org Name')]"
-                },
-                {
-                    "name": "DEVOPS_PROJECT_NAME",
-                    "value": "[parameters('IntuneCD DevOps Project Name')]"
-                },
-                {
-                    "name": "SCOPE",
-                    "value": "[[\"499b84ac-1321-427f-aa17-267ca6975798/.default\"]"
-                },
-                {
-                    "name": "SECRET_KEY",
-                    "value": "[uniqueString(resourceGroup().id)]"
-                },
-                {
-                    "name": "SESSION_LIFETIME_HOURS",
-                    "value": ""
-                }
+            "apiVersion": "2018-11-01",
+            "name": "[parameters('IntuneCD Instance Name')]",
+            "type": "Microsoft.Web/sites",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Sql/servers', variables('IntuneCDdbName'))]"
             ],
-            "linuxFxVersion": "COMPOSE|dmVyc2lvbjogIjMuOCIKCnNlcnZpY2VzOgoKICB3ZWI6CiAgICBpbWFnZTogZ2hjci5pby9hbG1lbnNjb3JuZXIvaW50dW5lY2QtbW9uaXRvcjpsYXRlc3QKICAgIHJlc3RhcnQ6IGFsd2F5cwogICAgY29tbWFuZDogZ3VuaWNvcm4gLS1iaW5kIDAuMC4wLjA6ODA4MCAtLXRocmVhZHMgMTAgcnVuOmFwcAogICAgZXhwb3NlOgogICAgICAtIDgwODA6ODA4MAogIAogIG5naW54OgogICAgaW1hZ2U6IGdoY3IuaW8vYWxtZW5zY29ybmVyL2ludHVuZWNkLW1vbml0b3Ivbmdpbng6bGF0ZXN0CiAgICByZXN0YXJ0OiBhbHdheXMKICAgIGNvbW1hbmQ6IFsiL2Jpbi9zaCIsICItYyIsICJlbnZzdWJzdCA8IC9ldGMvbmdpbngvY29uZi5kL25naW54LmNvbmYudGVtcGxhdGUgPiAvZXRjL25naW54L2NvbmYuZC9uZ2lueC5jb25mICYmIGV4ZWMgbmdpbnggLWcgJ2RhZW1vbiBvZmY7JyJdCiAgICBwb3J0czoKICAgICAgLSA4MDo4MA==",
-            "alwaysOn": false
-        },
-        "webSocketsEnabled": true,
-        "httpsOnly": true,
-        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms/', parameters('IntuneCD Instance Name'))]"
-    }
+            "tags": {
+                "[concat('hidden-related:', resourceGroup().id, '/providers/Microsoft.Web/serverfarms/', parameters('IntuneCD Instance Name'))]": "Resource",
+                "displayName": "IntuneCD"
+            },
+            "properties": {
+                "name": "[parameters('IntuneCD Instance Name')]",
+                "siteConfig": {
+                    "appSettings": [
+                        {
+                            "name": "DOCKER_REGISTRY_SERVER_URL",
+                            "value": "https://ghcr.io"
+                        },
+                        {
+                            "name": "WEBSITES_ENABLE_APP_SERVICE_STORAGE",
+                            "value": "true"
+                        },
+                        {
+                            "name": "SERVER_NAME",
+                            "value": "[concat(variables('URL'), '.azurewebsites.net')]"
+                        },
+                        {
+                            "name": "REDIRECT_PATH",
+                            "value": "/auth/signin-oidc"
+                        },
+                        {
+                            "name": "ADMIN_ROLE",
+                            "value": "intunecd_admin"
+                        },
+                        {
+                            "name": "AZDBDRIVER",
+                            "value": "{ODBC Driver 17 for SQL Server}"
+                        },
+                        {
+                            "name": "AZDBNAME",
+                            "value": "[parameters('IntuneCD DB Name')]"
+                        },
+                        {
+                            "name": "AZDBUSER",
+                            "value": "[parameters('IntuneCD DB AdminLogin')]"
+                        },
+                        {
+                            "name": "AZDBPW",
+                            "value": "[parameters('IntuneCD DB AdminLoginPassword')]"
+                        },
+                        {
+                            "name": "AZDBSERVER",
+                            "value": "[concat(variables('IntuneCDdbName'), '.database.windows.net')]"
+                        },
+                        {
+                            "name": "AZURE_TENANT_ID",
+                            "value": "[subscription().tenantId]"
+                        },
+                        {
+                            "name": "AZURE_CLIENT_ID",
+                            "value": "[parameters('IntuneCD Client ID')]"
+                        },
+                        {
+                            "name": "AZURE_CLIENT_SECRET",
+                            "value": "[parameters('IntuneCD Client Secret')]"
+                        },
+                        {
+                            "name": "AZURE_VAULT_URL",
+                            "value": "[reference(resourceId('Microsoft.KeyVault/vaults', parameters('IntuneCD Instance Name')), '2018-02-14').vaultUri]"
+                        },
+                        {
+                            "name": "BEAT_DB_URI",
+                            "value": "sqlite:///db/schedule.db"
+                        },
+                        {
+                            "name": "SCOPE",
+                            "value": "[[]"
+                        },
+                        {
+                            "name": "SECRET_KEY",
+                            "value": "[uniqueString(resourceGroup().id)]"
+                        },
+                        {
+                            "name": "SESSION_LIFETIME_HOURS",
+                            "value": ""
+                        },
+                        {
+                            "name": "TIMEZONE",
+                            "value": "[parameters('Timezone')]"
+                        }
+                    ],
+                    "linuxFxVersion": "COMPOSE|dmVyc2lvbjogIjMuOCIKCnNlcnZpY2VzOgoKICB3ZWI6CiAgICBpbWFnZTogZ2hjci5pby9hbG1lbnNjb3JuZXIvaW50dW5lY2QtbW9uaXRvcjpsYXRlc3QKICAgIHJlc3RhcnQ6IGFsd2F5cwogICAgZW50cnlwb2ludDogLi9zZXJ2ZXItZW50cnlwb2ludC5zaAogICAgZXhwb3NlOgogICAgICAtIDgwODA6ODA4MAogICAgdm9sdW1lczoKICAgICAgLSAke1dFQkFQUF9TVE9SQUdFX0hPTUV9L2RiOi9pbnR1bmVjZC9kYgoKICByZWRpczoKICAgIGltYWdlOiBnaGNyLmlvL2FsbWVuc2Nvcm5lci9pbnR1bmVjZC1tb25pdG9yL3JlZGlzOmxhdGVzdAogICAgcmVzdGFydDogYWx3YXlzCgogIHdvcmtlcjoKICAgIGltYWdlOiBnaGNyLmlvL2FsbWVuc2Nvcm5lci9pbnR1bmVjZC1tb25pdG9yL3dvcmtlcjpsYXRlc3QKICAgIHJlc3RhcnQ6IGFsd2F5cwogICAgZW50cnlwb2ludDogY2VsZXJ5CiAgICBjb21tYW5kOiAtQSBhcHAuY2VsZXJ5IHdvcmtlciAtbCBpbmZvIC0tcG9vbCB0aHJlYWRzCiAgICBkZXBlbmRzX29uOgogICAgICAtICJyZWRpcyIKICAgIHZvbHVtZXM6CiAgICAgIC0gJHtXRUJBUFBfU1RPUkFHRV9IT01FfS9kYjovaW50dW5lY2QvZGIKCiAgYmVhdDoKICAgIGltYWdlOiBnaGNyLmlvL2FsbWVuc2Nvcm5lci9pbnR1bmVjZC1tb25pdG9yL2JlYXQ6bGF0ZXN0CiAgICByZXN0YXJ0OiBhbHdheXMKICAgIGVudHJ5cG9pbnQ6IGNlbGVyeQogICAgY29tbWFuZDogLUEgYXBwLmNlbGVyeSBiZWF0IC1TIHNxbGFsY2hlbXlfY2VsZXJ5X2JlYXQuc2NoZWR1bGVyczpEYXRhYmFzZVNjaGVkdWxlciAtbCBpbmZvCiAgICBkZXBlbmRzX29uOgogICAgICAtICJ3b3JrZXIiCiAgICB2b2x1bWVzOgogICAgICAtICR7V0VCQVBQX1NUT1JBR0VfSE9NRX0vZGI6L2ludHVuZWNkL2RiCiAgCiAgbmdpbng6CiAgICBpbWFnZTogZ2hjci5pby9hbG1lbnNjb3JuZXIvaW50dW5lY2QtbW9uaXRvci9uZ2lueDpsYXRlc3QKICAgIHJlc3RhcnQ6IGFsd2F5cwogICAgY29tbWFuZDogWyIvYmluL3NoIiwgIi1jIiwgImVudnN1YnN0IDwgL2V0Yy9uZ2lueC9jb25mLmQvbmdpbnguY29uZi50ZW1wbGF0ZSA+IC9ldGMvbmdpbngvY29uZi5kL25naW54LmNvbmYgJiYgZXhlYyBuZ2lueCAtZyAnZGFlbW9uIG9mZjsnIl0KICAgIHBvcnRzOgogICAgICAtIDgwOjgw",
+                    "alwaysOn": false
+                },
+                "webSocketsEnabled": true,
+                "httpsOnly": true,
+                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms/', parameters('IntuneCD Instance Name'))]"
+            }
         }
     ],
     "variables": {

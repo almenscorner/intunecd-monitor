@@ -27,7 +27,7 @@ RUN echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bash_profile
 RUN echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bashrc 
 
 # CONFIGURE GIT
-RUN git config --global user.email "inteuncdmonitor@intunecd.local"
+RUN git config --global user.email "inteuncdmonitor@intunecd.locals"
 RUN git config --global user.name "IntuneCD Monitor"
 
 RUN pip3 install pyodbc
@@ -38,4 +38,4 @@ ADD . /intunecd
 # create db folder
 RUN mkdir /intunecd/db
 
-ENTRYPOINT ["/bin/bash", "-c", "./server-entrypoint.sh"]
+ENTRYPOINT ["/bin/bash", "-c", "./beat-entrypoint.sh"]

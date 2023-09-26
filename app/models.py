@@ -5,24 +5,21 @@ class summary_config_count(db.Model):
     id = db.Column(db.Integer, primary_key=True, unique=True)
     config_count = db.Column(db.Integer, unique=False)
     last_update = db.Column(db.String, unique=False)
+    tenant = db.Column(db.Integer, unique=False)
 
 
 class summary_diff_count(db.Model):
     id = db.Column(db.Integer, primary_key=True, unique=True)
     diff_count = db.Column(db.Integer, unique=False)
     last_update = db.Column(db.String, unique=False)
-
-
-class summary_match_count(db.Model):
-    id = db.Column(db.Integer, primary_key=True, unique=True)
-    match_count = db.Column(db.Integer, unique=False)
-    last_update = db.Column(db.String, unique=False)
+    tenant = db.Column(db.Integer, unique=False)
 
 
 class summary_average_diffs(db.Model):
     id = db.Column(db.Integer, primary_key=True, unique=True)
     average_diffs = db.Column(db.Integer, unique=False)
     last_update = db.Column(db.String, unique=False)
+    tenant = db.Column(db.Integer, unique=False)
 
 
 class summary_changes(db.Model):
@@ -30,6 +27,8 @@ class summary_changes(db.Model):
     name = db.Column(db.String, unique=False)
     type = db.Column(db.String, unique=False)
     diffs = db.Column(db.String, unique=False)
+    tenant = db.Column(db.Integer, unique=False)
+
 
 class summary_assignments(db.Model):
     id = db.Column(db.Integer, primary_key=True, unique=True)
@@ -37,16 +36,26 @@ class summary_assignments(db.Model):
     type = db.Column(db.String, unique=False)
     membership_rule = db.Column(db.String, unique=False)
     assigned_to = db.Column(db.String, unique=False)
+    tenant = db.Column(db.Integer, unique=False)
 
 
-class backup_feed(db.Model):
+class intunecd_tenants(db.Model):
     id = db.Column(db.Integer, primary_key=True, unique=True)
-    feed = db.Column(db.String)
-
-
-class update_feed(db.Model):
-    id = db.Column(db.Integer, primary_key=True, unique=True)
-    feed = db.Column(db.String)
+    display_name = db.Column(db.String, unique=False)
+    name = db.Column(db.String, unique=False)
+    repo = db.Column(db.String, unique=False)
+    vault_name = db.Column(db.String, unique=False)
+    update_args = db.Column(db.String, unique=False)
+    backup_args = db.Column(db.String, unique=False)
+    baseline = db.Column(db.String, unique=False)
+    update_feed = db.Column(db.String, unique=False)
+    backup_feed = db.Column(db.String, unique=False)
+    last_update = db.Column(db.String, unique=False)
+    last_update_status = db.Column(db.String, unique=False)
+    last_update_message = db.Column(db.String, unique=False)
+    last_task_id = db.Column(db.String, unique=False)
+    new_branch = db.Column(db.String, unique=False)
+    update_branch = db.Column(db.String, unique=False)
 
 
 class api_key(db.Model):

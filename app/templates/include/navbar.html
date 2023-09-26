@@ -4,45 +4,57 @@
       <nav aria-label="breadcrumb">
         <ol class="breadcrumb bg-transparent mb-0 pb-0 pt-1 px-0 me-sm-6 me-5">
           <li class="breadcrumb-item text-sm"><a class="opacity-5 text-dark" href="javascript:;">Pages</a></li>
-          {% if 'home' in segment %}
+            {% if 'home' in segment %}
             <li class="breadcrumb-item text-sm text-dark active" aria-current="page">Dashboard</li>
             </ol>
             <h6 class="font-weight-bolder mb-0">Dashboard</h6>
-          {% endif %}
+            {% endif %}
 
-        {% if 'changes' in segment %}
-          <li class="breadcrumb-item text-sm text-dark active" aria-current="page">Changes</li>
-          </ol>
-          <h6 class="font-weight-bolder mb-0">Changes</h6>
-        {% endif %}
+            {% if 'changes' in segment %}
+              <li class="breadcrumb-item text-sm text-dark active" aria-current="page">Changes</li>
+              </ol>
+              <h6 class="font-weight-bolder mb-0">Changes</h6>
+            {% endif %}
 
-        {% if 'documentation' in segment %}
-        <li class="breadcrumb-item text-sm text-dark active" aria-current="page">Documentation</li>
-        </ol>
-        <h6 class="font-weight-bolder mb-0">Documentation</h6>
-        {% endif %}
+            {% if 'documentation' in segment %}
+            <li class="breadcrumb-item text-sm text-dark active" aria-current="page">Documentation</li>
+            </ol>
+            <h6 class="font-weight-bolder mb-0">Documentation</h6>
+            {% endif %}
 
-        {% if 'assignments' in segment %}
-        <li class="breadcrumb-item text-sm text-dark active" aria-current="page">Assignments</li>
-        </ol>
-        <h6 class="font-weight-bolder mb-0">Assignments</h6>
-        {% endif %}
+            {% if 'assignments' in segment %}
+            <li class="breadcrumb-item text-sm text-dark active" aria-current="page">Assignments</li>
+            </ol>
+            <h6 class="font-weight-bolder mb-0">Assignments</h6>
+            {% endif %}
 
-        {% if 'settings' in segment %}
-          <li class="breadcrumb-item text-sm text-dark active" aria-current="page">Settings</li>
-          </ol>
-          <h6 class="font-weight-bolder mb-0">Settings</h6>
-        {% endif %}
+            {% if 'settings' in segment %}
+              <li class="breadcrumb-item text-sm text-dark active" aria-current="page">Settings</li>
+              </ol>
+              <h6 class="font-weight-bolder mb-0">Settings</h6>
+            {% endif %}
 
-        {% if 'profile' in segment %}
-          <li class="breadcrumb-item text-sm text-dark active" aria-current="page">Profile</li>
-          </ol>
-          <h6 class="font-weight-bolder mb-0">Profile</h6>
-        {% endif %}
+            {% if 'schedules' in segment %}
+              <li class="breadcrumb-item text-sm text-dark active" aria-current="page">Schedules</li>
+              </ol>
+              <h6 class="font-weight-bolder mb-0">Schedules</h6>
+            {% endif %}
+
+            {% if 'tenants' in segment %}
+              <li class="breadcrumb-item text-sm text-dark active" aria-current="page">Tenants</li>
+              </ol>
+              <h6 class="font-weight-bolder mb-0">Tenants</h6>
+            {% endif %}
+
+            {% if 'profile' in segment %}
+              <li class="breadcrumb-item text-sm text-dark active" aria-current="page">Profile</li>
+              </ol>
+              <h6 class="font-weight-bolder mb-0">Profile</h6>
+            {% endif %}
 
       </nav>
       <div class="collapse navbar-collapse mt-sm-0 mt-2 me-md-0 me-sm-4" id="navbar">
-        <ul class="navbar-nav justify-content-end">
+        <ul class="ms-md-auto pe-md-3 d-flex align-items-center">
           <li class="nav-item d-xl-none ps-3 d-flex align-items-center">
             <a href="javascript:;" class="nav-link text-body p-0" id="iconNavbarSidenav">
               <div class="sidenav-toggler-inner">
@@ -53,6 +65,7 @@
             </a>
           </li>
         </ul>
+        
       </div>
     </div>
   </nav>

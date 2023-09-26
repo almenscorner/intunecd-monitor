@@ -19,7 +19,19 @@ AZ_DB_PW = os.getenv("AZDBPW")
 if not AZ_DB_PW:
     raise ValueError("Need to define AZDBPW environment variable")
 
-AZURE_SQL_DSN = dsn = 'DRIVER='+AZ_DB_DRIVER+';SERVER='+AZ_DB_SERVER+';PORT=1433;DATABASE='+AZ_DB_NAME+';UID='+AZ_DB_USER+';PWD='+AZ_DB_PW
+AZURE_SQL_DSN = dsn = (
+    "DRIVER="
+    + AZ_DB_DRIVER
+    + ";SERVER="
+    + AZ_DB_SERVER
+    + ";PORT=1433;DATABASE="
+    + AZ_DB_NAME
+    + ";UID="
+    + AZ_DB_USER
+    + ";PWD="
+    + AZ_DB_PW
+    + ";connect_timeout=5"
+)
 params = urllib.parse.quote_plus(AZURE_SQL_DSN)
 
 ADMIN_ROLE = os.getenv("ADMIN_ROLE")
@@ -30,25 +42,17 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 if not SECRET_KEY:
     raise ValueError("Need to define SECRET_KEY environment variable")
 
-CLIENT_ID = os.getenv("CLIENT_ID")
-if not CLIENT_ID:
+AZURE_CLIENT_ID = os.getenv("AZURE_CLIENT_ID")
+if not AZURE_CLIENT_ID:
     raise ValueError("Need to define CLIENT_ID environment variable")
 
-CLIENT_SECRET = os.getenv("CLIENT_SECRET")
-if not CLIENT_SECRET:
+AZURE_CLIENT_SECRET = os.getenv("AZURE_CLIENT_SECRET")
+if not AZURE_CLIENT_SECRET:
     raise ValueError("Need to define CLIENT_SECRET environment variable")
 
-AZUREAD_ID = os.getenv("AZUREAD_ID")
-if not AZUREAD_ID:
+AZURE_TENANT_ID = os.getenv("AZURE_TENANT_ID")
+if not AZURE_TENANT_ID:
     raise ValueError("Need to define AZUREAD_ID environment variable")
-
-DEVOPS_ORG_NAME = os.getenv("DEVOPS_ORG_NAME")
-if not DEVOPS_ORG_NAME:
-    raise ValueError("Need to define DEVOPS_ORG_NAME environment variable")
-
-DEVOPS_PROJECT_NAME = os.getenv("DEVOPS_PROJECT_NAME")
-if not DEVOPS_PROJECT_NAME:
-    raise ValueError("Need to define DEVOPS_PROJECT_NAME environment variable")
 
 REDIRECT_PATH = os.getenv("REDIRECT_PATH")
 if not REDIRECT_PATH:
@@ -56,7 +60,7 @@ if not REDIRECT_PATH:
 
 SCOPE = os.getenv("SCOPE")
 if SCOPE:
-    SCOPE = json.loads(os.environ['SCOPE'])
+    SCOPE = json.loads(os.environ["SCOPE"])
 else:
     raise ValueError("Need to define SCOPE environment variable")
 
@@ -72,6 +76,12 @@ if DOCUMENTATION:
     if not DOCUMENTATION_FILE_NAME:
         raise ValueError("Need to define DOCUMENTATION_FILE_NAME environment variable")
 
+
+AZURE_VAULT_URL = os.getenv("AZURE_VAULT_URL")
+if not AZURE_VAULT_URL:
+    raise ValueError("Need to define AZURE_VAULT_URL environment variable")
+
+
 SESSION_LIFETIME_HOURS = os.getenv("SESSION_LIFETIME_HOURS")
 if SESSION_LIFETIME_HOURS:
     PERMANENT_SESSION_LIFETIME = timedelta(hours=SESSION_LIFETIME_HOURS)
@@ -79,10 +89,15 @@ else:
     PERMANENT_SESSION_LIFETIME = timedelta(hours=3)
 
 SQLALCHEMY_DATABASE_URI = "mssql+pyodbc:///?odbc_connect=%s" % params
-AUTHORITY = f"https://login.microsoftonline.com/{AZUREAD_ID}"
+SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True}
+AUTHORITY = f"https://login.microsoftonline.com/{AZURE_TENANT_ID}"
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 SESSION_TYPE = "filesystem"
 SESSION_FILE_THRESHOLD = 100
 SESSION_COOKIE_HTTPONLY = True
 REMEMBER_COOKIE_HTTPONLY = True
 COMPANY_NAME = os.getenv("COMPANY_NAME")
+CELERY_BROKER_URL = "redis://redis:6379/0"
+RESULT_BACKEND = "redis://redis:6379/0"
+TIMEZONE = os.getenv("TIMEZONE")
+BEAT_DB_URI = os.getenv("BEAT_DB_URI")

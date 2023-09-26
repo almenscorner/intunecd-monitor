@@ -31,7 +31,7 @@ server {
         proxy_read_timeout 86400s;
 		proxy_send_timeout 86400s;
         proxy_set_header Host ${ESC}http_host;
-        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-Proto ${ESC}scheme;
         proxy_set_header X-Forwarded-For ${ESC}remote_addr;
         proxy_set_header X-Real-IP ${ESC}remote_addr;
         proxy_set_header Upgrade ${ESC}http_upgrade;
@@ -42,7 +42,7 @@ server {
 
         proxy_pass http://app;
     }
-        
+
     location @html502error {
         root /var/html;
         try_files /error502.html 502;
