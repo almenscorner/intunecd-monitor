@@ -34,6 +34,19 @@
             ],
             "defaultValue": "Basic"
         },
+        "IntuneCD Farm SKU Code": {
+            "type": "string",
+            "allowedValues": [
+                "B1",
+                "B2",
+                "B3",
+                "S1",
+                "S2",
+                "S3",
+                "P1v3"
+            ],
+            "defaultValue": "B1"
+        },
         "IntuneCD DB Location": {
             "type": "string",
             "allowedValues": [
@@ -163,7 +176,7 @@
             "type": "Microsoft.Web/serverfarms",
             "location": "[resourceGroup().location]",
             "kind": "app,linux",
-            "apiVersion": "2014-06-01",
+            "apiVersion": "2018-11-01",
             "dependsOn": [
                 "[resourceId('Microsoft.KeyVault/vaults', parameters('IntuneCD Instance Name'))]"
             ],
@@ -172,10 +185,13 @@
             },
             "properties": {
                 "name": "[parameters('IntuneCD Instance Name')]",
-                "sku": "[parameters('IntuneCD Farm SKU')]",
                 "workerSize": 0,
                 "numberOfWorkers": 1,
                 "reserved": true
+            },
+            "sku": {
+                "Tier": "[parameters('IntuneCD Farm SKU')]",
+                "Name": "[parameters('IntuneCD Farm SKU Code')]"
             }
         },
         /* DATABASE */
