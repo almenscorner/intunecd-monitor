@@ -3,7 +3,7 @@ version: "3.8"
 services:
 
   web:
-    image: ghcr.io/almenscorner/intunecd-monitor:beta
+    image: ghcr.io/almenscorner/intunecd-monitor:latest
     restart: always
     entrypoint: ./server-entrypoint.sh
     expose:
@@ -12,11 +12,11 @@ services:
       - ${WEBAPP_STORAGE_HOME}/db:/intunecd/db
 
   redis:
-    image: ghcr.io/almenscorner/intunecd-monitor/redis:beta
+    image: ghcr.io/almenscorner/intunecd-monitor/redis:latest
     restart: always
 
   worker:
-    image: ghcr.io/almenscorner/intunecd-monitor/worker:beta
+    image: ghcr.io/almenscorner/intunecd-monitor/worker:latest
     restart: always
     entrypoint: celery
     command: -A app.celery worker -l info --pool threads
@@ -26,7 +26,7 @@ services:
       - ${WEBAPP_STORAGE_HOME}/db:/intunecd/db
 
   beat:
-    image: ghcr.io/almenscorner/intunecd-monitor/beat:beta
+    image: ghcr.io/almenscorner/intunecd-monitor/beat:latest
     restart: always
     entrypoint: celery
     command: -A app.celery beat -S sqlalchemy_celery_beat.schedulers:DatabaseScheduler -l info
@@ -36,7 +36,7 @@ services:
       - ${WEBAPP_STORAGE_HOME}/db:/intunecd/db
   
   nginx:
-    image: ghcr.io/almenscorner/intunecd-monitor/nginx:beta
+    image: ghcr.io/almenscorner/intunecd-monitor/nginx:latest
     restart: always
     command: ["/bin/sh", "-c", "envsubst < /etc/nginx/conf.d/nginx.conf.template > /etc/nginx/conf.d/nginx.conf && exec nginx -g 'daemon off;'"]
     ports:
