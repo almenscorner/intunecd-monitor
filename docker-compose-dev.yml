@@ -13,6 +13,8 @@ services:
       - 8080
     environment:
       - TZ=Europe/Stockholm
+    volumes:
+      - ./db:/intunecd/db
 
   redis:
       image: "redis:6.0.5-buster"
@@ -27,6 +29,8 @@ services:
       - .env
     environment:
       - TZ=Europe/Stockholm
+    volumes:
+      - ./db:/intunecd/db
 
   beat:
     build: ./
@@ -38,6 +42,8 @@ services:
       - .env
     environment:
       - TZ=Europe/Stockholm
+    volumes:
+      - ./db:/intunecd/db
   
   nginx:
     build: ./nginx-dev

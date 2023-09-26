@@ -839,7 +839,10 @@ def add_schedule():
     if tenant.new_branch == "true":
         schedule_tenant_args = [schedule_tenant, tenant.new_branch]
     else:
-        schedule_tenant_args = [schedule_tenant, ""]
+        if schedule_type == "update":
+            schedule_tenant_args = [schedule_tenant]
+        else:
+            schedule_tenant_args = [schedule_tenant, ""]
 
     add_scheduled_task(
         schedule_cron, schedule_name, schedule_task, schedule_tenant_args
