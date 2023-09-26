@@ -101,7 +101,8 @@ def sw():
 
 @socketio.on("connect")
 def connect():
-    emit("connected")
+    if not session.get("user"):
+        return False
     
 # endregion
 
