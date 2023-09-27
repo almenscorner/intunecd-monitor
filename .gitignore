@@ -133,3 +133,6 @@ dmypy.json
 
 #flask
 flask_session/
+
+#DB
+db/*
