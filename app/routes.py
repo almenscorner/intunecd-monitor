@@ -4,7 +4,6 @@ import msal
 import json
 import base64
 import secrets
-import pytz
 
 from app import app, db, docs, app_config, celery, socketio
 from flask import (
@@ -115,154 +114,75 @@ def connect():
 def home():
     segment = get_segment(request)
 
+    # Get the baseline tenant id
     baseline_tenant = intunecd_tenants.query.filter_by(baseline="true").first()
+    baseline_id = baseline_tenant.id if baseline_tenant else None
 
-    if baseline_tenant:
-        baseline_id = baseline_tenant.id
-    else:
-        baseline_id = None
+    # Get the current tenant id
+    id = session.pop("tenant_id", baseline_id)
 
-    if session.get("tenant_id"):
-        id = session["tenant_id"]
-        session.pop("tenant_id")
-    else:
-        # get the id where baseline is true
-        if baseline_tenant:
-            id = baseline_tenant.id
-        else:
-            id = None
-
-    # Diffs
-    # Get number of diffs
+    # Get the config count from the baseline tenant and diff count from the current tenant
     config_count_data = summary_config_count.query.filter_by(tenant=baseline_id).all()
     diff_count_data = summary_diff_count.query.filter_by(tenant=id).all()
+    
+    # Set the count data to the last item in the list
+    count_data = config_count_data[-1] if config_count_data else None
+    trackedCount = count_data.config_count if count_data else 0
+    
+    # Set the diff data to the last item in the list
+    diff_data = diff_count_data[-1] if diff_count_data else None
+    diffCount = diff_data.diff_count if diff_data else 0
 
-    # Get the last config count from db
-    if config_count_data:
-        count_data = summary_config_count.query.filter_by(tenant=baseline_id).all()[-1]
-        trackedCount = count_data.config_count
-    # if count is empty, set count to 0
-    else:
-        count_data = None
-        trackedCount = 0
-
-    # Get the last diff count from db
-    if diff_count_data:
-        diff_data = summary_diff_count.query.filter_by(tenant=id).all()[-1]
-        diffCount = diff_data.diff_count
-    # if count is empty, set count to 0
-    else:
-        diff_data = None
-        diffCount = 0
-
-    # Get the last match count from db
-    current_config_count = summary_config_count.query.filter_by(
-        tenant=baseline_id
-    ).all()
+    # Get the current config count from the baseline tenant and current diff count from the current tenant
+    current_config_count = summary_config_count.query.filter_by(tenant=baseline_id).all()
     current_diff_count = summary_diff_count.query.filter_by(tenant=id).all()
-    if current_config_count and current_diff_count:
-        matchCount = (
-            current_config_count[-1].config_count - current_diff_count[-1].diff_count
-        )
-    else:
-        matchCount = 0
+    matchCount = (
+        current_config_count[-1].config_count - current_diff_count[-1].diff_count
+    ) if current_config_count and current_diff_count else 0
 
-    # Feeds
-    # Get backup feed from db
-    if id:
-        bfeed = intunecd_tenants.query.filter_by(id=id).first().backup_feed
-    else:
-        bfeed = None
-    if bfeed:
-        # Decode feed from base64 and split into list
-        feed_backup = base64.b64decode(bfeed).decode("utf-8").splitlines()
-    # if feed is empty, set feed to no data
-    else:
-        feed_backup = ["No data"]
+    # Get the current backup and update feed from the current tenant
+    bfeed = intunecd_tenants.query.filter_by(id=id).first().backup_feed if id else None
+    feed_backup = (
+        base64.b64decode(bfeed).decode("utf-8").splitlines() if bfeed else ["No data"]
+    )
 
-    # Get update feed from db
-    if id:
-        ufeed = intunecd_tenants.query.filter_by(id=id).first().update_feed
-    else:
-        ufeed = None
-    if ufeed:
-        # Decode feed from base64 and split into list
-        feed_update = base64.b64decode(ufeed).decode("utf-8").splitlines()
-        for line in feed_update:
-            # Renmove lines only containg '-' from feed_update
-            if line == "-" * 90:
-                feed_update.remove(line)
-    # if feed is empty, set feed to no data
-    else:
-        feed_update = ["No data"]
+    ufeed = intunecd_tenants.query.filter_by(id=id).first().update_feed if id else None
+    feed_update = (
+        base64.b64decode(ufeed).decode("utf-8").splitlines() if ufeed else ["No data"]
+    )
+    feed_update = [line for line in feed_update if line != '-' * 90]
 
-    # Trends
-    # Get the last 30 config and diff counts from db
+    # Get the last 30 records of data for the line charts
     line_data_diff = summary_diff_count.query.filter_by(tenant=id).all()[-30:]
-    line_data_config = summary_config_count.query.filter_by(tenant=baseline_id).all()[
-        -30:
-    ]
+    chart_data_diff = [(item.last_update, item.diff_count) for item in line_data_diff]
+    labelsDiff = [row[0] for row in chart_data_diff]
+    diffs = [row[1] for row in chart_data_diff]
+
+    line_data_config = summary_config_count.query.filter_by(tenant=baseline_id).all()[-30:]
+    chart_data_config = [(item.last_update, item.config_count) for item in line_data_config]
+    labelsConfig = [row[0] for row in chart_data_config]
+    config_counts = [row[1] for row in chart_data_config]
+
     line_data_average = summary_average_diffs.query.filter_by(tenant=id).all()[-30:]
+    chart_data_average = [(item.last_update, item.average_diffs) for item in line_data_average]
+    labelsAverage = [row[0] for row in chart_data_average]
+    average_diffs = [row[1] for row in chart_data_average]
 
-    # If we have diffs in the db, create a list with last upate date and diff count
-    if line_data_diff:
-        chart_data_diff = []
-        for item in line_data_diff:
-            chart_data_diff.append((item.last_update, item.diff_count))
-
-        labelsDiff = [row[0] for row in chart_data_diff]
-        diffs = [row[1] for row in chart_data_diff]
-
-    else:
-        labelsDiff = "null"
-        diffs = 0
-
-    # If we have diffs in the db, create a list with last upate date and diff count
-    if line_data_config:
-        chart_data_config = []
-        for item in line_data_config:
-            chart_data_config.append((item.last_update, item.config_count))
-
-        labelsConfig = [row[0] for row in chart_data_config]
-        config_counts = [row[1] for row in chart_data_config]
-
-    else:
-        labelsConfig = "null"
-        config_counts = 0
-
-    if line_data_average:
-        chart_data_average = []
-        for item in line_data_average:
-            chart_data_average.append((item.last_update, item.average_diffs))
-
-        labelsAverage = [row[0] for row in chart_data_average]
-        average_diffs = [row[1] for row in chart_data_average]
-
-    else:
-        labelsAverage = "null"
-        average_diffs = 0
-
-    # Get all API keys from db
+    # Check if any API keys are expiring in the next 30 days
     api_keys = api_key.query.all()
-    alert_api_keys = False
-    # Check if there are any API keys expiring in the next 30 days
-    for key in api_keys:
-        # Get the expiration date of the key
-        expiration = key.key_expiration
-        # If the expiration date is within 30 days, set the key to expire
-        if (
-            expiration < datetime.now() + timedelta(days=30)
-            and app_config.ADMIN_ROLE in session["user"]["roles"]
-        ):
-            alert_api_keys = True
+    alert_api_keys = any(
+        key.key_expiration < datetime.now() + timedelta(days=30)
+        and app_config.ADMIN_ROLE in session["user"]["roles"]
+        for key in api_keys
+    )
 
+    # Get all tenants
     tenants = intunecd_tenants.query.all()
-    if id:
-        selected_tenant_name = (
-            intunecd_tenants.query.filter_by(id=id).first().display_name
-        )
-    else:
-        selected_tenant_name = "Tenants"
+    selected_tenant_name = (
+        intunecd_tenants.query.filter_by(id=id).first().display_name
+        if id
+        else "Tenants"
+    )
 
     return render_template(
         "pages/home.html",
