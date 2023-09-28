@@ -166,7 +166,7 @@ def create_documentation(PATH, TENANT) -> None:
     document = subprocess.run(cmd, shell=True)
 
     if document.returncode != 0:
-        message = "Could not create documentation"
+        message = "Could not run documentation"
         emit_message(message, "error", "backup", TENANT.id)
         update_tenant_status_data(TENANT, "error", message)
         db.session.commit()
