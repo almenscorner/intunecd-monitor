@@ -470,10 +470,14 @@ def run_intunecd_backup(TENANT_ID, NEW_BRANCH=None) -> dict:
             db.session.commit()
 
         # Commit and push changes
+        ignore_files = ["backup_summary.json", "IntuneCD-documentation.md"]
         diff = repo.git.diff()
         untracked_files = repo.untracked_files
+        for f in ignore_files:
+            if f in untracked_files:
+                untracked_files.remove(f)
         if diff or untracked_files:
-            repo.git.add("--all", ":^backup_summary.json")
+            repo.git.add("--all", ":^backup_summary.json", ":^IntuneCD-documentation.md")
             if NEW_BRANCH:
                 date = get_now()
                 clean_date = date.replace(" ", "-").replace(":", "-")
@@ -497,12 +501,11 @@ def run_intunecd_backup(TENANT_ID, NEW_BRANCH=None) -> dict:
                 origin = repo.remote(name="origin")
                 origin.push(refspec="HEAD")
 
-            if intunecd_tenant.create_documentation:
+            if intunecd_tenant.create_documentation == "true":
                 create_documentation(local_path, intunecd_tenant)
 
-            shutil.rmtree(local_path)
+        shutil.rmtree(local_path)
 
-        date_now = get_now()
         return {
             "status": "success",
             "message": message,
