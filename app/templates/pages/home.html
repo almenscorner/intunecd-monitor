@@ -527,6 +527,17 @@ crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     });
   }
 
+  function handleCancelClick(tenant_id) {
+    const endpoint = 'intunecd/cancel';
+    fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ tenant_id: tenant_id }),
+    });
+  }
+
   $(document).ready(function() {
     var socket = io.connect();
     var statusData = {};
@@ -536,6 +547,7 @@ crossorigin="anonymous" referrerpolicy="no-referrer"></script>
       const el = document.getElementById(`current-message-${tenant_id}`);
       const updateButton = document.getElementById(`update-${tenant_id}`);
       const backupButton = document.getElementById(`backup-${tenant_id}`);
+      const cancelButton = document.getElementById(`cancel-${tenant_id}`);
       const ellipsis = document.getElementById(`ellipsis-${tenant_id}`);
       const ls = document.getElementById(`last-status-${tenant_id}`);
       const updateDate = document.getElementById(`updateDate-${tenant_id}`);
@@ -547,9 +559,10 @@ crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   
       if (backupButton) backupButton.style.removeProperty('display');
       if (updateButton) updateButton.style.removeProperty('display');
+      if (cancelButton) cancelButton.style.display = 'none';
       if (ellipsis) ellipsis.style.display = 'none';
   
-      if (status === 'error' || status === 'success') {
+      if (status === 'error' || status === 'success' || status === 'cancelled') {
         if (backupButton) backupButton.style.removeProperty('display');
         if (updateButton) updateButton.style.removeProperty('display');
         if (ellipsis) ellipsis.style.display = 'none';
@@ -559,6 +572,9 @@ crossorigin="anonymous" referrerpolicy="no-referrer"></script>
         } else if (status === 'success') {
           ls.classList.add('text-success');
           ls.classList.remove('text-warning', 'text-danger', 'text-info');
+        } else if (status === 'cancelled') {
+          ls.classList.add('text-danger');
+          ls.classList.remove('text-success', 'text-warning', 'text-info');
         }
         else {
           ls.classList.add('text-warning');
@@ -567,14 +583,16 @@ crossorigin="anonymous" referrerpolicy="no-referrer"></script>
       } else {
         if (!backupButton && ellipsis) {
           if (updateButton.style.display != 'none' && ellipsis.style.display === 'none') {
-            ellipsis.style.display = 'inline-block';
+            ellipsis.style = '';
+            cancelButton.style.removeProperty('display');
             ls.innerText = status;
             ls.classList.add('text-info')
             updateButton.style.display = 'none';
           }
         } else if (updateButton && backupButton && ellipsis) {
           if (updateButton.style.display != 'none' && backupButton.style.display != 'none' && ellipsis.style.display === 'none') {
-            ellipsis.style.display = 'inline-block';
+            ellipsis.style = '';
+            cancelButton.style.removeProperty('display');
             ls.innerText = status;
             ls.classList.add('text-info')
             updateButton.style.display = 'none';
