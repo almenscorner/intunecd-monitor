@@ -33,7 +33,7 @@ with app.app_context():
     paranoid.redirect_view = "/login"
     app.wsgi_app = ProxyFix(app.wsgi_app)
     docs = FlaskApiSpec(app)
-    socketio = SocketIO(app, message_queue="redis://redis:6379/0")
+    socketio = SocketIO(app, message_queue="redis://redis:6379/0", broadcast=True, namespace="/")
 
     def celery_init_app(app: Flask) -> Celery:
         class FlaskTask(Task):
