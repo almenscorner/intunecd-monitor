@@ -95,14 +95,26 @@
                             {% else %}
                             <h6 class="mb-3 text-sm tenant-header">{{ tenant.display_name }}</h6>
                             {% endif %}
-                            <span class="mb-2 text-xs tenant-property">Tenant name: <span class="text-dark font-weight-bold ms-sm-2 tenant-property">{{ tenant.name }}</span></span>
-                            <span class="mb-2 text-xs tenant-property">Tenant repo: <span class="text-dark ms-sm-2 font-weight-bold tenant-property">{{ tenant.repo }}</span></span>
-                            <span class="mb-2 text-xs tenant-property">Update args: <span class="text-dark ms-sm-2 font-weight-bold tenant-property">{{ tenant.update_args }}</span></span>
-                            <span class="mb-2 text-xs tenant-property">Backup args: <span class="text-dark ms-sm-2 font-weight-bold tenant-property">{{ tenant.backup_args }}</span></span>
+                            <span class="mb-2 text-xs tenant-property">Tenant name: 
+                                <span class="text-dark font-weight-bold ms-sm-2 tenant-value">{{ tenant.name }}</span>
+                            </span>
+                            <span class="mb-2 text-xs tenant-property">Tenant repo: 
+                                <span class="text-dark ms-sm-2 font-weight-bold tenant-value">{{ tenant.repo }}</span>
+                            </span>
+                            <span class="mb-2 text-xs tenant-property">Update args:
+                                <span class="text-dark ms-sm-2 font-weight-bold tenant-value">{{ tenant.update_args }}</span>
+                            </span>
+                            <span class="mb-2 text-xs tenant-property">Backup args: 
+                                <span class="text-dark ms-sm-2 font-weight-bold tenant-value">{{ tenant.backup_args }}</span>
+                            </span>
                             {% if tenant.update_branch %}
-                            <span class="mb-2 text-xs tenant-property">Update from branch: <span class="text-dark ms-sm-2 font-weight-bold tenant-property">{{ tenant.update_branch }}</span></span>
+                            <span class="mb-2 text-xs tenant-property">Update from branch: 
+                                <span class="text-dark ms-sm-2 font-weight-bold tenant-value">{{ tenant.update_branch }}</span>
+                            </span>
                             {% else %}
-                            <span class="mb-2 text-xs tenant-property">Update from branch: <span class="text-dark ms-sm-2 font-weight-bold tenant-property">main</span></span>
+                            <span class="mb-2 text-xs tenant-property">Update from branch: 
+                                <span class="text-dark ms-sm-2 font-weight-bold tenant-value">main</span>
+                            </span>
                             {% endif %}
                             {% if tenant.baseline == "true" %}
                             <div class="form-check mt-3" style="padding-left: 0;">
@@ -168,6 +180,7 @@
                 $('.tenant-group').addClass('placeholder-wave');
                 $('.tenant-header, .tenant-property').addClass('placeholder');
                 $('.tenant-check').addClass('d-none');
+                $('.tenant-value').addClass('d-none');
                 $('.btn').addClass('disabled');
                 $.ajax({
                     url: url,
@@ -178,12 +191,14 @@
                         $('#edit-tenant').html(data);
                         $('.tenant-group, .tenant-header, .tenant-property').removeClass('placeholder', 'placeholder-wave');
                         $('.tenant-check').removeClass('d-none');
+                        $('.tenant-value').removeClass('d-none');
                         $('.btn').removeClass('disabled');
                     },
                     error: function() {
                         alert('An error occurred while loading the page.');
                         $('.tenant-group, .tenant-header, .tenant-property').removeClass('placeholder', 'placeholder-wave');
                         $('.tenant-check').removeClass('d-none');
+                        $('.tenant-value').removeClass('d-none');
                         $('.btn').removeClass('disabled');
                     }
                 });
