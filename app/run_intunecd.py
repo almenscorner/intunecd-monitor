@@ -208,6 +208,8 @@ def run_intunecd_update(TENANT_ID) -> dict:
     os.environ["CLIENT_SECRET"] = app_config.AZURE_CLIENT_SECRET
 
     intunecd_tenant = intunecd_tenants.query.filter_by(id=TENANT_ID).first()
+
+    intunecd_tenant.last_task_id = run_intunecd_update.request.id
     update_tenant_status_data(intunecd_tenant, "running", "Update in progress...")
 
     db.session.commit()
