@@ -4,6 +4,7 @@ import msal
 import json
 import base64
 import secrets
+import pytz
 
 from app import app, db, docs, app_config, celery, socketio
 from flask import (
@@ -563,6 +564,52 @@ def run_intunecd():
 
     # return response
     return jsonify(data), 202
+
+
+@app.route("/intunecd/cancel", methods=["POST"])
+@login_required
+@admin_required
+def cancel_intunecd():
+    tenant_id = request.json["tenant_id"]
+    tenant = intunecd_tenants.query.get(tenant_id)
+    try:
+        celery.control.revoke(tenant.last_task_id, terminate=True)
+        tz = pytz.timezone(os.environ.get("TIMEZONE", "UTC"))
+        now = datetime.now(tz)
+        date_now = now.strftime("%Y-%m-%d %H:%M:%S")
+        socketio.emit(
+            "intunecdrun",
+            {
+                "status": "cancelled",
+                "task": "",
+                "message": "Task cancelled",
+                "date": date_now,
+                "tenant_id": tenant_id,
+            },
+        )
+        tenant.last_update_status = "cancelled"
+        tenant.last_update_message = "Task cancelled"
+        tenant.last_update_date = date_now
+        db.session.commit()
+
+        return jsonify({"status": "success"}), 202
+    except Exception as e:
+        socketio.emit(
+            "intunecdrun",
+            {
+                "status": "error",
+                "task": "",
+                "message": "Task failed to cancel",
+                "date": date_now,
+                "tenant_id": tenant_id,
+            },
+        )
+        tenant.last_update_status = "error"
+        tenant.last_update_message = "Task failed to cancel"
+        tenant.last_update_date = date_now
+        db.session.commit()
+
+        return jsonify({"error": str(e)}), 500
 
 
 # endregion
