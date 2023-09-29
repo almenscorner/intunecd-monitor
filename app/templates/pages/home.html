@@ -621,6 +621,29 @@ crossorigin="anonymous" referrerpolicy="no-referrer"></script>
         updateUI({ ...data, tenant_id });
       });
     }
+    else {
+      // No status data in local storage so get it from the page
+      const statusElements = document.querySelectorAll('[id^="last-status-"]');
+      statusElements.forEach(function(el) {
+        const tenant_id = el.id.split('-')[2];
+        const st = document.getElementById(`last-status-${tenant_id}`);
+        const cm = document.getElementById(`current-message-${tenant_id}`);
+        const date = document.getElementById(`updateDate-${tenant_id}`).innerText;
+        const status = st.innerText.toLowerCase();
+        const message = cm.innerText;
+        // do not store if status is success or error
+        if (status === 'running') {
+          statusData[tenant_id] = { status, message, date };
+        }
+      });
+      sessionStorage.setItem('statusData', JSON.stringify(statusData));
+      
+      // Update the UI
+      Object.keys(statusData).forEach(function(tenant_id) {
+        const data = statusData[tenant_id];
+        updateUI({ ...data, tenant_id });
+      });
+    }
   });
 </script>
 
