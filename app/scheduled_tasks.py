@@ -51,14 +51,8 @@ def remove_scheduled_task(NAME):
     schedule_session.delete(task)
 
     # Remove schedule if no other tasks are using it
-    schedule = (
-        schedule_session.query(CrontabSchedule).filter_by(id=task.schedule_id).first()
-    )
-    if (
-        not schedule_session.query(PeriodicTask)
-        .filter_by(schedule_id=schedule.id)
-        .first()
-    ):
+    schedule = schedule_session.query(CrontabSchedule).filter_by(id=task.schedule_id).first()
+    if not schedule_session.query(PeriodicTask).filter_by(schedule_id=schedule.id).first():
         schedule_session.delete(schedule)
 
     schedule_session.commit()
@@ -85,3 +79,26 @@ def get_scheduled_task_crontab(id):
     """
     schedule = schedule_session.query(CrontabSchedule).filter_by(id=id).first()
     return schedule
+
+
+def add_periodic_status_check():
+    """Adds a periodic status check to the database."""
+    add_scheduled_task(
+        CRON={
+            "minute": "*/45",
+            "hour": "*",
+            "day_of_week": "*",
+        },
+        NAME="intunecd.status_check",
+        TASK="app.run_intunecd.status_check",
+        ARGS=[],
+    )
+
+    schedule_session.create_all()
+    schedule_session.commit()
+
+
+tasks = schedule_session.query(PeriodicTask).all()
+
+if "intunecd.status_check" not in [task.name for task in tasks]:
+    add_periodic_status_check()
