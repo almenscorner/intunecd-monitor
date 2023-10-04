@@ -1,5 +1,5 @@
 <div id="tenant-status" class="row">
-    {% for item in tenants %}
+    {% for item in tenant_home_data.tenants %}
     {% if item.baseline %}
     <div class="col-xl-4 col-lg-6 col-md-6 col-sm-6 mb-5">
       <div class="card card-stats">
@@ -8,7 +8,7 @@
                 <span class="text-sm text-info" id="current-message-{{ item.id }}">{{ item.last_update_message }}</span>
             </span>
             <div class="text-sm"> Last status:
-                {% if item.last_update_status == 'error' %}
+                {% if item.last_update_status == 'error' or item.last_update_status == 'cancelled' %}
                 <span id="last-status-{{ item.id }}" class="text-sm mb-0 text-capitalize text-danger">{{ item.last_update_status }}</span>
                 {% elif item.last_update_status == 'success' %}
                 <span id="last-status-{{ item.id }}" class="text-sm mb-0 text-capitalize text-success">{{ item.last_update_status }}</span>
@@ -58,7 +58,7 @@
                 <span class="text-sm text-info" id="current-message-{{ item.id }}">{{ item.last_update_message }}</span>
             </span>
             <div class="text-sm"> Last status:
-                {% if item.last_update_status == 'error' %}
+                {% if item.last_update_status == 'error' or item.last_update_status == 'cancelled' %}
                 <span id="last-status-{{ item.id }}" class="text-sm mb-0 text-capitalize text-danger">{{ item.last_update_status }}</span>
                 {% elif item.last_update_status == 'success' %}
                 <span id="last-status-{{ item.id }}" class="text-sm mb-0 text-capitalize text-success">{{ item.last_update_status }}</span>
