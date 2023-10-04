@@ -2,9 +2,8 @@ import os
 import re
 import msal
 import json
-import base64
 import secrets
-import pytz
+import shutil
 
 from app import app, db, docs, app_config, celery, socketio
 from flask import (
@@ -53,6 +52,8 @@ from .scheduled_tasks import (
     get_scheduled_tasks,
     get_scheduled_task_crontab,
 )
+from app.socket_tasks import emit_message, update_tenant_status_data, get_now
+from .tenant_data import tenant_home_data
 
 
 # region context_processors
@@ -116,92 +117,29 @@ def connect():
 def home():
     segment = get_segment(request)
 
-    # Get the baseline tenant id
-    baseline_tenant = intunecd_tenants.query.filter_by(baseline="true").first()
-    baseline_id = baseline_tenant.id if baseline_tenant else None
-
-    # Get the current tenant id
-    id = session.pop("tenant_id", baseline_id)
-
-    # Get the config count from the baseline tenant and diff count from the current tenant
-    config_count_data = summary_config_count.query.filter_by(tenant=baseline_id).all()
-    diff_count_data = summary_diff_count.query.filter_by(tenant=id).all()
-
-    # Set the count data to the last item in the list
-    count_data = config_count_data[-1] if config_count_data else None
-    trackedCount = count_data.config_count if count_data else 0
-
-    # Set the diff data to the last item in the list
-    diff_data = diff_count_data[-1] if diff_count_data else None
-    diffCount = diff_data.diff_count if diff_data else 0
-
-    # Get the current config count from the baseline tenant and current diff count from the current tenant
-    current_config_count = summary_config_count.query.filter_by(tenant=baseline_id).all()
-    current_diff_count = summary_diff_count.query.filter_by(tenant=id).all()
-    matchCount = (
-        (current_config_count[-1].config_count - current_diff_count[-1].diff_count)
-        if current_config_count and current_diff_count
-        else 0
-    )
-
-    # Get the current backup and update feed from the current tenant
-    bfeed = intunecd_tenants.query.filter_by(id=id).first().backup_feed if id else None
-    feed_backup = base64.b64decode(bfeed).decode("utf-8").splitlines() if bfeed else ["No data"]
-
-    ufeed = intunecd_tenants.query.filter_by(id=id).first().update_feed if id else None
-    feed_update = base64.b64decode(ufeed).decode("utf-8").splitlines() if ufeed else ["No data"]
-    feed_update = [line for line in feed_update if line != "-" * 90]
-
-    # Get the last 30 records of data for the line charts
-    line_data_diff = summary_diff_count.query.filter_by(tenant=id).all()[-30:]
-    chart_data_diff = [(item.last_update, item.diff_count) for item in line_data_diff]
-    labelsDiff = [row[0] for row in chart_data_diff]
-    diffs = [row[1] for row in chart_data_diff]
-
-    line_data_config = summary_config_count.query.filter_by(tenant=baseline_id).all()[-30:]
-    chart_data_config = [(item.last_update, item.config_count) for item in line_data_config]
-    labelsConfig = [row[0] for row in chart_data_config]
-    config_counts = [row[1] for row in chart_data_config]
-
-    line_data_average = summary_average_diffs.query.filter_by(tenant=id).all()[-30:]
-    chart_data_average = [(item.last_update, item.average_diffs) for item in line_data_average]
-    labelsAverage = [row[0] for row in chart_data_average]
-    average_diffs = [row[1] for row in chart_data_average]
+    data = tenant_home_data()
+    app.logger.info(data)
+    # Get all tenants
+    # tenants = intunecd_tenants.query.all()
 
     # Check if any API keys are expiring in the next 30 days
     api_keys = api_key.query.all()
-    alert_api_keys = any(
+    alert_expiring_api_keys = any(
         key.key_expiration < datetime.now() + timedelta(days=30) and app_config.ADMIN_ROLE in session["user"]["roles"]
         for key in api_keys
     )
-
-    # Get all tenants
-    tenants = intunecd_tenants.query.all()
-    selected_tenant_name = intunecd_tenants.query.filter_by(id=id).first().display_name if id else "Tenants"
+    alert_expired_api_keys = any(
+        key.key_expiration < datetime.now() and app_config.ADMIN_ROLE in session["user"]["roles"] for key in api_keys
+    )
 
     return render_template(
         "pages/home.html",
         user=session["user"],
         version=msal.__version__,
-        backup_feed=feed_backup,
-        update_feed=feed_update,
-        count_data=count_data,
-        diff_data=diff_data,
-        matchCount=matchCount,
-        diffCount=diffCount,
-        trackedCount=trackedCount,
-        labelsDiff=labelsDiff,
-        labelsConfig=labelsConfig,
-        diffs=diffs,
-        config_counts=config_counts,
-        labelsAverage=labelsAverage,
-        average_diffs=average_diffs,
-        diff_data_len=len(line_data_diff),
-        alert_api_keys=alert_api_keys,
+        alert_expiring_api_keys=alert_expiring_api_keys,
+        alert_expired_api_keys=alert_expired_api_keys,
         segment=segment,
-        tenants=tenants,
-        selected_tenant=id,
-        selected_tenant_name=selected_tenant_name,
+        tenant_home_data=data,
     )
 
 
@@ -211,9 +149,41 @@ def home():
 def home_tenant(id):
     """Returns the home page for a specific tenant."""
 
-    session["tenant_id"] = id
+    # session["tenant_id"] = id
+    # return redirect(url_for("home"))
 
-    return redirect(url_for("home"))
+    data = tenant_home_data(id)
+
+    # Get all tenants
+    # tenants = intunecd_tenants.query.all()
+
+    # Create a new dictionary with the keys used in the JavaScript code
+    response_data = {
+        "matchCount": data["matchCount"],
+        "trackedCount": data["trackedCount"],
+        "diffCount": data["diffCount"],
+        "labelsConfig": data["labelsConfig"],
+        "configCounts": data["config_counts"],
+        "labelsAverage": data["labelsAverage"],
+        "averageDiffs": data["average_diffs"],
+        "labelsDiff": data["labelsDiff"],
+        "diffs": data["diffs"],
+        "selectedTenantName": data["selected_tenant_name"],
+        "feeds": {"backup_feed": data["backup_feed"], "update_feed": data["update_feed"]},
+    }
+
+    # Return the response as a JSON string
+    return json.dumps(response_data), 200, {"Content-Type": "application/json"}
+
+
+@app.route("/home/tenant/<int:id>/feeds", methods=["POST"])
+@login_required
+@role_required
+def home_tenant_feeds(id):
+    """Returns the feeds for a specific tenant."""
+    data = request.json["feeds"]
+
+    return render_template("views/home_feeds.html", data=data)
 
 
 @app.route("/changes")
@@ -412,7 +382,7 @@ def schedules():
         elif crontab.day_of_week != "*" and crontab.minute != "*" and crontab.hour != "*":
             run_when = f"Run every week on {days[int(crontab.day_of_week)]} at {crontab.hour}:{crontab.minute}"
 
-        if schedule.name != "celery.backend_cleanup":
+        if schedule.name != "celery.backend_cleanup" and schedule.name != "intunecd.status_check":
             schedules.append(
                 {
                     "name": schedule.name,
@@ -562,6 +532,15 @@ def run_intunecd():
 
     data = {"task_id": result.id}
 
+    # check if task is received but not started
+    task_status = celery.AsyncResult(result.id)
+    if task_status != "STARTED":
+        # task is received, return response
+        emit_message(f"Waiting for {task_type} to start", "pending", result.id, tenant_id, socketio)
+        update_tenant_status_data(tenant, "pending", f"Waiting for {task_type} to start")
+
+        db.session.commit()
+
     # return response
     return jsonify(data), 202
 
@@ -574,41 +553,48 @@ def cancel_intunecd():
     tenant = intunecd_tenants.query.get(tenant_id)
     try:
         celery.control.revoke(tenant.last_task_id, terminate=True)
-        tz = pytz.timezone(os.environ.get("TIMEZONE", "UTC"))
-        now = datetime.now(tz)
-        date_now = now.strftime("%Y-%m-%d %H:%M:%S")
-        socketio.emit(
-            "intunecdrun",
-            {
-                "status": "cancelled",
-                "task": "",
-                "message": "Task cancelled",
-                "date": date_now,
-                "tenant_id": tenant_id,
-            },
-        )
-        tenant.last_update_status = "cancelled"
-        tenant.last_update_message = "Task cancelled"
-        tenant.last_update_date = date_now
+        emit_message("Task cancelled", "cancelled", tenant.last_task_id, tenant_id, socketio)
+        update_tenant_status_data(tenant, "cancelled", "Task cancelled")
+
         db.session.commit()
 
         return jsonify({"status": "success"}), 202
     except Exception as e:
-        socketio.emit(
-            "intunecdrun",
-            {
-                "status": "error",
-                "task": "",
-                "message": "Task failed to cancel",
-                "date": date_now,
-                "tenant_id": tenant_id,
-            },
-        )
-        tenant.last_update_status = "error"
-        tenant.last_update_message = "Task failed to cancel"
-        tenant.last_update_date = date_now
+        emit_message("Error cancelling task", "error", tenant.last_task_id, tenant_id, socketio)
+        update_tenant_status_data(tenant, "error", "Error cancelling task")
         db.session.commit()
 
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/intunecd/purge", methods=["POST"])
+@login_required
+@admin_required
+def purge_intunecd():
+    try:
+        # purge tasks
+        celery.control.purge()
+
+        # revoke all tenant tasks
+        tenants = intunecd_tenants.query.all()
+        # get all tenant task ids
+        task_ids = [tenant.last_task_id for tenant in tenants if tenant.last_task_id]
+        celery.control.revoke(task_ids, terminate=True)
+
+        # clear all tenant task ids and statuses
+        for tenant in tenants:
+            tenant.last_task_id = None
+            tenant.last_update_status = "unknown"
+            tenant.last_update_status_message = None
+
+        db.session.commit()
+
+        # clean up tmp folders
+        if os.path.exists("/intunecd/tmp"):
+            shutil.rmtree("/intunecd/tmp")
+
+        return jsonify({"status": "success"}), 202
+    except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 
