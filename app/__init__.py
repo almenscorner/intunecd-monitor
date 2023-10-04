@@ -16,7 +16,7 @@ app.config.from_mapping(
     CELERY=dict(
         broker_url="redis://redis:6379/0",
         result_backend="redis://redis:6379/0",
-        task_ignore_result=True,
+        task_ignore_result=False,
         task_track_started=True,
     ),
 )
