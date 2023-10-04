@@ -1,7 +1,6 @@
 import os
 import shutil
 import subprocess
-import pytz
 import json
 import random
 import shutil
@@ -10,9 +9,8 @@ import mistune
 from app import app_config
 from azure.identity import DefaultAzureCredential
 from azure.keyvault.secrets import SecretClient
-from flask_socketio import emit, SocketIO
+from flask_socketio import SocketIO
 from celery import shared_task
-from datetime import datetime
 from git import Repo, Remote
 from app.models import (
     intunecd_tenants,
@@ -23,57 +21,9 @@ from app.models import (
     summary_assignments,
 )
 from app import db
+from app.socket_tasks import emit_message, update_tenant_status_data, get_now
 
 socket = SocketIO(message_queue="redis://redis:6379/0", broadcast=True, namespace="/")
-
-
-def emit_message(message, status, task, TENANT_ID) -> None:
-    """Emits a message to the frontend.
-
-    Args:
-        message (str): message to display
-        status (str): status of the run
-        task (str): task that is running
-        TENANT_ID (int): ID of the tenant
-    """
-    date_now = get_now()
-    socket.emit(
-        "intunecdrun",
-        {
-            "status": status,
-            "task": task,
-            "message": message,
-            "date": date_now,
-            "tenant_id": TENANT_ID,
-        },
-    )
-
-
-def update_tenant_status_data(TENANT, status, message) -> None:
-    """Updates the status data for the tenant.
-
-    Args:
-        TENANT (object): tenant object
-        status (str): status of the run
-        message (str): message to display
-    """
-    TENANT.last_update = get_now()
-    TENANT.last_update_status = status
-    TENANT.last_update_message = message
-
-
-def get_now() -> str:
-    """Returns current date in the Timezone specified in
-       ENV vars. If nothing is specifiec UTC is used.
-
-    Returns:
-        str: current date
-    """
-    tz = pytz.timezone(os.environ.get("TIMEZONE", "UTC"))
-    now = datetime.now(tz)
-    date_now = now.strftime("%Y-%m-%d %H:%M:%S")
-
-    return date_now
 
 
 def get_prefix_name(OPTIONS) -> str:
@@ -160,14 +110,14 @@ def create_documentation(PATH, TENANT) -> None:
     cmd = ["IntuneCD-startdocumentation", "-c", "-p", PATH, "-o", f"{PATH}/IntuneCD-documentation.md", "-t", TENANT.name]
     cmd = " ".join(cmd)
 
-    emit_message("Creating documentation...", "running", "backup", TENANT.id)
+    emit_message("Creating documentation...", "running", "backup", TENANT.id, socket)
     update_tenant_status_data(TENANT, "running", "Creating documentation...")
     db.session.commit()
     document = subprocess.run(cmd, shell=True)
 
     if document.returncode != 0:
         message = "Could not run documentation"
-        emit_message(message, "error", "backup", TENANT.id)
+        emit_message(message, "error", "backup", TENANT.id, socket)
         update_tenant_status_data(TENANT, "error", message)
         db.session.commit()
 
@@ -181,17 +131,17 @@ def create_documentation(PATH, TENANT) -> None:
                 f.write(html)
 
             message = "Back and documentation complete"
-            emit_message(message, "success", "backup", TENANT.id)
+            emit_message(message, "success", "backup", TENANT.id, socket)
             update_tenant_status_data(TENANT, "success", message)
             db.session.commit()
         except:
             message = "Could not create documentation"
-            emit_message(message, "error", "backup", TENANT.id)
+            emit_message(message, "error", "backup", TENANT.id, socket)
             update_tenant_status_data(TENANT, "error", message)
             db.session.commit()
 
 
-@shared_task(ignore_result=False)
+@shared_task(time_limit=3600, soft_time_limit=3000)
 def run_intunecd_update(TENANT_ID) -> dict:
     """Runs the IntuneCD-startupdate command for the specified tenant.
 
@@ -215,7 +165,7 @@ def run_intunecd_update(TENANT_ID) -> dict:
     db.session.commit()
 
     date_now = get_now()
-    emit_message("Update in progress...", "running", "update", TENANT_ID)
+    emit_message("Update in progress...", "running", "update", TENANT_ID, socket)
 
     if not all(
         [
@@ -226,7 +176,7 @@ def run_intunecd_update(TENANT_ID) -> dict:
     ):
         date_now = get_now()
         message = "Could not get environment variables"
-        emit_message(message, "error", "update", TENANT_ID)
+        emit_message(message, "error", "update", TENANT_ID, socket)
         update_tenant_status_data(intunecd_tenant, "error", message)
 
         db.session.commit()
@@ -253,7 +203,7 @@ def run_intunecd_update(TENANT_ID) -> dict:
     except:
         date_now = get_now()
         message = "Could not clone repository"
-        emit_message(message, "error", "update", TENANT_ID)
+        emit_message(message, "error", "update", TENANT_ID, socket)
         update_tenant_status_data(intunecd_tenant, "error", message)
 
         db.session.commit()
@@ -277,7 +227,7 @@ def run_intunecd_update(TENANT_ID) -> dict:
     if update.returncode != 0:
         date_now = get_now()
         message = "Could not run IntuneCD-startupdate"
-        emit_message(message, "error", "update", TENANT_ID)
+        emit_message(message, "error", "update", TENANT_ID, socket)
         # remove local_path
         shutil.rmtree(local_path)
         update_tenant_status_data(intunecd_tenant, "error", message)
@@ -337,7 +287,7 @@ def run_intunecd_update(TENANT_ID) -> dict:
                 intunecd_tenant.update_feed = summary["feed"]
 
             message = "Update successful"
-            emit_message(message, "success", "update", TENANT_ID)
+            emit_message(message, "success", "update", TENANT_ID, socket)
             update_tenant_status_data(intunecd_tenant, "success", message)
 
             db.session.commit()
@@ -352,7 +302,7 @@ def run_intunecd_update(TENANT_ID) -> dict:
         }
 
 
-@shared_task(ignore_result=False)
+@shared_task(time_limit=3600, soft_time_limit=3000)
 def run_intunecd_backup(TENANT_ID, NEW_BRANCH=None) -> dict:
     """Runs the IntuneCD-startbackup command for the specified tenant.
 
@@ -378,7 +328,7 @@ def run_intunecd_backup(TENANT_ID, NEW_BRANCH=None) -> dict:
 
     db.session.commit()
 
-    emit_message("Backup in progress...", "running", "backup", TENANT_ID)
+    emit_message("Backup in progress...", "running", "backup", TENANT_ID, socket)
 
     # Clone the repository
     try:
@@ -392,7 +342,7 @@ def run_intunecd_backup(TENANT_ID, NEW_BRANCH=None) -> dict:
     except:
         date_now = get_now()
         message = "Could not clone repository"
-        emit_message(message, "error", "backup", TENANT_ID)
+        emit_message(message, "error", "backup", TENANT_ID, socket)
         update_tenant_status_data(intunecd_tenant, "error", message)
 
         db.session.commit()
@@ -420,7 +370,7 @@ def run_intunecd_backup(TENANT_ID, NEW_BRANCH=None) -> dict:
     if backup.returncode != 0:
         date_now = get_now()
         message = "Could not run IntuneCD-startbackup"
-        emit_message(message, "error", "backup", TENANT_ID)
+        emit_message(message, "error", "backup", TENANT_ID, socket)
         shutil.rmtree(local_path)
         update_tenant_status_data(intunecd_tenant, "error", message)
         db.session.commit()
@@ -451,6 +401,9 @@ def run_intunecd_backup(TENANT_ID, NEW_BRANCH=None) -> dict:
 
             if assignment_summary:
                 for assignment in assignment_summary:
+                    current_assignment = summary_assignments.query.filter_by(tenant=TENANT_ID)
+                    if current_assignment:
+                        current_assignment.delete()
                     assignment = summary_assignments(
                         tenant=TENANT_ID,
                         name=assignment["groupName"],
@@ -464,7 +417,7 @@ def run_intunecd_backup(TENANT_ID, NEW_BRANCH=None) -> dict:
                 intunecd_tenant.backup_feed = summary["feed"]
 
             message = "Backup successful"
-            emit_message(message, "success", "backup", TENANT_ID)
+            emit_message(message, "success", "backup", TENANT_ID, socket)
             update_tenant_status_data(intunecd_tenant, "success", message)
 
             db.session.commit()
@@ -511,3 +464,36 @@ def run_intunecd_backup(TENANT_ID, NEW_BRANCH=None) -> dict:
             "message": message,
             "date": date_now,
         }
+
+
+@shared_task()
+def status_check():
+    tenants = intunecd_tenants.query.all()
+    ignore_states = ["success", "error", "unknown"]
+
+    for tenant in tenants:
+        if tenant.last_task_id:
+            task = run_intunecd_update.AsyncResult(tenant.last_task_id)
+            task_type = ""
+            if task.name == "app.run_intunecd.run_intunecd_update":
+                task_type = "Update"
+            elif task.name == "app.run_intunecd.run_intunecd_backup":
+                task_type = "Backup"
+
+            if tenant.last_update_status in ignore_states:
+                continue
+            else:
+                if task.state == "STARTED":
+                    emit_message(f"{task_type} in progress...", "running", task_type, tenant.id, socket)
+                    update_tenant_status_data(tenant, "running", f"{task_type} is running")
+                    db.session.commit()
+                elif task.state == "SUCCESS":
+                    emit_message(f"{task_type} completed successfully", "success", task_type, tenant.id, socket)
+                    update_tenant_status_data(tenant, "success", f"{task_type} completed successfully")
+                    db.session.commit()
+                elif task.state == "FAILURE":
+                    emit_message(f"{task_type} failed", "error", task_type, tenant.id, socket)
+                    update_tenant_status_data(tenant, "error", f"{task_type} failed")
+                    db.session.commit()
+                else:
+                    emit_message("None", "unknown", task_type, tenant.id, socket)
