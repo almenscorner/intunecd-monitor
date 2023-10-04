@@ -111,22 +111,22 @@
   <script async defer src="https://buttons.github.io/buttons.js"></script>
   <script src="{{ url_for('static', filename='assets/js/material-dashboard.min.js') }}?v=3.1.0"></script>
 
-    {% block serviceworker %}
-    <script type="text/javascript">
-      if ("serviceWorker" in navigator) {
-          window.addEventListener("load", () => {
-          navigator.serviceWorker
-              .register("/sw.js")
-              .then((registration) => {
-                console.log(`Fantastic, the service worker is loaded`)
-              })
-              .catch((err) => {
-                console.log(`Oops, the service worker failed to load: ${err}`);
-              });
-          });
-      }
-    </script>
-    {% endblock serviceworker %}
+  {% block serviceworker %}
+  <script type="text/javascript">
+    if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+        navigator.serviceWorker
+            .register("/sw.js")
+            .then((registration) => {
+              console.log(`Fantastic, the service worker is loaded`)
+            })
+            .catch((err) => {
+              console.log(`Oops, the service worker failed to load: ${err}`);
+            });
+        });
+    }
+  </script>
+  {% endblock serviceworker %}
 
 </body>
 
