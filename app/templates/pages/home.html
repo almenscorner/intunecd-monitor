@@ -7,9 +7,9 @@
 
 {% block content %}
   <div class="container-fluid py-4">
-    {% if alert_api_keys == true %}
     <div class="row">
       <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 mb-5">
+        {% if alert_expiring_api_keys %}
         <div class="alert alert-warning alert-dismissible text-white fade show" role="alert" style="align-items: right;">
           <span class="alert-icon align-middle"></span>
           <span class="alert-text"><strong>Warning!</strong> There are API Keys expiring. Make sure to replace them!</span>
@@ -17,15 +17,24 @@
           <span aria-hidden="true">×</span>
           </button>
         </div>
+        {% endif %}
+        {% if alert_expired_api_keys %}
+        <div class="alert alert-danger alert-dismissible text-white fade show" role="alert" style="align-items: right;">
+          <span class="alert-icon align-middle"></span>
+          <span class="alert-text"><strong>Expired!</strong> One or more API keys has expired!</span>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close">
+          <span aria-hidden="true">×</span>
+          </button>
+        </div>
+        {% endif %}
       </div>
     </div>
-    {% endif %}
     <!--- Pipeline -->
     {% include "include/tenantstatus.html" %}
     <!--- End Pipeline -->
 
     <!--- Tenant selection -->
-    <ul>
+    <ul id="tenant-selection">
       <li class="nav-item dropdown d-flex">
         <a href="#" class="btn btn-dark btn-sm mb-3 me-3 dropdown-toggle " data-bs-toggle="dropdown" id="dropdownMenuButton" aria-expanded="false">
           {{ selected_tenant_name }}
@@ -34,7 +43,7 @@
           <li class="mb-2">
             {% if tenant_data %}
             <li>
-              {% for tenant in tenants %}
+              {% for tenant in tenant_home_data.tenants %}
                 {% if tenant.baseline == "true" %}
                   {% if tenant.id == selected_tenant %}
                     <a class="dropdown-item text-bold text-warning" href="/home/tenant/{{ tenant.id }}">{{ tenant.display_name }}</a>
@@ -57,184 +66,186 @@
     </ul>
     <!--- end tenant selection -->
 
-    <!--- Trends -->
-    <div class="row mt-4">
-      <div class="col-xl-4 col-lg-12 mb-5">
-        <div class="card card-chart">
-          <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
-              <div class="bg-gradient-info shadow-success shadow-info border-radius-lg py-3 pe-1">
-            <canvas id="lineChartTracked" class="chart-canvas" style="display: block; box-sizing: border-box; height: 170px; width: 489.7px;" width="489" height="170"></canvas>
-              </div>
-          </div>
-          <div class="card-body">
-            <h3 class="card-title">Tracked</h3>
-            <p class="card-category">trend over tracked configurations</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-xl-4 col-lg-12 mb-5">
-        <div class="card card-chart">
-          <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
-            <div class="bg-gradient-warning shadow-warning shadow-warning border-radius-lg py-3 pe-1">
-            <canvas id="lineChartDiffs" class="chart-canvas" style="display: block; box-sizing: border-box; height: 170px; width: 489.7px;" width="489" height="170"></canvas>
-          </div>
-          </div>
-          <div class="card-body">
-            <h3 class="card-title">Changes</h3>
-            <p class="card-category">trend over changes between configurations</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-xl-4 col-lg-12 mb-5">
-        <div class="card card-chart">
-          <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
-              <div class="bg-gradient-primary shadow-primary shadow-primary border-radius-lg py-3 pe-1">
-            <canvas id="lineChartAverage" class="chart-canvas" style="display: block; box-sizing: border-box; height: 170px; width: 489.7px;" width="489" height="170"></canvas>
-              </div>
-          </div>
-          <div class="card-body">
-            <h3 class="card-title">Average</h3>
-            <p class="card-category">change average per last {{ diff_data_len }} records</p>
-          </div>
-        </div>
-      </div>
-    </div>
-    <!--- End Trends -->
-
-    <!--- Diff -->
-    <div class="row mt-4">
-
-      <div class="col-xl-4 col-sm-6 mb-xl-0 mb-5">
-        <div class="card">
-          <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
-            <div class="bg-gradient-info shadow-info shadow-info border-radius-lg py-4">
-            <div class="text-center">
-              <h3 class="text-light" id="tracked"></h3>
+    <div id="tenantData">
+      <!--- Trends -->
+      <div class="row mt-4">
+        <div class="col-xl-4 col-lg-12 mb-5">
+          <div class="card card-chart">
+            <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
+                <div class="bg-gradient-info shadow-info shadow-info border-radius-lg py-3 pe-1">
+              <canvas id="lineChartTracked" class="chart-canvas" style="display: block; box-sizing: border-box; height: 170px; width: 489.7px;" width="489" height="170"></canvas>
+                </div>
+            </div>
+            <div class="card-body">
+              <h3 class="card-title">Tracked</h3>
+              <p class="card-category">trend over tracked configurations</p>
             </div>
           </div>
+        </div>
+
+        <div class="col-xl-4 col-lg-12 mb-5">
+          <div class="card card-chart">
+            <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
+              <div class="bg-gradient-warning shadow-warning shadow-warning border-radius-lg py-3 pe-1">
+              <canvas id="lineChartDiffs" class="chart-canvas" style="display: block; box-sizing: border-box; height: 170px; width: 489.7px;" width="489" height="170"></canvas>
+            </div>
+            </div>
+            <div class="card-body">
+              <h3 class="card-title">Changes</h3>
+              <p class="card-category">trend over changes between configurations</p>
+            </div>
           </div>
-          <div class="card-body">
-            <h4 class="card-title">Tracked configurations</h4>
-          </div>
-          <div class="card-footer d-flex">
-            <i class="material-icons position-relative ms-auto text-lg me-1 my-auto">access_time</i>
-            <p class="font-weight-normal my-auto">Updated on: {{ count_data.last_update }}</p>
+        </div>
+
+        <div class="col-xl-4 col-lg-12 mb-5">
+          <div class="card card-chart">
+            <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
+                <div class="bg-gradient-primary shadow-primary shadow-primary border-radius-lg py-3 pe-1">
+              <canvas id="lineChartAverage" class="chart-canvas" style="display: block; box-sizing: border-box; height: 170px; width: 489.7px;" width="489" height="170"></canvas>
+                </div>
+            </div>
+            <div class="card-body">
+              <h3 class="card-title">Average</h3>
+              <p class="card-category">change average per last {{ tenant_home_data.diff_len }} records</p>
+            </div>
           </div>
         </div>
       </div>
+      <!--- End Trends -->
 
-      <div class="col-xl-4 col-sm-6 mb-xl-0 mb-5">
-        <div class="card">
-          <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
-            <div class="bg-gradient-success shadow-success shadow-success border-radius-lg py-4">
-            <div class="text-center">
-              <h3 class="text-light" id="match"></h3>
+      <!--- Diff -->
+      <div class="row mt-4">
+
+        <div class="col-xl-4 col-sm-6 mb-xl-0 mb-5">
+          <div class="card">
+            <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
+              <div class="bg-gradient-info shadow-info shadow-info border-radius-lg py-4">
+              <div class="text-center">
+                <h3 class="text-light" id="tracked"></h3>
+              </div>
             </div>
-          </div>
-          </div>
-          <div class="card-body">
-            <h4 class="card-title">Matching</h4>
-          </div>
-          <div class="card-footer d-flex">
+            </div>
+            <div class="card-body">
+              <h4 class="card-title">Tracked configurations</h4>
+            </div>
+            <div class="card-footer d-flex">
               <i class="material-icons position-relative ms-auto text-lg me-1 my-auto">access_time</i>
-              <p class="font-weight-normal my-auto">Updated on: {{ count_data.last_update }}</p>
-            </div>
-        </div>
-      </div>
-
-      <div class="col-xl-4 col-sm-6 mb-xl-0 mb-5">
-        <div class="card">
-          <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
-            <div class="bg-gradient-warning shadow-warning shadow-warning border-radius-lg py-4">
-            <div class="text-center">
-              <h3 class="text-light" id="diff"></h3>
+              <p class="font-weight-normal my-auto">Updated on: {{ tenant_home_data.count_data.last_update }}</p>
             </div>
           </div>
-          </div>
-          <div class="card-body">
-            <h4 class="card-title">Not matching</h4>
-          </div>
-          <div class="card-footer d-flex">
-            <i class="material-icons position-relative ms-auto text-lg me-1 my-auto">access_time</i>
-            <p class="font-weight-normal my-auto">Updated on: {{ diff_data.last_update }}</p>
+        </div>
+
+        <div class="col-xl-4 col-sm-6 mb-xl-0 mb-5">
+          <div class="card">
+            <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
+              <div class="bg-gradient-success shadow-success shadow-success border-radius-lg py-4">
+              <div class="text-center">
+                <h3 class="text-light" id="match"></h3>
+              </div>
+            </div>
+            </div>
+            <div class="card-body">
+              <h4 class="card-title">Matching</h4>
+            </div>
+            <div class="card-footer d-flex">
+                <i class="material-icons position-relative ms-auto text-lg me-1 my-auto">access_time</i>
+                <p class="font-weight-normal my-auto">Updated on: {{ tenant_home_data.count_data.last_update }}</p>
+              </div>
           </div>
         </div>
+
+        <div class="col-xl-4 col-sm-6 mb-xl-0 mb-5">
+          <div class="card">
+            <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
+              <div class="bg-gradient-warning shadow-warning shadow-warning border-radius-lg py-4">
+              <div class="text-center">
+                <h3 class="text-light" id="diff"></h3>
+              </div>
+            </div>
+            </div>
+            <div class="card-body">
+              <h4 class="card-title">Not matching</h4>
+            </div>
+            <div class="card-footer d-flex">
+              <i class="material-icons position-relative ms-auto text-lg me-1 my-auto">access_time</i>
+              <p class="font-weight-normal my-auto">Updated on: {{ tenant_home_data.diff_data.last_update }}</p>
+            </div>
+          </div>
+        </div>
+
       </div>
+      <!--- End Diff -->
 
-    </div>
-    <!--- End Diff -->
-
-    <!--- Feeds -->
-    <div class="row mt-4">
-      <div class="col-lg-6 col-md-12">
-        <div class="col-4">
-          <h2 class="text-secondary">Update feed</h2>
-        </div>
-        <div class="card mb-5">
-          <div class="card-body table-responsive" style="height: 515px;">
-            <input class="form-control" id="updateSearch" type="text" placeholder="Search..">
-            <table class="table table-hover">
-              <tbody id="updateTable">
-                {% for item in update_feed %}
-                <tr>
-                  <td>
-                    <div class="d-flex px-2 py-1">
-                      {% if "No changes" in item or "Checking if" in item %}
+      <!--- Feeds -->
+      <div class="row mt-4" id="feeds">
+        <div class="col-lg-6 col-md-12">
+          <div class="col-4">
+            <h2 class="text-secondary">Update feed</h2>
+          </div>
+          <div class="card mb-5">
+            <div class="card-body table-responsive" style="height: 515px;">
+              <input class="form-control" id="updateSearch" type="text" placeholder="Search..">
+              <table class="table table-hover">
+                <tbody id="updateTable">
+                  {% for item in tenant_home_data.update_feed %}
+                  <tr>
+                    <td>
+                      <div class="d-flex px-2 py-1">
+                        {% if "No changes" in item or "Checking if" in item %}
+                          <div class="icon icon-m me-4">
+                            <i class="material-icons opacity-5">check_circle</i>
+                          </div>
+                          <div class="d-flex flex-column justify-content-center">
+                            <h9 class="mb-0 text-sm">{{ item }}</h9>
+                          </div>
+                        {% else %}
                         <div class="icon icon-m me-4">
-                          <i class="material-icons opacity-5">check_circle</i>
+                          <i class="material-icons opacity-5">published_with_changes</i>
                         </div>
                         <div class="d-flex flex-column justify-content-center">
                           <h9 class="mb-0 text-sm">{{ item }}</h9>
                         </div>
-                      {% else %}
-                      <div class="icon icon-m me-4">
-                        <i class="material-icons opacity-5">published_with_changes</i>
+                        {% endif %}
                       </div>
-                      <div class="d-flex flex-column justify-content-center">
-                        <h9 class="mb-0 text-sm">{{ item }}</h9>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6 col-md-12">
+          <div class="col-4">
+            <h2 class="text-secondary">Backup feed</h2>
+          </div>
+          <div class="card mb-5">
+            <div class="card-body table-responsive" style="height: 515px;">
+              <input class="form-control" id="backupSearch" type="text" placeholder="Search..">
+              <table class="table table-hover">
+                <tbody id="backupTable">
+                  {% for item in tenant_home_data.backup_feed %}
+                  <tr>
+                    <td>
+                      <div class="d-flex px-2 py-1">
+                          <div class="icon icon-m me-4">
+                            <i class="material-icons opacity-5">cloud_download</i>
+                          </div>
+                          <div class="d-flex flex-column justify-content-center">
+                            <h9 class="mb-0 text-sm">{{ item }}</h9>
+                          </div>
                       </div>
-                      {% endif %}
-                    </div>
-                  </td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
-      <div class="col-lg-6 col-md-12">
-        <div class="col-4">
-          <h2 class="text-secondary">Backup feed</h2>
-        </div>
-        <div class="card mb-5">
-          <div class="card-body table-responsive" style="height: 515px;">
-            <input class="form-control" id="backupSearch" type="text" placeholder="Search..">
-            <table class="table table-hover">
-              <tbody id="backupTable">
-                {% for item in backup_feed %}
-                <tr>
-                  <td>
-                    <div class="d-flex px-2 py-1">
-                        <div class="icon icon-m me-4">
-                          <i class="material-icons opacity-5">cloud_download</i>
-                        </div>
-                        <div class="d-flex flex-column justify-content-center">
-                          <h9 class="mb-0 text-sm">{{ item }}</h9>
-                        </div>
-                    </div>
-                  </td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+      <!--- End Feeds -->
     </div>
-    <!--- End Feeds -->
   </div>
 
 {% endblock content %}
@@ -254,248 +265,11 @@ crossorigin="anonymous"></script>
 integrity="sha512-zoJXRvW2gC8Z0Xo3lBbao5+AS3g6YWr5ztKqaicua11xHo+AvE1b0lT9ODgrHTmNUxeCw0Ry4BGRYZfXu70weg==" 
 crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
-
-<script>
-  var ctx = document.getElementById("lineChartDiffs").getContext("2d");
-  var lineChart = new Chart(ctx, {
-    type: "line",
-    data: {
-      labels: {{ labelsDiff | safe }},
-  datasets: [
-    {
-      label: 'Diffs',
-      data: {{ diffs | safe }},
-    fill: false,
-    borderColor: "white",
-    lineTension: 0.1
-                      },
-  ]
-              },
-              options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: false,
-          }
-        },
-        interaction: {
-          intersect: false,
-          mode: 'index',
-        },
-        scales: {
-          y: {
-            grid: {
-              drawBorder: false,
-              display: true,
-              drawOnChartArea: true,
-              drawTicks: false,
-              borderDash: [5, 5],
-              color: 'rgba(255, 255, 255, .2)'
-            },
-            ticks: {
-              suggestedMin: 0,
-              suggestedMax: 500,
-              beginAtZero: true,
-              padding: 10,
-              font: {
-                size: 14,
-                weight: 300,
-                family: "Roboto",
-                style: 'normal',
-                lineHeight: 2
-              },
-              color: "#fff"
-            },
-          },
-          x: {
-            grid: {
-              drawBorder: false,
-              display: true,
-              drawOnChartArea: true,
-              drawTicks: false,
-              borderDash: [5, 5],
-              color: 'rgba(255, 255, 255, .2)'
-            },
-            ticks: {
-              display: false
-              },
-            }
-          }
-        }
-    });
-</script>
-
-<script>
-  var ctx = document.getElementById("lineChartTracked").getContext("2d");
-  var lineChart = new Chart(ctx, {
-    type: "line",
-    data: {
-      labels: {{ labelsConfig | safe }},
-  datasets: [
-    {
-      label: 'Tracked',
-      data: {{ config_counts | safe }},
-    fill: false,
-    borderColor: "white",
-    lineTension: 0.1
-                      },
-  ]
-              },
-              options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: false,
-          }
-        },
-        interaction: {
-          intersect: false,
-          mode: 'index',
-        },
-        scales: {
-          y: {
-            grid: {
-              drawBorder: false,
-              display: true,
-              drawOnChartArea: true,
-              drawTicks: false,
-              borderDash: [5, 5],
-              color: 'rgba(255, 255, 255, .2)'
-            },
-            ticks: {
-              suggestedMin: 0,
-              suggestedMax: 500,
-              beginAtZero: true,
-              padding: 10,
-              font: {
-                size: 14,
-                weight: 300,
-                family: "Roboto",
-                style: 'normal',
-                lineHeight: 2
-              },
-              color: "#fff"
-            },
-          },
-          x: {
-            grid: {
-              drawBorder: false,
-              display: true,
-              drawOnChartArea: true,
-              drawTicks: false,
-              borderDash: [5, 5],
-              color: 'rgba(255, 255, 255, .2)'
-            },
-            ticks: {
-              display: false
-              },
-            }
-          }
-        }
-    });
-</script>
-
-<script>
-  var ctx = document.getElementById("lineChartAverage").getContext("2d");
-  var lineChart = new Chart(ctx, {
-    type: "line",
-    data: {
-      labels: {{ labelsAverage | safe }},
-  datasets: [
-    {
-      label: 'Average',
-      data: {{ average_diffs | safe }},
-    fill: false,
-    borderColor: "white",
-    lineTension: 0.1
-                      },
-  ]
-              },
-              options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: false,
-          }
-        },
-        interaction: {
-          intersect: false,
-          mode: 'index',
-        },
-        scales: {
-          y: {
-            grid: {
-              drawBorder: false,
-              display: true,
-              drawOnChartArea: true,
-              drawTicks: false,
-              borderDash: [5, 5],
-              color: 'rgba(255, 255, 255, .2)'
-            },
-            ticks: {
-              suggestedMin: 0,
-              suggestedMax: 500,
-              beginAtZero: true,
-              padding: 10,
-              font: {
-                size: 14,
-                weight: 300,
-                family: "Roboto",
-                style: 'normal',
-                lineHeight: 2
-              },
-              color: "#fff"
-            },
-          },
-          x: {
-            grid: {
-              drawBorder: false,
-              display: true,
-              drawOnChartArea: true,
-              drawTicks: false,
-              borderDash: [5, 5],
-              color: 'rgba(255, 255, 255, .2)'
-            },
-            ticks: {
-              display: false
-              },
-            }
-          }
-        }
-    });
-</script>
-
-<script>
-  function count () {
-    var matchCount = new CountUp('match', 0, "{{ matchCount }}");
-    if (!matchCount.error) {
-      matchCount.start();
-    } else {
-      console.error(matchCount.error);
-    }
-    var diffCount = new CountUp('diff', 0, "{{ diffCount }}");
-    if (!diffCount.error) {
-      diffCount.start();
-    } else {
-      console.error(diffCount.error);
-    }
-    var trackedCount = new CountUp('tracked', 0, "{{ trackedCount }}");
-    if (!trackedCount.error) {
-      trackedCount.start();
-    } else {
-      console.error(trackedCount.error);
-    }
-  }
-
-  window.addEventListener('load', count);
-</script>
-
 <script>
   $(document).ready(function(){
-    $("#updateSearch").on("keyup", function() {
+    // Attach the event listener to the parent element
+    $("#updateTable").on("keyup", "#updateSearch", function() {
+      console.log("Event listener attached!")
       var value = $(this).val().toLowerCase();
       $("#updateTable tr").filter(function() {
         $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
@@ -506,10 +280,62 @@ crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
 <script>
   $(document).ready(function(){
-    $("#backupSearch").on("keyup", function() {
+    // Attach the event listener to the parent element
+    $("#backupTable").on("keyup", "#backupSearch", function() {
+      console.log("Event listener attached!")
       var value = $(this).val().toLowerCase();
       $("#backupTable tr").filter(function() {
         $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+      });
+    });
+  });
+</script>
+
+<script>
+  $(document).ready(function() {
+    // Get the search input element
+    const searchInput = $('#backupSearch');
+    // Get the list element
+    const table = $('#backupTable');
+    // Get all list items
+    const tableItems = table.find('tr');
+    // Attach event listener to search input
+    searchInput.on('keyup', function(event) {
+      // Get the search query
+      const query = $(this).val().toLowerCase();
+  
+      // Filter the list items based on the search query
+      tableItems.filter(function() {
+        // Get the text content of the list item
+        const text = $(this).text().toLowerCase();
+  
+        // Toggle the list item based on whether it matches the search query
+        $(this).toggle(text.indexOf(query) > -1);
+      });
+    });
+  });
+</script>
+
+<script>
+  $(document).ready(function() {
+    // Get the search input element
+    const searchInput = $('#updateSearch');
+    // Get the list element
+    const table = $('#updateTable');
+    // Get all list items
+    const tableItems = table.find('tr');
+    // Attach event listener to search input
+    searchInput.on('keyup', function(event) {
+      // Get the search query
+      const query = $(this).val().toLowerCase();
+  
+      // Filter the list items based on the search query
+      tableItems.filter(function() {
+        // Get the text content of the list item
+        const text = $(this).text().toLowerCase();
+  
+        // Toggle the list item based on whether it matches the search query
+        $(this).toggle(text.indexOf(query) > -1);
       });
     });
   });
@@ -562,7 +388,7 @@ crossorigin="anonymous" referrerpolicy="no-referrer"></script>
       if (cancelButton) cancelButton.style.display = 'none';
       if (ellipsis) ellipsis.style.display = 'none';
   
-      if (status === 'error' || status === 'success' || status === 'cancelled') {
+      if (status === 'error' || status === 'success' || status === 'cancelled' || status === 'unknown') {
         if (backupButton) backupButton.style.removeProperty('display');
         if (updateButton) updateButton.style.removeProperty('display');
         if (ellipsis) ellipsis.style.display = 'none';
@@ -584,7 +410,9 @@ crossorigin="anonymous" referrerpolicy="no-referrer"></script>
         if (!backupButton && ellipsis) {
           if (updateButton.style.display != 'none' && ellipsis.style.display === 'none') {
             ellipsis.style = '';
-            cancelButton.style.removeProperty('display');
+            if (status != 'pending') {
+              cancelButton.style.removeProperty('display');
+            }
             ls.innerText = status;
             ls.classList.add('text-info')
             updateButton.style.display = 'none';
@@ -592,7 +420,9 @@ crossorigin="anonymous" referrerpolicy="no-referrer"></script>
         } else if (updateButton && backupButton && ellipsis) {
           if (updateButton.style.display != 'none' && backupButton.style.display != 'none' && ellipsis.style.display === 'none') {
             ellipsis.style = '';
-            cancelButton.style.removeProperty('display');
+            if (status != 'pending') {
+              cancelButton.style.removeProperty('display');
+            }
             ls.innerText = status;
             ls.classList.add('text-info')
             updateButton.style.display = 'none';
@@ -650,7 +480,7 @@ crossorigin="anonymous" referrerpolicy="no-referrer"></script>
         const status = st.innerText.toLowerCase();
         const message = cm.innerText;
         // do not store if status is success or error
-        if (status === 'running') {
+        if (status === 'running' || status == 'pending') {
           statusData[tenant_id] = { status, message, date };
         }
       });
@@ -662,6 +492,57 @@ crossorigin="anonymous" referrerpolicy="no-referrer"></script>
         updateUI({ ...data, tenant_id });
       });
     }
+  });
+</script>
+
+<script>
+  $(document).ready(function() {
+      updateCounts({{ tenant_home_data.matchCount }}, {{ tenant_home_data.diffCount }}, {{ tenant_home_data.trackedCount }});
+      drawLineChart("lineChartTracked", {{ tenant_home_data.labelsConfig | safe }}, {{ tenant_home_data.config_counts | safe }});
+      drawLineChart("lineChartAverage", {{ tenant_home_data.labelsAverage | safe }}, {{ tenant_home_data.average_diffs | safe }});
+      drawLineChart("lineChartDiffs", {{ tenant_home_data.labelsDiff | safe }}, {{ tenant_home_data.diffs | safe }});
+      $('#dropdownMenuButton').text("{{ tenant_home_data.selected_tenant_name }}");
+  });
+
+  $(document).ready(function() {
+      // Handle "Edit" button click
+      $('a[href^="/home/tenant/"]').click(function(event) {
+          event.preventDefault(); // Prevent the default behavior of the anchor tag
+          var url = this.href;
+          $.ajax({
+              url: url,
+              type: 'GET',
+              cache: false,
+              success: function(data) {
+                  // Return data from AJAX request
+                  updateCounts(data.matchCount, data.diffCount, data.trackedCount)
+                  // destroy the old chart instance
+                  Chart.helpers.each(Chart.instances, function(instance) {
+                    instance.destroy();
+                  });
+                  drawLineChart("lineChartTracked", data.labelsConfig, data.configCounts);
+                  drawLineChart("lineChartAverage", data.labelsAverage, data.averageDiffs);
+                  drawLineChart("lineChartDiffs", data.labelsDiff, data.diffs);
+                  $('#dropdownMenuButton').text(data.selectedTenantName);
+                  $.ajax({
+                    url: url + '/feeds',
+                    type: 'POST',
+                    cache: false,
+                    data: JSON.stringify({feeds: data.feeds}),
+                    contentType: "application/json",
+                    success: function(data) {
+                      $('#feeds').html(data);
+                    },
+                    error: function() {
+                        alert('An error occurred while loading the page.');
+                    }
+                  });
+              },
+              error: function() {
+                  alert('An error occurred while loading the page.');
+              }
+          });
+      });
   });
 </script>
 
