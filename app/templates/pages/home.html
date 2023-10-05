@@ -106,7 +106,7 @@
             </div>
             <div class="card-body">
               <h3 class="card-title">Average</h3>
-              <p class="card-category">change average per last {{ tenant_home_data.diff_len }} records</p>
+              <p class="card-category" id="diff-len">change average per last {{ tenant_home_data.diff_len }} records</p>
             </div>
           </div>
         </div>
@@ -130,7 +130,7 @@
             </div>
             <div class="card-footer d-flex">
               <i class="material-icons position-relative ms-auto text-lg me-1 my-auto">access_time</i>
-              <p class="font-weight-normal my-auto">Updated on: {{ tenant_home_data.count_data.last_update }}</p>
+              <p class="font-weight-normal my-auto">Updated on: {{ tenant_home_data.config_data_last_update }}</p>
             </div>
           </div>
         </div>
@@ -149,7 +149,7 @@
             </div>
             <div class="card-footer d-flex">
                 <i class="material-icons position-relative ms-auto text-lg me-1 my-auto">access_time</i>
-                <p class="font-weight-normal my-auto">Updated on: {{ tenant_home_data.count_data.last_update }}</p>
+                <p class="font-weight-normal my-auto">Updated on: {{ tenant_home_data.config_data_last_update }}</p>
               </div>
           </div>
         </div>
@@ -168,7 +168,7 @@
             </div>
             <div class="card-footer d-flex">
               <i class="material-icons position-relative ms-auto text-lg me-1 my-auto">access_time</i>
-              <p class="font-weight-normal my-auto">Updated on: {{ tenant_home_data.diff_data.last_update }}</p>
+              <p class="font-weight-normal my-auto" id="diff-last-update">Updated on: {{ tenant_home_data.diff_data_last_update }}</p>
             </div>
           </div>
         </div>
@@ -522,6 +522,8 @@ crossorigin="anonymous" referrerpolicy="no-referrer"></script>
                   drawLineChart("lineChartAverage", data.labelsAverage, data.averageDiffs);
                   drawLineChart("lineChartDiffs", data.labelsDiff, data.diffs);
                   $('#dropdownMenuButton').text(data.selectedTenantName);
+                  $('#diff-len').text("change average per last " + data.diff_len + " records");
+                  $('#diff-last-update').text("Updated on: " + data.diff_data_last_update);
                   $.ajax({
                     url: url + '/feeds',
                     type: 'POST',
