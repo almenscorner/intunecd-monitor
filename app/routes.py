@@ -148,15 +148,7 @@ def home():
 @role_required
 def home_tenant(id):
     """Returns the home page for a specific tenant."""
-
-    # session["tenant_id"] = id
-    # return redirect(url_for("home"))
-
     data = tenant_home_data(id)
-
-    # Get all tenants
-    # tenants = intunecd_tenants.query.all()
-
     # Create a new dictionary with the keys used in the JavaScript code
     response_data = {
         "matchCount": data["matchCount"],
@@ -168,6 +160,9 @@ def home_tenant(id):
         "averageDiffs": data["average_diffs"],
         "labelsDiff": data["labelsDiff"],
         "diffs": data["diffs"],
+        "diff_len": data["diff_len"],
+        "diff_data_last_update": data["diff_data_last_update"],
+        "config_data_last_update": data["config_data_last_update"],
         "selectedTenantName": data["selected_tenant_name"],
         "feeds": {"backup_feed": data["backup_feed"], "update_feed": data["update_feed"]},
     }
