@@ -264,19 +264,17 @@ def run_intunecd_update(TENANT_ID) -> dict:
             )
 
             db.session.add(count)
+            db.session.commit()
 
             # Update average diff count in database
             records = summary_diff_count.query.filter_by(tenant=TENANT_ID).all()[-30:]
             count = 0
             for record in records:
                 count += record.diff_count
-            if count == 0:
-                average_diffs = 0
-            else:
-                average_diffs = count / len(records)
+            average_count = count / len(records)
             average_diffs = summary_average_diffs(
                 tenant=TENANT_ID,
-                average_diffs=average_diffs,
+                average_diffs=average_count,
                 last_update=date_now,
             )
 
