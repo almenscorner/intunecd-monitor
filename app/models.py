@@ -17,7 +17,7 @@ class summary_diff_count(db.Model):
 
 class summary_average_diffs(db.Model):
     id = db.Column(db.Integer, primary_key=True, unique=True)
-    average_diffs = db.Column(db.Integer, unique=False)
+    average_diffs = db.Column(db.Float, unique=False)
     last_update = db.Column(db.String, unique=False)
     tenant = db.Column(db.Integer, unique=False)
 
