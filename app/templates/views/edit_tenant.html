@@ -52,6 +52,7 @@
                         {% endfor %}
                     </select>
                 </div>
+                {% if tenant.baseline == "true" %}
                 <div class="form-check my-3" style="padding-left: 0;">
                     {% if tenant.create_documentation == "true" %}
                     <input class="form-check-input" type="checkbox" id="documentationCheck" name="tenant_create_documentation" value="true" onclick="updateValue(this)" checked>
@@ -60,6 +61,7 @@
                     {% endif %}
                     <label class="custom-control-label" for="documentationCheck">Create documentation</label>
                 </div>
+                {% endif %}
                 {% if tenant.baseline or tenant.repo %}
                 <div class="form-check my-3" style="padding-left: 0;">
                     {% if tenant.new_branch == "true" %}
