@@ -118,9 +118,6 @@ def home():
     segment = get_segment(request)
 
     data = tenant_home_data()
-    app.logger.info(data)
-    # Get all tenants
-    # tenants = intunecd_tenants.query.all()
 
     # Check if any API keys are expiring in the next 30 days
     api_keys = api_key.query.all()
@@ -193,7 +190,7 @@ def changes():
     tenant_changes = []
     for tenant in tenants:
         change_data = summary_changes.query.filter_by(tenant=tenant.id).all()[-180:]
-        tenant_data = {"name": tenant.display_name, "data": {"changes": []}}
+        tenant_data = {"name": tenant.display_name, "id": tenant.id, "data": {"changes": []}}
         for change in change_data:
             data = {
                 "id": change.id,
@@ -304,7 +301,7 @@ def assignments():
 
     for tenant in tenants:
         assignment_data = summary_assignments.query.filter_by(tenant=tenant.id).all()
-        tenant_data = {"name": tenant.display_name, "data": {"assignments": []}}
+        tenant_data = {"name": tenant.display_name, "id": tenant.id, "data": {"assignments": []}}
         for assignment in assignment_data:
             data = {
                 "id": assignment.id,
@@ -984,6 +981,7 @@ def get_tenants():
 @marshal_with(TenantSchema)
 def get_tenant(id):
     tenant = intunecd_tenants.query.get(id)
+
     if request.method == "GET":
         data = {
             "id": tenant.id,
