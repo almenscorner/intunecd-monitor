@@ -8,7 +8,7 @@ from flask_migrate import Migrate
 from flask_apispec import FlaskApiSpec
 from flask_socketio import SocketIO
 from werkzeug.middleware.proxy_fix import ProxyFix
-from celery import Celery, Task
+from celery import Celery, Task, schedules
 
 app = Flask(__name__)
 app.config.from_object(app_config)
@@ -20,7 +20,7 @@ app.config.from_mapping(
         task_track_started=True,
     ),
 )
-app.config["APP_VERSION"] = "2.0.3a4"
+app.config["APP_VERSION"] = "2.0.3b1"
 app.config["APISPEC_SWAGGER_UI_URL"] = "/apidocs"
 app.config["APISPEC_TITLE"] = "IntuneCD Monitor API Docs"
 
@@ -50,7 +50,16 @@ with app.app_context():
 
     celery = celery_init_app(app)
 
-    celery.conf.update({"beat_dburi": app_config.BEAT_DB_URI})
+    celery.conf.update({
+        "beat_dburi": app_config.BEAT_DB_URI,
+        "beat_schedule": {
+            "intunecd.status_check": {
+                "task": "app.scheduled_tasks.periodic_status_check",
+                'schedule': schedules.crontab('45', '*', '*'),
+                'args': (),
+            },
+        }
+    })
     celery.conf.update(result_extended=True)
 
     from app import routes
