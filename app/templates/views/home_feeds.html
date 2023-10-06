@@ -4,7 +4,7 @@
     </div>
     <div class="card mb-5">
       <div class="card-body table-responsive" style="height: 515px;">
-        <input class="form-control" id="updateSearch" type="text" placeholder="Search..">
+        <input class="form-control" id="updateSearch" type="text" placeholder="Search.." onclick="attachTableListener('#updateSearch', '#updateTable')">
         <table class="table table-hover">
           <tbody id="updateTable">
             {% for item in data.update_feed %}
@@ -41,7 +41,7 @@
     </div>
     <div class="card mb-5">
       <div class="card-body table-responsive" style="height: 515px;">
-        <input class="form-control" id="backupSearch" type="text" placeholder="Search..">
+        <input class="form-control" id="backupSearch" type="text" placeholder="Search.." onclick="attachTableListener('#backupSearch', '#backupTable')">
         <table class="table table-hover">
           <tbody id="backupTable">
             {% for item in data.backup_feed %}
