@@ -1,5 +1,5 @@
 <div id="tenant-status" class="row">
-    {% for item in tenants %}
+    {% for item in tenant_home_data.tenants %}
     {% if item.baseline %}
     <div class="col-xl-4 col-lg-6 col-md-6 col-sm-6 mb-5">
       <div class="card card-stats">
@@ -8,7 +8,7 @@
                 <span class="text-sm text-info" id="current-message-{{ item.id }}">{{ item.last_update_message }}</span>
             </span>
             <div class="text-sm"> Last status:
-                {% if item.last_update_status == 'error' %}
+                {% if item.last_update_status == 'error' or item.last_update_status == 'cancelled' %}
                 <span id="last-status-{{ item.id }}" class="text-sm mb-0 text-capitalize text-danger">{{ item.last_update_status }}</span>
                 {% elif item.last_update_status == 'success' %}
                 <span id="last-status-{{ item.id }}" class="text-sm mb-0 text-capitalize text-success">{{ item.last_update_status }}</span>
@@ -16,9 +16,19 @@
                 <span id="last-status-{{ item.id }}" class="text-sm mb-0 text-capitalize text-warning">{{ item.last_update_status }}</span>
                 {% endif %}
             </div>
-          <div class="text-end pt-1 mt-2">
-              <h4 class="mb-0 text-warning">{{ item.display_name }}</h4>
-          </div>
+            <div class="row mt-2">
+                <div class="col-6 mt-2">
+                    <span class="lds-ellipsis" id="ellipsis-{{ item.id }}" style="display: none;">
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                    </span>
+                </div>
+                <div class="text-end col-6">
+                    <h4 class="mb-0 text-warning">{{ item.display_name }}</h4>
+                </div>
+            </div>
       </div>
       <hr class="dark horizontal my-0">
       <div class="card-footer d-flex">
@@ -30,12 +40,11 @@
             width: 8rem;
             margin-right: 1.5rem;
         "/>
-        <div class="lds-ellipsis my-auto" id="ellipsis-{{ item.id }}" style="display: none;">
-            <div></div>
-            <div></div>
-            <div></div>
-            <div></div>
-        </div>
+        <input type="button" class="btn btn-sm bg-gradient-danger my-auto" id="cancel-{{ item.id }}" onclick="handleCancelClick({{ item.id }})" value="Cancel" style="
+        width: 8rem;
+        margin-right: 1.5rem;
+        display: none;
+        "/>
         <i class="material-icons position-relative ms-auto text-lg me-1 my-auto">date_range</i>
         <span class="font-weight-normal my-auto" id="updateDate-{{ item.id }}">{{ item.last_update }}</span>
       </div>
@@ -49,7 +58,7 @@
                 <span class="text-sm text-info" id="current-message-{{ item.id }}">{{ item.last_update_message }}</span>
             </span>
             <div class="text-sm"> Last status:
-                {% if item.last_update_status == 'error' %}
+                {% if item.last_update_status == 'error' or item.last_update_status == 'cancelled' %}
                 <span id="last-status-{{ item.id }}" class="text-sm mb-0 text-capitalize text-danger">{{ item.last_update_status }}</span>
                 {% elif item.last_update_status == 'success' %}
                 <span id="last-status-{{ item.id }}" class="text-sm mb-0 text-capitalize text-success">{{ item.last_update_status }}</span>
@@ -57,9 +66,19 @@
                 <span id="last-status-{{ item.id }}" class="text-sm mb-0 text-capitalize text-warning">{{ item.last_update_status }}</span>
                 {% endif %}
             </div>
-          <div class="text-end pt-1 mt-2">
-              <h4 class="mb-0">{{ item.display_name }}</h4>
-          </div>
+            <div class="row mt-2">
+                <div class="col-6 mt-2">
+                    <span class="lds-ellipsis" id="ellipsis-{{ item.id }}" style="display: none;">
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                        <div></div>
+                    </span>
+                </div>
+                <div class="text-end col-6">
+                    <h4 class="mb-0">{{ item.display_name }}</h4>
+                </div>
+            </div>
       </div>
       <hr class="dark horizontal my-0">
       <div class="card-footer d-flex">
@@ -73,12 +92,11 @@
             margin-right: 1.5rem;
         "/>
         {% endif %}
-        <div class="lds-ellipsis my-auto" id="ellipsis-{{ item.id }}" style="display: none;">
-            <div></div>
-            <div></div>
-            <div></div>
-            <div></div>
-        </div>
+        <input type="button" class="btn btn-sm bg-gradient-danger my-auto" id="cancel-{{ item.id }}" onclick="handleCancelClick({{ item.id }})" value="Cancel" style="
+        width: 8rem;
+        margin-right: 1.5rem;
+        display: none;
+        "/>
         <i class="material-icons position-relative ms-auto text-lg me-1 my-auto">date_range</i>
         <span class="font-weight-normal my-auto" id="updateDate-{{ item.id }}">{{ item.last_update }}</span>
       </div>

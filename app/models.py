@@ -17,7 +17,7 @@ class summary_diff_count(db.Model):
 
 class summary_average_diffs(db.Model):
     id = db.Column(db.Integer, primary_key=True, unique=True)
-    average_diffs = db.Column(db.Integer, unique=False)
+    average_diffs = db.Column(db.Float, unique=False)
     last_update = db.Column(db.String, unique=False)
     tenant = db.Column(db.Integer, unique=False)
 
@@ -56,6 +56,7 @@ class intunecd_tenants(db.Model):
     last_task_id = db.Column(db.String, unique=False)
     new_branch = db.Column(db.String, unique=False)
     update_branch = db.Column(db.String, unique=False)
+    create_documentation = db.Column(db.String, unique=False)
 
 
 class api_key(db.Model):

@@ -2,8 +2,8 @@ import os
 import re
 import msal
 import json
-import base64
 import secrets
+import shutil
 
 from app import app, db, docs, app_config, celery, socketio
 from flask import (
@@ -52,6 +52,8 @@ from .scheduled_tasks import (
     get_scheduled_tasks,
     get_scheduled_task_crontab,
 )
+from app.socket_tasks import emit_message, update_tenant_status_data, get_now
+from .tenant_data import tenant_home_data
 
 
 # region context_processors
@@ -102,7 +104,8 @@ def sw():
 def connect():
     if not session.get("user"):
         return False
-    
+
+
 # endregion
 
 
@@ -114,99 +117,26 @@ def connect():
 def home():
     segment = get_segment(request)
 
-    # Get the baseline tenant id
-    baseline_tenant = intunecd_tenants.query.filter_by(baseline="true").first()
-    baseline_id = baseline_tenant.id if baseline_tenant else None
-
-    # Get the current tenant id
-    id = session.pop("tenant_id", baseline_id)
-
-    # Get the config count from the baseline tenant and diff count from the current tenant
-    config_count_data = summary_config_count.query.filter_by(tenant=baseline_id).all()
-    diff_count_data = summary_diff_count.query.filter_by(tenant=id).all()
-    
-    # Set the count data to the last item in the list
-    count_data = config_count_data[-1] if config_count_data else None
-    trackedCount = count_data.config_count if count_data else 0
-    
-    # Set the diff data to the last item in the list
-    diff_data = diff_count_data[-1] if diff_count_data else None
-    diffCount = diff_data.diff_count if diff_data else 0
-
-    # Get the current config count from the baseline tenant and current diff count from the current tenant
-    current_config_count = summary_config_count.query.filter_by(tenant=baseline_id).all()
-    current_diff_count = summary_diff_count.query.filter_by(tenant=id).all()
-    matchCount = (
-        current_config_count[-1].config_count - current_diff_count[-1].diff_count
-    ) if current_config_count and current_diff_count else 0
-
-    # Get the current backup and update feed from the current tenant
-    bfeed = intunecd_tenants.query.filter_by(id=id).first().backup_feed if id else None
-    feed_backup = (
-        base64.b64decode(bfeed).decode("utf-8").splitlines() if bfeed else ["No data"]
-    )
-
-    ufeed = intunecd_tenants.query.filter_by(id=id).first().update_feed if id else None
-    feed_update = (
-        base64.b64decode(ufeed).decode("utf-8").splitlines() if ufeed else ["No data"]
-    )
-    feed_update = [line for line in feed_update if line != '-' * 90]
-
-    # Get the last 30 records of data for the line charts
-    line_data_diff = summary_diff_count.query.filter_by(tenant=id).all()[-30:]
-    chart_data_diff = [(item.last_update, item.diff_count) for item in line_data_diff]
-    labelsDiff = [row[0] for row in chart_data_diff]
-    diffs = [row[1] for row in chart_data_diff]
-
-    line_data_config = summary_config_count.query.filter_by(tenant=baseline_id).all()[-30:]
-    chart_data_config = [(item.last_update, item.config_count) for item in line_data_config]
-    labelsConfig = [row[0] for row in chart_data_config]
-    config_counts = [row[1] for row in chart_data_config]
-
-    line_data_average = summary_average_diffs.query.filter_by(tenant=id).all()[-30:]
-    chart_data_average = [(item.last_update, item.average_diffs) for item in line_data_average]
-    labelsAverage = [row[0] for row in chart_data_average]
-    average_diffs = [row[1] for row in chart_data_average]
+    data = tenant_home_data()
 
     # Check if any API keys are expiring in the next 30 days
     api_keys = api_key.query.all()
-    alert_api_keys = any(
-        key.key_expiration < datetime.now() + timedelta(days=30)
-        and app_config.ADMIN_ROLE in session["user"]["roles"]
+    alert_expiring_api_keys = any(
+        key.key_expiration < datetime.now() + timedelta(days=30) and app_config.ADMIN_ROLE in session["user"]["roles"]
         for key in api_keys
     )
-
-    # Get all tenants
-    tenants = intunecd_tenants.query.all()
-    selected_tenant_name = (
-        intunecd_tenants.query.filter_by(id=id).first().display_name
-        if id
-        else "Tenants"
+    alert_expired_api_keys = any(
+        key.key_expiration < datetime.now() and app_config.ADMIN_ROLE in session["user"]["roles"] for key in api_keys
     )
 
     return render_template(
         "pages/home.html",
         user=session["user"],
         version=msal.__version__,
-        backup_feed=feed_backup,
-        update_feed=feed_update,
-        count_data=count_data,
-        diff_data=diff_data,
-        matchCount=matchCount,
-        diffCount=diffCount,
-        trackedCount=trackedCount,
-        labelsDiff=labelsDiff,
-        labelsConfig=labelsConfig,
-        diffs=diffs,
-        config_counts=config_counts,
-        labelsAverage=labelsAverage,
-        average_diffs=average_diffs,
-        diff_data_len=len(line_data_diff),
-        alert_api_keys=alert_api_keys,
+        alert_expiring_api_keys=alert_expiring_api_keys,
+        alert_expired_api_keys=alert_expired_api_keys,
         segment=segment,
-        tenants=tenants,
-        selected_tenant=id,
-        selected_tenant_name=selected_tenant_name,
+        tenant_home_data=data,
     )
 
 
@@ -215,10 +145,37 @@ def home():
 @role_required
 def home_tenant(id):
     """Returns the home page for a specific tenant."""
+    data = tenant_home_data(id)
+    # Create a new dictionary with the keys used in the JavaScript code
+    response_data = {
+        "matchCount": data["matchCount"],
+        "trackedCount": data["trackedCount"],
+        "diffCount": data["diffCount"],
+        "labelsConfig": data["labelsConfig"],
+        "configCounts": data["config_counts"],
+        "labelsAverage": data["labelsAverage"],
+        "averageDiffs": data["average_diffs"],
+        "labelsDiff": data["labelsDiff"],
+        "diffs": data["diffs"],
+        "diff_len": data["diff_len"],
+        "diff_data_last_update": data["diff_data_last_update"],
+        "config_data_last_update": data["config_data_last_update"],
+        "selectedTenantName": data["selected_tenant_name"],
+        "feeds": {"backup_feed": data["backup_feed"], "update_feed": data["update_feed"]},
+    }
 
-    session["tenant_id"] = id
+    # Return the response as a JSON string
+    return json.dumps(response_data), 200, {"Content-Type": "application/json"}
 
-    return redirect(url_for("home"))
+
+@app.route("/home/tenant/<int:id>/feeds", methods=["POST"])
+@login_required
+@role_required
+def home_tenant_feeds(id):
+    """Returns the feeds for a specific tenant."""
+    data = request.json["feeds"]
+
+    return render_template("views/home_feeds.html", data=data)
 
 
 @app.route("/changes")
@@ -233,7 +190,7 @@ def changes():
     tenant_changes = []
     for tenant in tenants:
         change_data = summary_changes.query.filter_by(tenant=tenant.id).all()[-180:]
-        tenant_data = {"name": tenant.display_name, "data": {"changes": []}}
+        tenant_data = {"name": tenant.display_name, "id": tenant.id, "data": {"changes": []}}
         for change in change_data:
             data = {
                 "id": change.id,
@@ -266,60 +223,67 @@ def documentation():
     app.jinja_env.cache = {}
     segment = get_segment(request)
     blob_data = ""
-
-    def az_blob_client(connection_string, container_name, file_name):
-        """Create a blob client to get the file from the container."""
-        try:
-            blob_service_client = BlobServiceClient.from_connection_string(
-                connection_string
-            )
-
-            blob_client = blob_service_client.get_blob_client(
-                container=container_name, blob=file_name
-            )
-
-            return blob_client
-
-        except Exception as ex:
-            print("Error: " + str(ex))
-
-    def get_documentation_blob(connection_string, container_name, file_name):
-        """Returns the current documentation from the blob storage."""
-        try:
-            local_path = "/intunecd/app/templates/include"
-            data = ""
-            download_file_path = os.path.join(local_path, "documentation.html")
-            blob_client = az_blob_client(connection_string, container_name, file_name)
-
-            with open(download_file_path, "wb") as _f:
-                blob_data = blob_client.download_blob()
-                data = blob_data.readall()
-                _f.write(data)
-
-            if data == "":
-                return False
-            else:
-                return True
-
-        except Exception as ex:
-            print("Error: " + str(ex))
-
-    if app_config.DOCUMENTATION:
-        blob_data = get_documentation_blob(
-            app_config.AZURE_CONNECTION_STRING,
-            app_config.AZURE_CONTAINER_NAME,
-            app_config.DOCUMENTATION_FILE_NAME,
-        )
-
+    html = ""
+    htmldoc = False
     active = False
-    if blob_data:
-        active = True
+    baseline_tenant = intunecd_tenants.query.filter_by(baseline="true").first()
+    if baseline_tenant.create_documentation == "true":
+        if os.path.exists("/documentation/documentation.html"):
+            htmldoc = True
+            with open("/documentation/documentation.html", "r") as f:
+                html = f.read()
+    else:
+
+        def az_blob_client(connection_string, container_name, file_name):
+            """Create a blob client to get the file from the container."""
+            try:
+                blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+
+                blob_client = blob_service_client.get_blob_client(container=container_name, blob=file_name)
+
+                return blob_client
+
+            except Exception as ex:
+                print("Error: " + str(ex))
+
+        def get_documentation_blob(connection_string, container_name, file_name):
+            """Returns the current documentation from the blob storage."""
+            try:
+                local_path = "/intunecd/app/templates/include"
+                data = ""
+                download_file_path = os.path.join(local_path, "documentation.html")
+                blob_client = az_blob_client(connection_string, container_name, file_name)
+
+                with open(download_file_path, "wb") as _f:
+                    blob_data = blob_client.download_blob()
+                    data = blob_data.readall()
+                    _f.write(data)
+
+                if data == "":
+                    return False
+                else:
+                    return True
+
+            except Exception as ex:
+                print("Error: " + str(ex))
+
+        if app_config.DOCUMENTATION:
+            blob_data = get_documentation_blob(
+                app_config.AZURE_CONNECTION_STRING,
+                app_config.AZURE_CONTAINER_NAME,
+                app_config.DOCUMENTATION_FILE_NAME,
+            )
+
+        if blob_data:
+            active = True
 
     return render_template(
         "pages/documentation.html",
         user=session["user"],
         segment=segment,
         active=active,
+        htmldoc=htmldoc,
+        html=html,
         version=msal.__version__,
     )
 
@@ -337,7 +301,7 @@ def assignments():
 
     for tenant in tenants:
         assignment_data = summary_assignments.query.filter_by(tenant=tenant.id).all()
-        tenant_data = {"name": tenant.display_name, "data": {"assignments": []}}
+        tenant_data = {"name": tenant.display_name, "id": tenant.id, "data": {"assignments": []}}
         for assignment in assignment_data:
             data = {
                 "id": assignment.id,
@@ -347,9 +311,7 @@ def assignments():
                 "assigned_to": assignment.assigned_to,
             }
 
-            data["assigned_to"] = (
-                data["assigned_to"].replace("'", '"').replace("\\", "\\\\")
-            )
+            data["assigned_to"] = data["assigned_to"].replace("'", '"').replace("\\", "\\\\")
             data["assigned_to"] = json.loads(data["assigned_to"])
             tenant_data["data"]["assignments"].append(data)
 
@@ -407,16 +369,12 @@ def schedules():
         # convert to human readable format
         if crontab.hour == "*" and crontab.minute != "*":
             run_when = f"Run every hour at {crontab.minute} minutes past the hour"
-        elif (
-            crontab.hour != "*" and crontab.minute != "*" and crontab.day_of_week == "*"
-        ):
+        elif crontab.hour != "*" and crontab.minute != "*" and crontab.day_of_week == "*":
             run_when = f"Run every day at {crontab.hour}:{crontab.minute}"
-        elif (
-            crontab.day_of_week != "*" and crontab.minute != "*" and crontab.hour != "*"
-        ):
+        elif crontab.day_of_week != "*" and crontab.minute != "*" and crontab.hour != "*":
             run_when = f"Run every week on {days[int(crontab.day_of_week)]} at {crontab.hour}:{crontab.minute}"
 
-        if schedule.name != "celery.backend_cleanup":
+        if schedule.name != "celery.backend_cleanup" and schedule.name != "intunecd.status_check":
             schedules.append(
                 {
                     "name": schedule.name,
@@ -553,7 +511,7 @@ def delete_key():
 def run_intunecd():
     tenant_id = request.json["tenant_id"]
     task_type = request.json["task_type"]
-    
+
     tenant = intunecd_tenants.query.get(tenant_id)
 
     if task_type == "backup":
@@ -566,8 +524,71 @@ def run_intunecd():
 
     data = {"task_id": result.id}
 
+    # check if task is received but not started
+    task_status = celery.AsyncResult(result.id)
+    if task_status != "STARTED":
+        # task is received, return response
+        emit_message(f"Waiting for {task_type} to start", "pending", result.id, tenant_id, socketio)
+        update_tenant_status_data(tenant, "pending", f"Waiting for {task_type} to start")
+
+        db.session.commit()
+
     # return response
     return jsonify(data), 202
+
+
+@app.route("/intunecd/cancel", methods=["POST"])
+@login_required
+@admin_required
+def cancel_intunecd():
+    tenant_id = request.json["tenant_id"]
+    tenant = intunecd_tenants.query.get(tenant_id)
+    try:
+        celery.control.revoke(tenant.last_task_id, terminate=True)
+        emit_message("Task cancelled", "cancelled", tenant.last_task_id, tenant_id, socketio)
+        update_tenant_status_data(tenant, "cancelled", "Task cancelled")
+
+        db.session.commit()
+
+        return jsonify({"status": "success"}), 202
+    except Exception as e:
+        emit_message("Error cancelling task", "error", tenant.last_task_id, tenant_id, socketio)
+        update_tenant_status_data(tenant, "error", "Error cancelling task")
+        db.session.commit()
+
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/intunecd/purge", methods=["POST"])
+@login_required
+@admin_required
+def purge_intunecd():
+    try:
+        # purge tasks
+        celery.control.purge()
+
+        # revoke all tenant tasks
+        tenants = intunecd_tenants.query.all()
+        # get all tenant task ids
+        task_ids = [tenant.last_task_id for tenant in tenants if tenant.last_task_id]
+        celery.control.revoke(task_ids, terminate=True)
+
+        # clear all tenant task ids and statuses
+        for tenant in tenants:
+            tenant.last_task_id = None
+            tenant.last_update_status = "unknown"
+            tenant.last_update_status_message = None
+
+        db.session.commit()
+
+        # clean up tmp folders
+        if os.path.exists("/intunecd/tmp"):
+            shutil.rmtree("/intunecd/tmp")
+
+        return jsonify({"status": "success"}), 202
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 # endregion
 
@@ -619,7 +640,7 @@ def add_tenant():
         baseline=tenant_baseline,
         last_update_status="unknown",
         new_branch=tenant_new_branch,
-        update_branch="main"
+        update_branch="main",
     )
 
     db.session.add(add_tenant)
@@ -629,9 +650,7 @@ def add_tenant():
     client_ID = app_config.AZURE_CLIENT_ID
     scope = "https://graph.microsoft.com/.default"
     redirect_uri = f"{os.getenv('SERVER_NAME')}/tenants"
-    consent_url = (
-        f"{base_url}?client_id={client_ID}&scope={scope}&redirect_uri={redirect_uri}"
-    )
+    consent_url = f"{base_url}?client_id={client_ID}&scope={scope}&redirect_uri={redirect_uri}"
 
     return redirect(consent_url)
 
@@ -665,16 +684,37 @@ def delete_tenant(id):
 @login_required
 @admin_required
 def edit_tenant(id):
-    tenant = intunecd_tenants.query.get(id)
-    edit_id = tenant.id
+    edit_tenant = intunecd_tenants.query.get(id)
+    edit_id = edit_tenant.id
+    tenants_list = []
 
     tenants = intunecd_tenants.query.all()
-    
+
+    for tenant in tenants:
+        tenants_list.append(
+            {
+                "id": tenant.id,
+                "display_name": tenant.display_name,
+                "name": tenant.name,
+                "repo": tenant.repo,
+                "update_args": tenant.update_args,
+                "backup_args": tenant.backup_args,
+                "baseline": tenant.baseline,
+                "last_update_status": tenant.last_update_status,
+                "update_branch": tenant.update_branch,
+                "new_branch": tenant.new_branch,
+                "create_documentation": tenant.create_documentation,
+            }
+        )
+
     branches = get_branches(id)
     if "HEAD" in branches:
         branches.remove("HEAD")
 
-    return render_template("pages/tenants.html", edit_id=edit_id, tenants=tenants, branches=branches)
+    # Create a dictionary with the data to be returned
+    data = {"edit_id": edit_id, "tenants": tenants_list, "branches": branches}
+
+    return render_template("views/edit_tenant.html", user=session["user"], data=data, version=msal.__version__)
 
 
 @app.route("/tenants/edit/<int:id>/save", methods=["POST"])
@@ -690,6 +730,7 @@ def save_tenant(id):
     tenant.new_branch = request.form.get("tenant_new_branch")
     tenant_pat = request.form.get("tenant_pat")
     tenant.update_branch = request.form.get("tenant_update_branch")
+    tenant.create_documentation = request.form.get("tenant_create_documentation")
 
     credential = DefaultAzureCredential()
     client = SecretClient(app_config.AZURE_VAULT_URL, credential)
@@ -714,6 +755,7 @@ def save_tenant(id):
     db.session.commit()
 
     return redirect(url_for("tenants"))
+
 
 # endregion
 
@@ -764,9 +806,7 @@ def add_schedule():
         else:
             schedule_tenant_args = [schedule_tenant, ""]
 
-    add_scheduled_task(
-        schedule_cron, schedule_name, schedule_task, schedule_tenant_args
-    )
+    add_scheduled_task(schedule_cron, schedule_name, schedule_task, schedule_tenant_args)
 
     return redirect(url_for("schedules"))
 
@@ -937,12 +977,11 @@ def get_tenants():
 
 @app.route("/api/v1/tenants/<int:id>", methods=["GET", "PATCH", "DELETE"])
 @require_appkey
-@doc(
-    description="Get and update a specific tenant", tags=["tenants"], params=headerDoc()
-)
+@doc(description="Get and update a specific tenant", tags=["tenants"], params=headerDoc())
 @marshal_with(TenantSchema)
 def get_tenant(id):
     tenant = intunecd_tenants.query.get(id)
+
     if request.method == "GET":
         data = {
             "id": tenant.id,
@@ -1182,15 +1221,11 @@ def login():
     )
 
 
-@app.route(
-    app_config.REDIRECT_PATH
-)  # Its absolute URL must match your app's redirect_uri set in AAD
+@app.route(app_config.REDIRECT_PATH)  # Its absolute URL must match your app's redirect_uri set in AAD
 def authorized():
     try:
         cache = _load_cache()
-        result = _build_msal_app(cache=cache).acquire_token_by_auth_code_flow(
-            session.get("flow", {}), request.args
-        )
+        result = _build_msal_app(cache=cache).acquire_token_by_auth_code_flow(session.get("flow", {}), request.args)
         if "error" in result:
             return render_template("pages/auth_error.html", result=result)
         session["user"] = result.get("id_token_claims")
@@ -1204,10 +1239,7 @@ def authorized():
 def logout():
     session.clear()  # Wipe out user and its token cache from session
     return redirect(  # Also logout from your tenant's web session
-        app_config.AUTHORITY
-        + "/oauth2/v2.0/logout"
-        + "?post_logout_redirect_uri="
-        + url_for("login", _external=True)
+        app_config.AUTHORITY + "/oauth2/v2.0/logout" + "?post_logout_redirect_uri=" + url_for("login", _external=True)
     )
 
 
@@ -1226,6 +1258,4 @@ def get_segment(r):
         return None
 
 
-app.jinja_env.globals.update(
-    _build_auth_code_flow=_build_auth_code_flow
-)  # Used in template
+app.jinja_env.globals.update(_build_auth_code_flow=_build_auth_code_flow)  # Used in template

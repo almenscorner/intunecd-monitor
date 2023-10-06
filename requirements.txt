@@ -36,3 +36,4 @@ azure-keyvault==4.2.0
 celery[redis]==5.3.4
 sqlalchemy-celery-beat==0.7.0
 gunicorn[eventlet]==21.2.0
+mistune==3.0.1

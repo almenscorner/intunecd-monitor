@@ -1,0 +1,151 @@
+<div class="card-body px-4 pb-2" id="edit-tenant">
+    {% if data %}
+    {% for tenant in data.tenants %}
+    {% if data.edit_id and tenant.id == data.edit_id %}
+    <!-- Edit Tenant -->
+        <div class="d-flex flex-column border-0 p-4 mb-2 bg-gray-100 border-radius-lg">
+            {% if tenant.baseline == "true" %}
+            <h6 class="mb-3 text-sm text-warning">{{ tenant.display_name }}</h6>
+            {% else %}
+            <h6 class="mb-3 text-sm">{{ tenant.display_name }}</h6>
+            {% endif %}
+            <form role="form text-left" action="/tenants/edit/{{ tenant.id }}/save" method="post">
+                <span class="mb-2 text-xs">Tenant Display Name:
+                    <div class="input-group input-group-dynamic mb-4">
+                    <input type="text" class="form-control" name="tenant_display_name" value="{{ tenant.display_name }}">
+                    </div>
+                </span>
+                <span class="mb-2 text-xs">Tenant Name:
+                    <div class="input-group input-group-dynamic mb-4">
+                    <input type="text" class="form-control" name="tenant_name" value="{{ tenant.name }}" disabled>
+                    </div>
+                </span>
+                <span class="mb-2 text-xs">Tenant Repo:
+                    <div class="input-group input-group-dynamic mb-4">
+                    <input type="text" class="form-control" name="tenant_repo" value="{{ tenant.repo }}">
+                    </div>
+                </span>
+                <span class="mb-2 text-xs">Tenant PAT:
+                    <div class="input-group input-group-dynamic mb-4">
+                    <input type="password" class="form-control" name="tenant_pat" value="">
+                    </div>
+                </span>
+                <span class="mb-2 text-xs">Update Args:
+                    <div class="input-group input-group-dynamic mb-4">
+                    <input type="text" class="form-control" name="tenant_update_args" value="{{ tenant.update_args }}">
+                    </div>
+                </span>
+                <span class="mb-2 text-xs">Backup Args:
+                    <div class="input-group input-group-dynamic mb-4">
+                    <input type="text" class="form-control" name="tenant_backup_args" value="{{ tenant.backup_args }}">
+                    </div>
+                </span>
+                <div id="branches">
+                    <label for="branch">Update from branch:</label>
+                    <select name="tenant_update_branch" id="tenant_update_branch" style="max-width: 10rem;">
+                        {% for branch in data.branches %}
+                            {% if branch == tenant.update_branch %}
+                                <option value="{{ branch }}" selected>{{ branch }}</option>
+                            {% else %}
+                                <option value="{{ branch }}">{{ branch }}</option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+                {% if tenant.baseline == "true" %}
+                <div class="form-check my-3" style="padding-left: 0;">
+                    {% if tenant.create_documentation == "true" %}
+                    <input class="form-check-input" type="checkbox" id="documentationCheck" name="tenant_create_documentation" value="true" onclick="updateValue(this)" checked>
+                    {% else %}
+                    <input class="form-check-input" type="checkbox" id="documentationCheck" name="tenant_create_documentation" value="false" onclick="updateValue(this)">
+                    {% endif %}
+                    <label class="custom-control-label" for="documentationCheck">Create documentation</label>
+                </div>
+                {% endif %}
+                {% if tenant.baseline or tenant.repo %}
+                <div class="form-check my-3" style="padding-left: 0;">
+                    {% if tenant.new_branch == "true" %}
+                    <input class="form-check-input" type="checkbox" id="branchCheck" name="tenant_new_branch" value="true" onclick="updateValue(this)" checked>
+                    {% else %}
+                    <input class="form-check-input" type="checkbox" id="branchCheck" name="tenant_new_branch" value="false" onclick="updateValue(this)">
+                    {% endif %}
+                    <label class="custom-control-label" for="branchCheck">Create new branch</label>
+                </div>
+                {% endif %}
+                <div class="form-check my-3" style="padding-left: 0;">
+                    {% if tenant.baseline == "true" %}
+                    <input class="form-check-input" type="checkbox" id="baselineCheck" name="tenant_baseline" value="true" onclick="updateValue(this)" checked>
+                    {% else %}
+                    <input class="form-check-input" type="checkbox" id="baselineCheck" name="tenant_baseline" value="false" onclick="updateValue(this)">
+                    {% endif %}
+                    <label class="form-check-label" for="baselineCheck">Baseline tenant</label>
+                </div>
+                <div class="ms-auto text-end">
+                    <button type="submit" class="btn btn-link text-dark text-gradient px-3 mb-0">
+                        <i class="material-icons text-sm me-2" type="submit">save</i>Save
+                    </button>
+                    <button type="button" class="btn btn-link text-danger text-gradient px-3 mb-0">
+                        <a href="{{ url_for('tenants') }}"><i class="material-icons text-sm me-2" type="submit">cancel</i>Cancel</a>
+                    </button>
+                </div>
+            </form>
+        </div>
+    <!-- End Edit Tenant -->
+    {% else %}
+    <!-- Tenants -->
+        <ul class="list-group">
+        <li class="list-group-item border-0 p-4 mb-2 bg-gray-100 border-radius-lg">
+            <div class="d-flex flex-column tenant-group">
+            {% if tenant.baseline == "true" %}
+            <h6 class="mb-3 text-sm text-warning tenant-header">{{ tenant.display_name }}</h6>
+            {% else %}
+            <h6 class="mb-3 text-sm tenant-header">{{ tenant.display_name }}</h6>
+            {% endif %}
+            <span class="mb-2 text-xs tenant-property">Tenant name: <span class="text-dark font-weight-bold ms-sm-2 tenant-property">{{ tenant.name }}</span></span>
+            <span class="mb-2 text-xs tenant-property">Tenant repo: <span class="text-dark ms-sm-2 font-weight-bold tenant-property">{{ tenant.repo }}</span></span>
+            <span class="mb-2 text-xs tenant-property">Update args: <span class="text-dark ms-sm-2 font-weight-bold tenant-property">{{ tenant.update_args }}</span></span>
+            <span class="mb-2 text-xs tenant-property">Backup args: <span class="text-dark ms-sm-2 font-weight-bold tenant-property">{{ tenant.backup_args }}</span></span>
+            {% if tenant.update_branch %}
+            <span class="mb-2 text-xs tenant-property">Update from branch: <span class="text-dark ms-sm-2 font-weight-bold tenant-property">{{ tenant.update_branch }}</span></span>
+            {% else %}
+            <span class="mb-2 text-xs tenant-property">Update from branch: <span class="text-dark ms-sm-2 font-weight-bold tenant-property">main</span></span>
+            {% endif %}
+            {% if tenant.baseline == "true" %}
+            <div class="form-check mt-3" style="padding-left: 0;">
+                {% if tenant.create_documentation == "true" %}
+                <input class="form-check-input tenant-property" type="checkbox" value="true" checked disabled>
+                {% else %}
+                <input class="form-check-input tenant-property" type="checkbox" value="false" disabled>
+                {% endif %}
+                <label class="custom-control-label tenant-property" for="baselineCheck">Create documentation</label>
+            </div>
+            {% endif %}
+            {% if tenant.repo %}
+            <div class="form-check my-3" style="padding-left: 0;">
+                {% if tenant.new_branch == "true" %}
+                <input class="form-check-input tenant-property" type="checkbox" value="true" checked disabled>
+                {% else %}
+                <input class="form-check-input tenant-property" type="checkbox" value="false" disabled>
+                {% endif %}
+                <label class="custom-control-label tenant-property" for="baselineCheck">Create new branch</label>
+            </div>
+            {% endif %}
+            {% if tenant.baseline == "true" %}
+            <div class="form-check my-1" style="padding-left: 0;">
+                <input class="form-check-input tenant-property" type="checkbox" value="true" checked disabled>
+                <label class="custom-control-label text-sm tenant-property">Baseline tenant</label>
+            </div>
+            {% endif %}
+            </div>
+            <div class="ms-auto text-end">
+                <a class="btn btn-link text-danger text-gradient px-3 mb-0" href="/tenants/delete/{{ tenant.id }}"><i
+                    class="material-icons text-sm me-2" type="submit">delete</i>Delete</a>
+                <a class="btn btn-link text-dark text-gradient px-3 mb-0" href="/tenants/edit/{{ tenant.id }}"><i
+                    class="material-icons text-sm me-2" type="submit">edit</i>Edit</a>
+            </div>
+        </ul>
+    <!-- End Tenants -->
+    {% endif %}
+    {% endfor %}
+    {% endif %}
+</div>

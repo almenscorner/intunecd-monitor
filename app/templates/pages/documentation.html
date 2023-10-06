@@ -8,9 +8,11 @@
 <div class="container-fluid py-4">
     <div class="card">
         <div class="card-body px-4 pb-2 text-sm">
-            <div class="table-responsive">
+            <div class="table-responsive markdown-body">
                 {% if active == true %}
                     {% include 'include/documentation.html' %}
+                {% elif htmldoc == true %}
+                    {{ html|safe }}
                 {% else %}
                     <p>Documentation is not active or file could not be found</p>
                 {% endif %}
@@ -20,13 +22,19 @@
 </div>
 
 {% block javascripts %}
-<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
-
 <script>
     $('table').each(function(i){
         $(this).addClass('table table-hover',i);
     });
 </script>
 {% endblock javascripts %}
+
+<style>
+    .page-break { page-break-after: always; } 
+    .markdown-body { font-size: 14px; } 
+    .markdown-body table td, .markdown-body table th { word-break: break-all; width: 500px; } 
+    .markdown-body table td { table-layout: fixed; } 
+    .markdown-body table tr { page-break-inside: avoid; }
+  </style>
 
 {% endblock content %}
