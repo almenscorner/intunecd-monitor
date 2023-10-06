@@ -19,8 +19,8 @@
 
             <div class="card">
                 <div class="card-body px-4 pb-2" style="height: calc(100vh - 360px); overflow: auto;">
-                    <input class="form-control" id="changeSearch" type="text" placeholder="Search..">
-                    <div class="accordion accordion-flush" id="accordionFlush">
+                    <input class="form-control" id="accordionSearch-{{ tenant.id }}" type="text" placeholder="Search.." onclick="attachAccordionListener({{ tenant.id }})">
+                    <div class="accordion accordion-flush" id="accordionFlush-{{ tenant.id }}">
                         {% for change in tenant.data.changes %}
                         <div class="accordion-item">
                             <h2 class="accordion-header" id="flush-{{ change.id }}">
@@ -76,23 +76,4 @@
 {% endblock content %}
 
 {% block javascripts %}
-<script>
-    const searchInput = $('#changeSearch');
-    const accordion = $('#accordionFlush');
-
-    searchInput.on('keyup', (event) => {
-        const searchTerm = event.target.value.toLowerCase();
-        const accordionItems = accordion.find('.accordion-item');
-        
-        accordionItems.each(function() {
-        const itemName = $(this).find('.accordion-header p').text().toLowerCase();
-        
-        if (itemName.includes(searchTerm)) {
-            $(this).css('display', 'block');
-        } else {
-            $(this).css('display', 'none');
-        }
-        });
-    });
-</script>
 {% endblock javascripts %}
