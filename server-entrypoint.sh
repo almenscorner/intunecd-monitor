@@ -1,28 +1,26 @@
 #!/bin/bash
 set -o nounset
 
-# check current db version
-current=$(flask db current | grep "head" | awk '{print $2}')
-# if current is null then check for migrations
-if [ -z "$current" ]; then
-    echo "INFO [DB MIGRATION] No current version found, setting to initial"
-    flask db stamp "3a8c28fde990"
+# Upgrade the database and capture the output
+dbUpgrade=$(flask db upgrade 2>&1)
+# Check for updates to the database schema
+dbCheck=$(flask db check 2>&1)
+# Check the current version
+currentVersion=$(flask db current)
+
+if [[ $? -ne 0 ]]; then
+    echo "INFO  [DB UPGRADE] Schema changes detected, upgrading database"
 fi
 
-# Check for migrations
-migrate=$(flask db check 2>&1)
-# If migrate is null then set to latest
-if [[ $? -eq 0 ]]; then
-    if [ -n "$current" ] && [ "$current" != "head" ]; then
-      if [ "$current" != "(head)" ]; then
-        echo "INFO [DB MIGRATION] No migrations found, setting to latest"
-        latest=$(flask db heads)
-        flask db stamp "$latest"
-      fi
+# Check if the upgrade was successful or if there was an error due to duplicate column names
+if [[ "$dbUpgrade" == *"Column names in each table must be unique"* ]]; then
+    if [[ -z "$currentVersion" ]]; then
+        echo "INFO  [DB UPGRADE] Database already up to date, stamping head"
+        flask db stamp head
     fi
-else
-    echo "INFO [DB MIGRATION] Migrations found, upgrading"
-    flask db upgrade
 fi
+
+currentVersion=$(flask db current)
+echo "INFO  [DB UPGRADE] Current database version: $currentVersion"
 
 gunicorn --bind :8080 --worker-class eventlet -w 1 run:app
