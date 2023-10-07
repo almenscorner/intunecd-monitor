@@ -54,7 +54,7 @@ with app.app_context():
         "beat_dburi": app_config.BEAT_DB_URI,
         "beat_schedule": {
             "intunecd.status_check": {
-                "task": "app.scheduled_tasks.periodic_status_check",
+                "task": "app.run_intunecd.status_check",
                 'schedule': schedules.crontab('45', '*', '*'),
                 'args': (),
             },
