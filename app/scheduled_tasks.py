@@ -40,7 +40,6 @@ def add_scheduled_task(CRON, NAME, TASK, ARGS) -> None:
     schedule_session.add(task)
     schedule_session.commit()
 
-
 def remove_scheduled_task(NAME):
     """Remove a scheduled task from the database.
 
@@ -51,14 +50,8 @@ def remove_scheduled_task(NAME):
     schedule_session.delete(task)
 
     # Remove schedule if no other tasks are using it
-    schedule = (
-        schedule_session.query(CrontabSchedule).filter_by(id=task.schedule_id).first()
-    )
-    if (
-        not schedule_session.query(PeriodicTask)
-        .filter_by(schedule_id=schedule.id)
-        .first()
-    ):
+    schedule = schedule_session.query(CrontabSchedule).filter_by(id=task.schedule_id).first()
+    if not schedule_session.query(PeriodicTask).filter_by(schedule_id=schedule.id).first():
         schedule_session.delete(schedule)
 
     schedule_session.commit()

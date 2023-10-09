@@ -90,6 +90,7 @@
                             </tbody>
                         </table>
                     </div>
+                    <input type="button" value="Purge tasks" class="btn btn-sm bg-gradient-danger my-auto mb-3 mt-3" id="purge">
                 </div>
             </div>
         </div>
@@ -179,7 +180,6 @@
 </div>
 
 {% block javascripts %}
-<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.10/dist/clipboard.min.js" integrity="sha256-uv91Qb6cIPf5d/aZPOOc+pN6e95p22577ruPaDcmgqE=" crossorigin="anonymous"></script>
 {% if new_key %}
 <script>
@@ -193,8 +193,32 @@
         $('#copyicon').text('check');
       });
     }); 
-  </script>
+</script>
 {% endif %}
+<script>
+    $(document).ready(function() {
+      $(document).off('click', '#purge').on('click', '#purge', function() {
+        $.ajax({
+          url: '/intunecd/purge',
+          type: 'POST',
+          beforeSend: function() {
+            if (confirm('This will purge all tasks from celery. This action cannot be undone. Are you sure you want to proceed?')) {
+              return true;
+            } else {
+              return false;
+            }
+          },
+          success: function() {
+            alert('Tasks purged');
+          },
+          error: function(error) {
+            console.log(error);
+            alert('Something went wrong. Check the console for more information.');
+          }
+        });
+      });
+    });
+  </script>
 {% endblock javascripts %}
 
 {% endblock content %}

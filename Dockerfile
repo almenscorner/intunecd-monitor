@@ -37,5 +37,7 @@ ADD . /intunecd
 
 # create db folder
 RUN mkdir /intunecd/db
+# create doc folder
+RUN mkdir /intunecd/documentation
 
 ENTRYPOINT ["/bin/bash", "-c", "./server-entrypoint.sh"]

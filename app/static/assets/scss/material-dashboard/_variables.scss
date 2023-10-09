@@ -3,7 +3,6 @@
 // Variables should follow the `$component-state-property-size` formula for
 // consistent naming. Ex: $nav-link-disabled-color and $modal-content-box-shadow-xs.
 
-// $soft-background-color: #fbfbfb !default;
 $soft-background-color: #ffffff !default; // Testing
 $font-color:            #7b809a !default;
 $h-color:               #344767 !default;
@@ -62,6 +61,8 @@ $warning:       #fb8c00 !default;
 $danger:        #F44335 !default;
 $light:         $gray-200 !default;
 $dark:          $h-color !default;
+$dark-blue:     #1A237E !default;
+
 
 // scss-docs-start theme-colors-map
 $theme-colors: (
@@ -73,7 +74,8 @@ $theme-colors: (
   "danger":     $danger,
   "light":      $light,
   "dark":       $dark,
-  "white":      $white
+  "white":      $white,
+  "dark-blue":  $dark-blue,
 ) !default;
 // scss-docs-end theme-colors-map
 
