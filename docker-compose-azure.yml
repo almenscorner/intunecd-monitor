@@ -10,6 +10,7 @@ services:
       - 8080:8080
     volumes:
       - ${WEBAPP_STORAGE_HOME}/db:/intunecd/db
+      - ${WEBAPP_STORAGE_HOME}/documentation:/documentation
 
   redis:
     image: ghcr.io/almenscorner/intunecd-monitor/redis:latest
@@ -19,11 +20,12 @@ services:
     image: ghcr.io/almenscorner/intunecd-monitor/worker:latest
     restart: always
     entrypoint: celery
-    command: -A app.celery worker -l info --pool threads
+    command: -A app.celery worker -l info
     depends_on:
       - "redis"
     volumes:
       - ${WEBAPP_STORAGE_HOME}/db:/intunecd/db
+      - ${WEBAPP_STORAGE_HOME}/documentation:/documentation
 
   beat:
     image: ghcr.io/almenscorner/intunecd-monitor/beat:latest
@@ -34,6 +36,7 @@ services:
       - "worker"
     volumes:
       - ${WEBAPP_STORAGE_HOME}/db:/intunecd/db
+      - ${WEBAPP_STORAGE_HOME}/documentation:/documentation
   
   nginx:
     image: ghcr.io/almenscorner/intunecd-monitor/nginx:latest
