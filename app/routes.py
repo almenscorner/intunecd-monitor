@@ -84,6 +84,28 @@ def inject_version():
     return dict(app_version=app.config["APP_VERSION"])
 
 
+@app.context_processor
+def utility_processor():
+    def get_icon_and_color(item, feed_type="update"):
+        if "No changes" in item or "Checking if" in item:
+            return "check_circle", "text-success"
+        elif "***" in item:
+            return "info", "text-info"
+        elif "Removing" in item:
+            return "delete", "text-danger"
+        elif "[ERROR]" in item:
+            return "cancel", "text-danger"
+        elif "[WARNING]" in item:
+            return "info", "text-warning"
+        else:
+            if feed_type == "update":
+                return "published_with_changes", "opacity-5"
+            else:
+                return "cloud_download", "opacity-5"
+
+    return dict(get_icon_and_color=get_icon_and_color)
+
+
 # endregion
 
 

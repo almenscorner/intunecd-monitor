@@ -49,7 +49,6 @@ def get_feeds(id):
         if tenant.update_feed
         else ["No data"]
     )
-    update_feed = [line for line in update_feed if line != "-" * 100]
 
     return backup_feed, update_feed
 
