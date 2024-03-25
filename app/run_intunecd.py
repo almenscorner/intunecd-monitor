@@ -71,12 +71,12 @@ def get_branches(TENANT_ID) -> list:
     return branches
 
 
-def configure_git() -> None:
+def configure_git(path) -> None:
     """Configures git with the necessary settings."""
-    cmd = ["git", "config", "user.email", "inteuncdmonitor@intunecd.local"]
+    cmd = ["git", "-C", path, "config", "user.email", "inteuncdmonitor@intunecd.local"]
     cmd = " ".join(cmd)
     subprocess.run(cmd, shell=True)
-    cmd = ["git", "config", "user.name", "IntuneCD Monitor"]
+    cmd = ["git", "-C", path, "config", "user.name", "IntuneCD Monitor"]
     cmd = " ".join(cmd)
     subprocess.run(cmd, shell=True)
 
@@ -402,7 +402,7 @@ def run_intunecd_backup(TENANT_ID, NEW_BRANCH=None) -> dict:
 
     else:
         if audit:
-            configure_git()
+            configure_git(local_path)
         # check if tenant id is in the backup_feed table
         with open(f"{local_path}/backup_summary.json", "r") as f:
             summary = json.load(f)
