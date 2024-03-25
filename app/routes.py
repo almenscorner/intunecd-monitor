@@ -233,8 +233,8 @@ def changes():
 
             data["diffs"] = data["diffs"].replace("'", '"').replace("None", "null")
             data["diffs"] = json.loads(data["diffs"])
-
             tenant_data["data"]["changes"].append(data)
+            tenant_data["data"]["changes"].reverse()
 
         tenant_changes.append(tenant_data)
 
@@ -359,6 +359,10 @@ def assignments():
             data["assigned_to"] = json.loads(data["assigned_to"])
             tenant_data["data"]["assignments"].append(data)
 
+        # alphabetically sort the assignments by name
+        tenant_data["data"]["assignments"] = sorted(
+            tenant_data["data"]["assignments"], key=lambda x: x["name"].lower()
+        )
         tenant_assignments.append(tenant_data)
 
     return render_template(
