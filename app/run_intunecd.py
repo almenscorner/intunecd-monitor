@@ -71,6 +71,16 @@ def get_branches(TENANT_ID) -> list:
     return branches
 
 
+def configure_git(path) -> None:
+    """Configures git with the necessary settings."""
+    cmd = ["git", "-C", path, "config", "user.email", "inteuncdmonitor@intunecd.local"]
+    cmd = " ".join(cmd)
+    subprocess.run(cmd, shell=True)
+    cmd = ["git", "-C", path, "config", "user.name", "IntuneCD Monitor"]
+    cmd = " ".join(cmd)
+    subprocess.run(cmd, shell=True)
+
+
 def get_connection_info(TENANT_ID) -> tuple:
     """Gets the connection info for the tenant from the database.
 
@@ -107,7 +117,16 @@ def create_documentation(PATH, TENANT) -> None:
         PATH (str): path to the repository
         TENANT (object): tenant object
     """
-    cmd = ["IntuneCD-startdocumentation", "-c", "-p", PATH, "-o", f"{PATH}/IntuneCD-documentation.md", "-t", TENANT.name]
+    cmd = [
+        "IntuneCD-startdocumentation",
+        "-c",
+        "-p",
+        PATH,
+        "-o",
+        f"{PATH}/IntuneCD-documentation.md",
+        "-t",
+        TENANT.name,
+    ]
     cmd = " ".join(cmd)
 
     emit_message("Creating documentation...", "running", "backup", TENANT.id, socket)
@@ -337,7 +356,7 @@ def run_intunecd_backup(TENANT_ID, NEW_BRANCH=None) -> dict:
 
         Repo.clone_from(REPO_URL, local_path)
         repo = Repo(local_path)
-    except:
+    except Exception:
         date_now = get_now()
         message = "Could not clone repository"
         emit_message(message, "error", "backup", TENANT_ID, socket)
@@ -352,11 +371,14 @@ def run_intunecd_backup(TENANT_ID, NEW_BRANCH=None) -> dict:
         }
 
     cmd = ["IntuneCD-startbackup", "-m", "1", "-p", local_path, "--intunecdmonitor"]
+    audit = False
 
     # Get tenant args
     if intunecd_tenant.backup_args:
         OPTIONS = intunecd_tenant.backup_args.split(" ")
         prefix_name = get_prefix_name(intunecd_tenant.backup_args)
+        if "--audit" in OPTIONS:
+            audit = True
         cmd += OPTIONS
 
         if prefix_name and prefix_name in Remote(repo, "origin").refs:
@@ -379,6 +401,8 @@ def run_intunecd_backup(TENANT_ID, NEW_BRANCH=None) -> dict:
         }
 
     else:
+        if audit:
+            configure_git(local_path)
         # check if tenant id is in the backup_feed table
         with open(f"{local_path}/backup_summary.json", "r") as f:
             summary = json.load(f)
@@ -399,7 +423,9 @@ def run_intunecd_backup(TENANT_ID, NEW_BRANCH=None) -> dict:
 
             if assignment_summary:
                 for assignment in assignment_summary:
-                    current_assignment = summary_assignments.query.filter_by(tenant=TENANT_ID)
+                    current_assignment = summary_assignments.query.filter_by(
+                        tenant=TENANT_ID
+                    )
                     if current_assignment:
                         current_assignment.delete()
                     assignment = summary_assignments(
@@ -428,7 +454,9 @@ def run_intunecd_backup(TENANT_ID, NEW_BRANCH=None) -> dict:
             if f in untracked_files:
                 untracked_files.remove(f)
         if diff or untracked_files:
-            repo.git.add("--all", ":^backup_summary.json", ":^IntuneCD-documentation.md")
+            repo.git.add(
+                "--all", ":^backup_summary.json", ":^IntuneCD-documentation.md"
+            )
             if NEW_BRANCH:
                 date = get_now()
                 clean_date = date.replace(" ", "-").replace(":", "-")
@@ -482,15 +510,33 @@ def status_check():
                 continue
             else:
                 if task.state == "STARTED":
-                    emit_message(f"{task_type} in progress...", "running", task_type, tenant.id, socket)
-                    update_tenant_status_data(tenant, "running", f"{task_type} is running")
+                    emit_message(
+                        f"{task_type} in progress...",
+                        "running",
+                        task_type,
+                        tenant.id,
+                        socket,
+                    )
+                    update_tenant_status_data(
+                        tenant, "running", f"{task_type} is running"
+                    )
                     db.session.commit()
                 elif task.state == "SUCCESS":
-                    emit_message(f"{task_type} completed successfully", "success", task_type, tenant.id, socket)
-                    update_tenant_status_data(tenant, "success", f"{task_type} completed successfully")
+                    emit_message(
+                        f"{task_type} completed successfully",
+                        "success",
+                        task_type,
+                        tenant.id,
+                        socket,
+                    )
+                    update_tenant_status_data(
+                        tenant, "success", f"{task_type} completed successfully"
+                    )
                     db.session.commit()
                 elif task.state == "FAILURE":
-                    emit_message(f"{task_type} failed", "error", task_type, tenant.id, socket)
+                    emit_message(
+                        f"{task_type} failed", "error", task_type, tenant.id, socket
+                    )
                     update_tenant_status_data(tenant, "error", f"{task_type} failed")
                     db.session.commit()
                 else:

@@ -84,6 +84,28 @@ def inject_version():
     return dict(app_version=app.config["APP_VERSION"])
 
 
+@app.context_processor
+def utility_processor():
+    def get_icon_and_color(item, feed_type="update"):
+        if "No changes" in item or "Checking if" in item:
+            return "check_circle", "text-success"
+        elif "***" in item:
+            return "info", "text-info"
+        elif "Removing" in item:
+            return "delete", "text-danger"
+        elif "[ERROR]" in item:
+            return "cancel", "text-danger"
+        elif "[WARNING]" in item:
+            return "info", "text-warning"
+        else:
+            if feed_type == "update":
+                return "published_with_changes", "opacity-5"
+            else:
+                return "cloud_download", "opacity-5"
+
+    return dict(get_icon_and_color=get_icon_and_color)
+
+
 # endregion
 
 
@@ -122,11 +144,14 @@ def home():
     # Check if any API keys are expiring in the next 30 days
     api_keys = api_key.query.all()
     alert_expiring_api_keys = any(
-        key.key_expiration < datetime.now() + timedelta(days=30) and app_config.ADMIN_ROLE in session["user"]["roles"]
+        key.key_expiration < datetime.now() + timedelta(days=30)
+        and app_config.ADMIN_ROLE in session["user"]["roles"]
         for key in api_keys
     )
     alert_expired_api_keys = any(
-        key.key_expiration < datetime.now() and app_config.ADMIN_ROLE in session["user"]["roles"] for key in api_keys
+        key.key_expiration < datetime.now()
+        and app_config.ADMIN_ROLE in session["user"]["roles"]
+        for key in api_keys
     )
 
     return render_template(
@@ -136,7 +161,7 @@ def home():
         alert_expiring_api_keys=alert_expiring_api_keys,
         alert_expired_api_keys=alert_expired_api_keys,
         segment=segment,
-        tenant_home_data=data,
+        data=data,
     )
 
 
@@ -161,7 +186,10 @@ def home_tenant(id):
         "diff_data_last_update": data["diff_data_last_update"],
         "config_data_last_update": data["config_data_last_update"],
         "selectedTenantName": data["selected_tenant_name"],
-        "feeds": {"backup_feed": data["backup_feed"], "update_feed": data["update_feed"]},
+        "feeds": {
+            "backup_feed": data["backup_feed"],
+            "update_feed": data["update_feed"],
+        },
     }
 
     # Return the response as a JSON string
@@ -190,7 +218,11 @@ def changes():
     tenant_changes = []
     for tenant in tenants:
         change_data = summary_changes.query.filter_by(tenant=tenant.id).all()[-180:]
-        tenant_data = {"name": tenant.display_name, "id": tenant.id, "data": {"changes": []}}
+        tenant_data = {
+            "name": tenant.display_name,
+            "id": tenant.id,
+            "data": {"changes": []},
+        }
         for change in change_data:
             data = {
                 "id": change.id,
@@ -199,10 +231,10 @@ def changes():
                 "diffs": change.diffs,
             }
 
-            data["diffs"] = data["diffs"].replace("'", '"')
+            data["diffs"] = data["diffs"].replace("'", '"').replace("None", "null")
             data["diffs"] = json.loads(data["diffs"])
-
             tenant_data["data"]["changes"].append(data)
+            tenant_data["data"]["changes"].reverse()
 
         tenant_changes.append(tenant_data)
 
@@ -237,9 +269,13 @@ def documentation():
         def az_blob_client(connection_string, container_name, file_name):
             """Create a blob client to get the file from the container."""
             try:
-                blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+                blob_service_client = BlobServiceClient.from_connection_string(
+                    connection_string
+                )
 
-                blob_client = blob_service_client.get_blob_client(container=container_name, blob=file_name)
+                blob_client = blob_service_client.get_blob_client(
+                    container=container_name, blob=file_name
+                )
 
                 return blob_client
 
@@ -252,7 +288,9 @@ def documentation():
                 local_path = "/intunecd/app/templates/include"
                 data = ""
                 download_file_path = os.path.join(local_path, "documentation.html")
-                blob_client = az_blob_client(connection_string, container_name, file_name)
+                blob_client = az_blob_client(
+                    connection_string, container_name, file_name
+                )
 
                 with open(download_file_path, "wb") as _f:
                     blob_data = blob_client.download_blob()
@@ -301,7 +339,11 @@ def assignments():
 
     for tenant in tenants:
         assignment_data = summary_assignments.query.filter_by(tenant=tenant.id).all()
-        tenant_data = {"name": tenant.display_name, "id": tenant.id, "data": {"assignments": []}}
+        tenant_data = {
+            "name": tenant.display_name,
+            "id": tenant.id,
+            "data": {"assignments": []},
+        }
         for assignment in assignment_data:
             data = {
                 "id": assignment.id,
@@ -311,10 +353,16 @@ def assignments():
                 "assigned_to": assignment.assigned_to,
             }
 
-            data["assigned_to"] = data["assigned_to"].replace("'", '"').replace("\\", "\\\\")
+            data["assigned_to"] = (
+                data["assigned_to"].replace("'", '"').replace("\\", "\\\\")
+            )
             data["assigned_to"] = json.loads(data["assigned_to"])
             tenant_data["data"]["assignments"].append(data)
 
+        # alphabetically sort the assignments by name
+        tenant_data["data"]["assignments"] = sorted(
+            tenant_data["data"]["assignments"], key=lambda x: x["name"].lower()
+        )
         tenant_assignments.append(tenant_data)
 
     return render_template(
@@ -369,12 +417,19 @@ def schedules():
         # convert to human readable format
         if crontab.hour == "*" and crontab.minute != "*":
             run_when = f"Run every hour at {crontab.minute} minutes past the hour"
-        elif crontab.hour != "*" and crontab.minute != "*" and crontab.day_of_week == "*":
+        elif (
+            crontab.hour != "*" and crontab.minute != "*" and crontab.day_of_week == "*"
+        ):
             run_when = f"Run every day at {crontab.hour}:{crontab.minute}"
-        elif crontab.day_of_week != "*" and crontab.minute != "*" and crontab.hour != "*":
+        elif (
+            crontab.day_of_week != "*" and crontab.minute != "*" and crontab.hour != "*"
+        ):
             run_when = f"Run every week on {days[int(crontab.day_of_week)]} at {crontab.hour}:{crontab.minute}"
 
-        if schedule.name != "celery.backend_cleanup" and schedule.name != "intunecd.status_check":
+        if (
+            schedule.name != "celery.backend_cleanup"
+            and schedule.name != "intunecd.status_check"
+        ):
             schedules.append(
                 {
                     "name": schedule.name,
@@ -528,8 +583,16 @@ def run_intunecd():
     task_status = celery.AsyncResult(result.id)
     if task_status != "STARTED":
         # task is received, return response
-        emit_message(f"Waiting for {task_type} to start", "pending", result.id, tenant_id, socketio)
-        update_tenant_status_data(tenant, "pending", f"Waiting for {task_type} to start")
+        emit_message(
+            f"Waiting for {task_type} to start",
+            "pending",
+            result.id,
+            tenant_id,
+            socketio,
+        )
+        update_tenant_status_data(
+            tenant, "pending", f"Waiting for {task_type} to start"
+        )
 
         db.session.commit()
 
@@ -545,14 +608,18 @@ def cancel_intunecd():
     tenant = intunecd_tenants.query.get(tenant_id)
     try:
         celery.control.revoke(tenant.last_task_id, terminate=True)
-        emit_message("Task cancelled", "cancelled", tenant.last_task_id, tenant_id, socketio)
+        emit_message(
+            "Task cancelled", "cancelled", tenant.last_task_id, tenant_id, socketio
+        )
         update_tenant_status_data(tenant, "cancelled", "Task cancelled")
 
         db.session.commit()
 
         return jsonify({"status": "success"}), 202
     except Exception as e:
-        emit_message("Error cancelling task", "error", tenant.last_task_id, tenant_id, socketio)
+        emit_message(
+            "Error cancelling task", "error", tenant.last_task_id, tenant_id, socketio
+        )
         update_tenant_status_data(tenant, "error", "Error cancelling task")
         db.session.commit()
 
@@ -650,7 +717,9 @@ def add_tenant():
     client_ID = app_config.AZURE_CLIENT_ID
     scope = "https://graph.microsoft.com/.default"
     redirect_uri = f"{os.getenv('SERVER_NAME')}/tenants"
-    consent_url = f"{base_url}?client_id={client_ID}&scope={scope}&redirect_uri={redirect_uri}"
+    consent_url = (
+        f"{base_url}?client_id={client_ID}&scope={scope}&redirect_uri={redirect_uri}"
+    )
 
     return redirect(consent_url)
 
@@ -714,7 +783,12 @@ def edit_tenant(id):
     # Create a dictionary with the data to be returned
     data = {"edit_id": edit_id, "tenants": tenants_list, "branches": branches}
 
-    return render_template("views/edit_tenant.html", user=session["user"], data=data, version=msal.__version__)
+    return render_template(
+        "views/edit_tenant.html",
+        user=session["user"],
+        data=data,
+        version=msal.__version__,
+    )
 
 
 @app.route("/tenants/edit/<int:id>/save", methods=["POST"])
@@ -806,7 +880,9 @@ def add_schedule():
         else:
             schedule_tenant_args = [schedule_tenant, ""]
 
-    add_scheduled_task(schedule_cron, schedule_name, schedule_task, schedule_tenant_args)
+    add_scheduled_task(
+        schedule_cron, schedule_name, schedule_task, schedule_tenant_args
+    )
 
     return redirect(url_for("schedules"))
 
@@ -977,7 +1053,9 @@ def get_tenants():
 
 @app.route("/api/v1/tenants/<int:id>", methods=["GET", "PATCH", "DELETE"])
 @require_appkey
-@doc(description="Get and update a specific tenant", tags=["tenants"], params=headerDoc())
+@doc(
+    description="Get and update a specific tenant", tags=["tenants"], params=headerDoc()
+)
 @marshal_with(TenantSchema)
 def get_tenant(id):
     tenant = intunecd_tenants.query.get(id)
@@ -1221,11 +1299,15 @@ def login():
     )
 
 
-@app.route(app_config.REDIRECT_PATH)  # Its absolute URL must match your app's redirect_uri set in AAD
+@app.route(
+    app_config.REDIRECT_PATH
+)  # Its absolute URL must match your app's redirect_uri set in AAD
 def authorized():
     try:
         cache = _load_cache()
-        result = _build_msal_app(cache=cache).acquire_token_by_auth_code_flow(session.get("flow", {}), request.args)
+        result = _build_msal_app(cache=cache).acquire_token_by_auth_code_flow(
+            session.get("flow", {}), request.args
+        )
         if "error" in result:
             return render_template("pages/auth_error.html", result=result)
         session["user"] = result.get("id_token_claims")
@@ -1239,7 +1321,10 @@ def authorized():
 def logout():
     session.clear()  # Wipe out user and its token cache from session
     return redirect(  # Also logout from your tenant's web session
-        app_config.AUTHORITY + "/oauth2/v2.0/logout" + "?post_logout_redirect_uri=" + url_for("login", _external=True)
+        app_config.AUTHORITY
+        + "/oauth2/v2.0/logout"
+        + "?post_logout_redirect_uri="
+        + url_for("login", _external=True)
     )
 
 
@@ -1258,4 +1343,6 @@ def get_segment(r):
         return None
 
 
-app.jinja_env.globals.update(_build_auth_code_flow=_build_auth_code_flow)  # Used in template
+app.jinja_env.globals.update(
+    _build_auth_code_flow=_build_auth_code_flow
+)  # Used in template

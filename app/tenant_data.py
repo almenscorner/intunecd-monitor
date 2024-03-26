@@ -1,6 +1,11 @@
 import base64
 
-from app.models import intunecd_tenants, summary_config_count, summary_diff_count, summary_average_diffs
+from app.models import (
+    intunecd_tenants,
+    summary_config_count,
+    summary_diff_count,
+    summary_average_diffs,
+)
 
 
 def get_tenants():
@@ -34,9 +39,16 @@ def get_feeds(id):
     tenant = intunecd_tenants.query.filter_by(id=id).first()
     if not tenant:
         return ["No data"], ["No data"]
-    backup_feed = base64.b64decode(tenant.backup_feed).decode("utf-8").splitlines() if tenant.backup_feed else ["No data"]
-    update_feed = base64.b64decode(tenant.update_feed).decode("utf-8").splitlines() if tenant.update_feed else ["No data"]
-    update_feed = [line for line in update_feed if line != "-" * 90]
+    backup_feed = (
+        base64.b64decode(tenant.backup_feed).decode("utf-8").splitlines()
+        if tenant.backup_feed
+        else ["No data"]
+    )
+    update_feed = (
+        base64.b64decode(tenant.update_feed).decode("utf-8").splitlines()
+        if tenant.update_feed
+        else ["No data"]
+    )
 
     return backup_feed, update_feed
 
@@ -67,8 +79,12 @@ def get_line_data_config(baseline_id):
     Returns:
         tuple: A tuple containing the labels and data for the config line chart.
     """
-    line_data_config = summary_config_count.query.filter_by(tenant=baseline_id).all()[-30:]
-    chart_data_config = [(item.last_update, item.config_count) for item in line_data_config]
+    line_data_config = summary_config_count.query.filter_by(tenant=baseline_id).all()[
+        -30:
+    ]
+    chart_data_config = [
+        (item.last_update, item.config_count) for item in line_data_config
+    ]
     labelsConfig = [row[0] for row in chart_data_config]
     config_counts = [row[1] for row in chart_data_config]
 
@@ -84,8 +100,12 @@ def get_line_data_average(tenant_id):
     Returns:
         tuple: A tuple containing the labels and data for the average diff line chart.
     """
-    line_data_average = summary_average_diffs.query.filter_by(tenant=tenant_id).all()[-30:]
-    chart_data_average = [(item.last_update, item.average_diffs) for item in line_data_average]
+    line_data_average = summary_average_diffs.query.filter_by(tenant=tenant_id).all()[
+        -30:
+    ]
+    chart_data_average = [
+        (item.last_update, item.average_diffs) for item in line_data_average
+    ]
     labelsAverage = [row[0] for row in chart_data_average]
     average_diffs = [row[1] for row in chart_data_average]
 
@@ -113,7 +133,9 @@ def tenant_home_data(tenant_id=None):
     diffCount = diff_data.diff_count if diff_data else 0
 
     matchCount = (
-        (config_count_data[-1].config_count - diff_count_data[-1].diff_count) if config_count_data and diff_count_data else 0
+        (config_count_data[-1].config_count - diff_count_data[-1].diff_count)
+        if config_count_data and diff_count_data
+        else 0
     )
 
     # Get the current backup and update feed from the current tenant
@@ -124,7 +146,11 @@ def tenant_home_data(tenant_id=None):
     labelsConfig, config_counts = get_line_data_config(baseline_id)
     labelsAverage, average_diffs = get_line_data_average(tenant_id)
 
-    selected_tenant_name = intunecd_tenants.query.filter_by(id=tenant_id).first().display_name if tenant_id else "Tenants"
+    selected_tenant_name = (
+        intunecd_tenants.query.filter_by(id=tenant_id).first().display_name
+        if tenant_id
+        else "Tenants"
+    )
 
     return {
         "tenants": tenants,

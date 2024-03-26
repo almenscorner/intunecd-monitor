@@ -43,7 +43,7 @@
           <li class="mb-2">
             {% if tenant_data %}
             <li>
-              {% for tenant in tenant_home_data.tenants %}
+              {% for tenant in data.tenants %}
                 {% if tenant.baseline == "true" %}
                   {% if tenant.id == selected_tenant %}
                     <a class="dropdown-item text-bold text-warning" href="/home/tenant/{{ tenant.id }}">{{ tenant.display_name }}</a>
@@ -106,7 +106,7 @@
             </div>
             <div class="card-body">
               <h3 class="card-title">Average</h3>
-              <p class="card-category" id="diff-len">change average per last {{ tenant_home_data.diff_len }} records</p>
+              <p class="card-category" id="diff-len">change average per last {{ data.diff_len }} records</p>
             </div>
           </div>
         </div>
@@ -130,7 +130,7 @@
             </div>
             <div class="card-footer d-flex">
               <i class="material-icons position-relative ms-auto text-lg me-1 my-auto">access_time</i>
-              <p class="font-weight-normal my-auto">Updated on: {{ tenant_home_data.config_data_last_update }}</p>
+              <p class="font-weight-normal my-auto">Updated on: {{ data.config_data_last_update }}</p>
             </div>
           </div>
         </div>
@@ -149,7 +149,7 @@
             </div>
             <div class="card-footer d-flex">
                 <i class="material-icons position-relative ms-auto text-lg me-1 my-auto">access_time</i>
-                <p class="font-weight-normal my-auto">Updated on: {{ tenant_home_data.config_data_last_update }}</p>
+                <p class="font-weight-normal my-auto">Updated on: {{ data.config_data_last_update }}</p>
               </div>
           </div>
         </div>
@@ -168,7 +168,7 @@
             </div>
             <div class="card-footer d-flex">
               <i class="material-icons position-relative ms-auto text-lg me-1 my-auto">access_time</i>
-              <p class="font-weight-normal my-auto" id="diff-last-update">Updated on: {{ tenant_home_data.diff_data_last_update }}</p>
+              <p class="font-weight-normal my-auto" id="diff-last-update">Updated on: {{ data.diff_data_last_update }}</p>
             </div>
           </div>
         </div>
@@ -177,73 +177,7 @@
       <!--- End Diff -->
 
       <!--- Feeds -->
-      <div class="row mt-4" id="feeds">
-        <div class="col-lg-6 col-md-12">
-          <div class="col-4">
-            <h2 class="text-secondary">Update feed</h2>
-          </div>
-          <div class="card mb-5">
-            <div class="card-body table-responsive" style="height: 515px;">
-              <input class="form-control" id="updateSearch" type="text" placeholder="Search.." onclick="attachTableListener('#updateSearch', '#updateTable')">
-              <table class="table table-hover">
-                <tbody id="updateTable">
-                  {% for item in tenant_home_data.update_feed %}
-                  <tr>
-                    <td>
-                      <div class="d-flex px-2 py-1">
-                        {% if "No changes" in item or "Checking if" in item %}
-                          <div class="icon icon-m me-4">
-                            <i class="material-icons opacity-5">check_circle</i>
-                          </div>
-                          <div class="d-flex flex-column justify-content-center">
-                            <h9 class="mb-0 text-sm">{{ item }}</h9>
-                          </div>
-                        {% else %}
-                        <div class="icon icon-m me-4">
-                          <i class="material-icons opacity-5">published_with_changes</i>
-                        </div>
-                        <div class="d-flex flex-column justify-content-center">
-                          <h9 class="mb-0 text-sm">{{ item }}</h9>
-                        </div>
-                        {% endif %}
-                      </div>
-                    </td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-        <div class="col-lg-6 col-md-12">
-          <div class="col-4">
-            <h2 class="text-secondary">Backup feed</h2>
-          </div>
-          <div class="card mb-5">
-            <div class="card-body table-responsive" style="height: 515px;">
-              <input class="form-control" id="backupSearch" type="text" placeholder="Search.." onclick="attachTableListener('#backupSearch', '#backupTable')">
-              <table class="table table-hover">
-                <tbody id="backupTable">
-                  {% for item in tenant_home_data.backup_feed %}
-                  <tr>
-                    <td>
-                      <div class="d-flex px-2 py-1">
-                          <div class="icon icon-m me-4">
-                            <i class="material-icons opacity-5">cloud_download</i>
-                          </div>
-                          <div class="d-flex flex-column justify-content-center">
-                            <h9 class="mb-0 text-sm">{{ item }}</h9>
-                          </div>
-                      </div>
-                    </td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
+     {% include "views/home_feeds.html" %}
       <!--- End Feeds -->
     </div>
   </div>
@@ -275,11 +209,11 @@ $(document).ready(function() {
 
 <script>
 $(document).ready(function() {
-  updateCounts({{ tenant_home_data.matchCount }}, {{ tenant_home_data.diffCount }}, {{ tenant_home_data.trackedCount }});
-  drawLineChart("lineChartTracked", {{ tenant_home_data.labelsConfig | safe }}, {{ tenant_home_data.config_counts | safe }});
-  drawLineChart("lineChartAverage", {{ tenant_home_data.labelsAverage | safe }}, {{ tenant_home_data.average_diffs | safe }});
-  drawLineChart("lineChartDiffs", {{ tenant_home_data.labelsDiff | safe }}, {{ tenant_home_data.diffs | safe }});
-  $('#dropdownMenuButton').text("{{ tenant_home_data.selected_tenant_name }}");
+  updateCounts({{ data.matchCount }}, {{ data.diffCount }}, {{ data.trackedCount }});
+  drawLineChart("lineChartTracked", {{ data.labelsConfig | safe }}, {{ data.config_counts | safe }});
+  drawLineChart("lineChartAverage", {{ data.labelsAverage | safe }}, {{ data.average_diffs | safe }});
+  drawLineChart("lineChartDiffs", {{ data.labelsDiff | safe }}, {{ data.diffs | safe }});
+  $('#dropdownMenuButton').text("{{ data.selected_tenant_name }}");
   // Handle "Edit" button click
   handleTenantClick();
 });

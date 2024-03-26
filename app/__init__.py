@@ -20,7 +20,7 @@ app.config.from_mapping(
         task_track_started=True,
     ),
 )
-app.config["APP_VERSION"] = "2.0.3"
+app.config["APP_VERSION"] = "2.1.0"
 app.config["APISPEC_SWAGGER_UI_URL"] = "/apidocs"
 app.config["APISPEC_TITLE"] = "IntuneCD Monitor API Docs"
 
@@ -33,7 +33,9 @@ with app.app_context():
     paranoid.redirect_view = "/login"
     app.wsgi_app = ProxyFix(app.wsgi_app)
     docs = FlaskApiSpec(app)
-    socketio = SocketIO(app, message_queue="redis://redis:6379/0", broadcast=True, namespace="/")
+    socketio = SocketIO(
+        app, message_queue="redis://redis:6379/0", broadcast=True, namespace="/"
+    )
 
     def celery_init_app(app: Flask) -> Celery:
         class FlaskTask(Task):
@@ -50,16 +52,18 @@ with app.app_context():
 
     celery = celery_init_app(app)
 
-    celery.conf.update({
-        "beat_dburi": app_config.BEAT_DB_URI,
-        "beat_schedule": {
-            "intunecd.status_check": {
-                "task": "app.run_intunecd.status_check",
-                'schedule': schedules.crontab('45', '*', '*'),
-                'args': (),
+    celery.conf.update(
+        {
+            "beat_dburi": app_config.BEAT_DB_URI,
+            "beat_schedule": {
+                "intunecd.status_check": {
+                    "task": "app.run_intunecd.status_check",
+                    "schedule": schedules.crontab("45", "*", "*"),
+                    "args": (),
+                },
             },
         }
-    })
+    )
     celery.conf.update(result_extended=True)
 
     from app import routes
