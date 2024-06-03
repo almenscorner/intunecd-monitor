@@ -28,7 +28,7 @@ Werkzeug==3.0.1
 wsproto==1.2.0
 python-dateutil==2.9.0.post0
 azure-storage-blob==12.19.0
-IntuneCD==2.3.2
+IntuneCD==2.3.3
 flask-migrate==4.0.7
 gitpython==3.1.42
 azure-identity==1.15.0
