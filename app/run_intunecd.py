@@ -319,7 +319,7 @@ def run_intunecd_update(TENANT_ID) -> dict:
         }
 
 
-@shared_task(time_limit=3600, soft_time_limit=3000)
+@shared_task(time_limit=7200, soft_time_limit=6600)
 def run_intunecd_backup(TENANT_ID, NEW_BRANCH=None) -> dict:
     """Runs the IntuneCD-startbackup command for the specified tenant.
 
