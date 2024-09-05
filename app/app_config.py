@@ -88,6 +88,12 @@ if SESSION_LIFETIME_HOURS:
 else:
     PERMANENT_SESSION_LIFETIME = timedelta(hours=3)
 
+DOCUMENTATION_MAX_LENGTH = os.getenv("DOCUMENTATION_MAX_LENGTH")
+if DOCUMENTATION_MAX_LENGTH:
+    DOCUMENTATION_MAX_LENGTH = int(DOCUMENTATION_MAX_LENGTH)
+else:
+    DOCUMENTATION_MAX_LENGTH = None
+
 SQLALCHEMY_DATABASE_URI = "mssql+pyodbc:///?odbc_connect=%s" % params
 SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True}
 AUTHORITY = f"https://login.microsoftonline.com/{AZURE_TENANT_ID}"

@@ -117,6 +117,7 @@ def create_documentation(PATH, TENANT) -> None:
         PATH (str): path to the repository
         TENANT (object): tenant object
     """
+
     cmd = [
         "IntuneCD-startdocumentation",
         "-c",
@@ -127,6 +128,10 @@ def create_documentation(PATH, TENANT) -> None:
         "-t",
         TENANT.name,
     ]
+
+    if app_config.DOCUMENTATION_MAX_LENGTH:
+        cmd += ["-m", app_config.DOCUMENTATION_MAX_LENGTH]
+
     cmd = " ".join(cmd)
 
     emit_message("Creating documentation...", "running", "backup", TENANT.id, socket)
