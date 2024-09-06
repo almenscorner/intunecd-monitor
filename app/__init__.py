@@ -20,7 +20,7 @@ app.config.from_mapping(
         task_track_started=True,
     ),
 )
-app.config["APP_VERSION"] = "2.1.0"
+app.config["APP_VERSION"] = "2.1.3"
 app.config["APISPEC_SWAGGER_UI_URL"] = "/apidocs"
 app.config["APISPEC_TITLE"] = "IntuneCD Monitor API Docs"
 

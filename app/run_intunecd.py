@@ -117,6 +117,7 @@ def create_documentation(PATH, TENANT) -> None:
         PATH (str): path to the repository
         TENANT (object): tenant object
     """
+
     cmd = [
         "IntuneCD-startdocumentation",
         "-c",
@@ -127,6 +128,10 @@ def create_documentation(PATH, TENANT) -> None:
         "-t",
         TENANT.name,
     ]
+
+    if app_config.DOCUMENTATION_MAX_LENGTH:
+        cmd += ["-m", app_config.DOCUMENTATION_MAX_LENGTH]
+
     cmd = " ".join(cmd)
 
     emit_message("Creating documentation...", "running", "backup", TENANT.id, socket)
@@ -319,7 +324,7 @@ def run_intunecd_update(TENANT_ID) -> dict:
         }
 
 
-@shared_task(time_limit=3600, soft_time_limit=3000)
+@shared_task(time_limit=7200, soft_time_limit=6600)
 def run_intunecd_backup(TENANT_ID, NEW_BRANCH=None) -> dict:
     """Runs the IntuneCD-startbackup command for the specified tenant.
 
