@@ -1,229 +1,138 @@
-
 {% extends "base/template.html" %}
-{% block title %} Home {% endblock title %}
-
-{% block stylesheets %}
-{% endblock stylesheets %}
+{% block title %}Dashboard{% endblock %}
 
 {% block content %}
-  <div class="container-fluid py-4">
-    <div class="row">
-      <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6 mb-5">
-        {% if alert_expiring_api_keys %}
-        <div class="alert alert-warning alert-dismissible text-white fade show" role="alert" style="align-items: right;">
-          <span class="alert-icon align-middle"></span>
-          <span class="alert-text"><strong>Warning!</strong> There are API Keys expiring. Make sure to replace them!</span>
-          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close">
-          <span aria-hidden="true">×</span>
-          </button>
-        </div>
-        {% endif %}
-        {% if alert_expired_api_keys %}
-        <div class="alert alert-danger alert-dismissible text-white fade show" role="alert" style="align-items: right;">
-          <span class="alert-icon align-middle"></span>
-          <span class="alert-text"><strong>Expired!</strong> One or more API keys has expired!</span>
-          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close">
-          <span aria-hidden="true">×</span>
-          </button>
-        </div>
-        {% endif %}
-      </div>
-    </div>
-    <!--- Pipeline -->
-    {% include "include/tenantstatus.html" %}
-    <!--- End Pipeline -->
+<div class="p-6">
 
-    <!--- Tenant selection -->
-    <ul id="tenant-selection">
-      <li class="nav-item dropdown d-flex">
-        <a href="#" class="btn btn-dark btn-sm mb-3 me-3 dropdown-toggle " data-bs-toggle="dropdown" id="dropdownMenuButton" aria-expanded="false">
-          {{ selected_tenant_name }}
+  <!-- Alerts -->
+  {% if alert_expiring_api_keys %}
+  <div class="flex items-start gap-3 bg-amber-500/10 border border-amber-500/30 text-amber-300 rounded-xl px-4 py-3 mb-5 text-sm">
+    <span class="material-icons-round text-base mt-0.5">warning</span>
+    <span><strong>Warning:</strong> There are API keys expiring soon. Make sure to replace them.</span>
+  </div>
+  {% endif %}
+  {% if alert_expired_api_keys %}
+  <div class="flex items-start gap-3 bg-rose-500/10 border border-rose-500/30 text-rose-300 rounded-xl px-4 py-3 mb-5 text-sm">
+    <span class="material-icons-round text-base mt-0.5">error</span>
+    <span><strong>Expired:</strong> One or more API keys has expired.</span>
+  </div>
+  {% endif %}
+
+  <!-- Tenant status cards -->
+  {% include "include/tenantstatus.html" %}
+
+  <!-- Tenant selector -->
+  {% if data and data.tenants %}
+  <div class="flex items-center gap-3 mb-6" x-data="{ open: false }">
+    <span class="text-xs text-zinc-500">Viewing:</span>
+    <div class="relative">
+      <button id="tenantDropdownBtn" @click="open = !open"
+              class="flex items-center gap-1.5 text-sm font-medium text-zinc-100 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg px-3 py-1.5 transition-colors">
+        {{ data.selected_tenant_name }}
+        <span class="material-icons-round text-base" x-text="open ? 'expand_less' : 'expand_more'">expand_more</span>
+      </button>
+      <div x-show="open" @click.away="open = false" x-transition
+           class="absolute left-0 top-full mt-1 z-10 bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl py-1 min-w-max">
+        {% for tenant in data.tenants %}
+        <a href="/home/tenant/{{ tenant.id }}" @click="open = false"
+           class="flex items-center gap-2 px-4 py-2 text-sm hover:bg-zinc-800 transition-colors
+                  {% if tenant.id == data.selected_tenant %}text-indigo-400 font-semibold{% else %}text-zinc-300{% endif %}">
+          {% if tenant.baseline %}
+          <span class="badge-warning text-xs">baseline</span>
+          {% endif %}
+          {{ tenant.display_name }}
         </a>
-        <ul class="dropdown-menu px-2 py-3 me-sm-n4" aria-labelledby="dropdownMenuButton">
-          <li class="mb-2">
-            {% if tenant_data %}
-            <li>
-              {% for tenant in data.tenants %}
-                {% if tenant.baseline == "true" %}
-                  {% if tenant.id == selected_tenant %}
-                    <a class="dropdown-item text-bold text-warning" href="/home/tenant/{{ tenant.id }}">{{ tenant.display_name }}</a>
-                  {% else %}
-                    <a class="dropdown-item text-warning" href="/home/tenant/{{ tenant.id }}">{{ tenant.display_name }}</a>
-                  {% endif %}
-                {% else %}
-                  {% if tenant.id == selected_tenant %}
-                  <a class="dropdown-item text-bold" href="/home/tenant/{{ tenant.id }}">{{ tenant.display_name }}</a>
-                  {% else %}
-                    <a class="dropdown-item" href="/home/tenant/{{ tenant.id }}">{{ tenant.display_name }}</a>
-                  {% endif %}
-                {% endif %}
-              {% endfor %}
-            </li>
-            {% endif %}
-          </li>
-        </ul>
-      </li>
-    </ul>
-    <!--- end tenant selection -->
-
-    <div id="tenantData">
-      <!--- Trends -->
-      <div class="row mt-4">
-        <div class="col-xl-4 col-lg-12 mb-5">
-          <div class="card card-chart">
-            <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
-                <div class="bg-gradient-info shadow-info shadow-info border-radius-lg py-3 pe-1">
-              <canvas id="lineChartTracked" class="chart-canvas" style="display: block; box-sizing: border-box; height: 170px; width: 489.7px;" width="489" height="170"></canvas>
-                </div>
-            </div>
-            <div class="card-body">
-              <h3 class="card-title">Tracked</h3>
-              <p class="card-category">trend over tracked configurations</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-xl-4 col-lg-12 mb-5">
-          <div class="card card-chart">
-            <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
-              <div class="bg-gradient-warning shadow-warning shadow-warning border-radius-lg py-3 pe-1">
-              <canvas id="lineChartDiffs" class="chart-canvas" style="display: block; box-sizing: border-box; height: 170px; width: 489.7px;" width="489" height="170"></canvas>
-            </div>
-            </div>
-            <div class="card-body">
-              <h3 class="card-title">Changes</h3>
-              <p class="card-category">trend over changes between configurations</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-xl-4 col-lg-12 mb-5">
-          <div class="card card-chart">
-            <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
-                <div class="bg-gradient-primary shadow-primary shadow-primary border-radius-lg py-3 pe-1">
-              <canvas id="lineChartAverage" class="chart-canvas" style="display: block; box-sizing: border-box; height: 170px; width: 489.7px;" width="489" height="170"></canvas>
-                </div>
-            </div>
-            <div class="card-body">
-              <h3 class="card-title">Average</h3>
-              <p class="card-category" id="diff-len">change average per last {{ data.diff_len }} records</p>
-            </div>
-          </div>
-        </div>
+        {% endfor %}
       </div>
-      <!--- End Trends -->
-
-      <!--- Diff -->
-      <div class="row mt-4">
-
-        <div class="col-xl-4 col-sm-6 mb-xl-0 mb-5">
-          <div class="card">
-            <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
-              <div class="bg-gradient-info shadow-info shadow-info border-radius-lg py-4">
-              <div class="text-center">
-                <h3 class="text-light" id="tracked"></h3>
-              </div>
-            </div>
-            </div>
-            <div class="card-body">
-              <h4 class="card-title">Tracked configurations</h4>
-            </div>
-            <div class="card-footer d-flex">
-              <i class="material-icons position-relative ms-auto text-lg me-1 my-auto">access_time</i>
-              <p class="font-weight-normal my-auto">Updated on: {{ data.config_data_last_update }}</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-xl-4 col-sm-6 mb-xl-0 mb-5">
-          <div class="card">
-            <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
-              <div class="bg-gradient-success shadow-success shadow-success border-radius-lg py-4">
-              <div class="text-center">
-                <h3 class="text-light" id="match"></h3>
-              </div>
-            </div>
-            </div>
-            <div class="card-body">
-              <h4 class="card-title">Matching</h4>
-            </div>
-            <div class="card-footer d-flex">
-                <i class="material-icons position-relative ms-auto text-lg me-1 my-auto">access_time</i>
-                <p class="font-weight-normal my-auto">Updated on: {{ data.config_data_last_update }}</p>
-              </div>
-          </div>
-        </div>
-
-        <div class="col-xl-4 col-sm-6 mb-xl-0 mb-5">
-          <div class="card">
-            <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2 bg-transparent">
-              <div class="bg-gradient-warning shadow-warning shadow-warning border-radius-lg py-4">
-              <div class="text-center">
-                <h3 class="text-light" id="diff"></h3>
-              </div>
-            </div>
-            </div>
-            <div class="card-body">
-              <h4 class="card-title">Not matching</h4>
-            </div>
-            <div class="card-footer d-flex">
-              <i class="material-icons position-relative ms-auto text-lg me-1 my-auto">access_time</i>
-              <p class="font-weight-normal my-auto" id="diff-last-update">Updated on: {{ data.diff_data_last_update }}</p>
-            </div>
-          </div>
-        </div>
-
-      </div>
-      <!--- End Diff -->
-
-      <!--- Feeds -->
-     {% include "views/home_feeds.html" %}
-      <!--- End Feeds -->
     </div>
   </div>
+  {% endif %}
 
-{% endblock content %}
+  <!-- Metric cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
 
-{% block javascripts %}
-<script src="https://cdn.jsdelivr.net/npm/countup.js@1.8.5/dist/countUp.js" 
-integrity="sha256-uuJpDbZXxCG+b0n1BHZF/culPcadU3xCGhSIrbiypTg=" 
-crossorigin="anonymous"></script>
+    <div class="card p-4">
+      <div class="bg-sky-600/20 border border-sky-600/30 rounded-lg px-4 py-6 text-center mb-3">
+        <span id="tracked" class="text-3xl font-bold text-sky-300">0</span>
+      </div>
+      <h4 class="text-sm font-medium text-zinc-300">Tracked configurations</h4>
+      <p class="text-xs text-zinc-500 mt-1 flex items-center gap-1">
+        <span class="material-icons-round text-xs">schedule</span>
+        Updated: {{ data.config_data_last_update or '—' }}
+      </p>
+    </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.js"
-integrity="sha256-gjQYlCMM/HIX3lODQvv5er+D4m6hfcSetDqlGj8FGj0="
-crossorigin="anonymous"></script>
+    <div class="card p-4">
+      <div class="bg-emerald-600/20 border border-emerald-600/30 rounded-lg px-4 py-6 text-center mb-3">
+        <span id="match" class="text-3xl font-bold text-emerald-300">0</span>
+      </div>
+      <h4 class="text-sm font-medium text-zinc-300">Matching</h4>
+      <p class="text-xs text-zinc-500 mt-1 flex items-center gap-1">
+        <span class="material-icons-round text-xs">schedule</span>
+        Updated: {{ data.config_data_last_update or '—' }}
+      </p>
+    </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js" 
-integrity="sha512-zoJXRvW2gC8Z0Xo3lBbao5+AS3g6YWr5ztKqaicua11xHo+AvE1b0lT9ODgrHTmNUxeCw0Ry4BGRYZfXu70weg==" 
-crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <div class="card p-4">
+      <div class="bg-amber-600/20 border border-amber-600/30 rounded-lg px-4 py-6 text-center mb-3">
+        <span id="diff" class="text-3xl font-bold text-amber-300">0</span>
+      </div>
+      <h4 class="text-sm font-medium text-zinc-300">Not matching</h4>
+      <p class="text-xs text-zinc-500 mt-1 flex items-center gap-1" id="diff-last-update">
+        <span class="material-icons-round text-xs">schedule</span>
+        Updated: {{ data.diff_data_last_update or '—' }}
+      </p>
+    </div>
+
+  </div>
+
+  <!-- Trend charts -->
+  <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-6">
+
+    <div class="card p-4">
+      <div class="bg-sky-700/30 border border-sky-700/40 rounded-lg p-3 mb-3" style="height: 160px;">
+        <canvas id="lineChartTracked"></canvas>
+      </div>
+      <h3 class="text-sm font-semibold text-zinc-200">Tracked</h3>
+      <p class="text-xs text-zinc-500 mt-0.5">Trend over tracked configurations</p>
+    </div>
+
+    <div class="card p-4">
+      <div class="bg-amber-700/30 border border-amber-700/40 rounded-lg p-3 mb-3" style="height: 160px;">
+        <canvas id="lineChartDiffs"></canvas>
+      </div>
+      <h3 class="text-sm font-semibold text-zinc-200">Changes</h3>
+      <p class="text-xs text-zinc-500 mt-0.5">Trend over changes between configurations</p>
+    </div>
+
+    <div class="card p-4">
+      <div class="bg-indigo-700/30 border border-indigo-700/40 rounded-lg p-3 mb-3" style="height: 160px;">
+        <canvas id="lineChartAverage"></canvas>
+      </div>
+      <h3 class="text-sm font-semibold text-zinc-200">Average</h3>
+      <p class="text-xs text-zinc-500 mt-0.5" id="diff-len">change average per last {{ data.diff_len or 0 }} records</p>
+    </div>
+
+  </div>
+
+  <!-- Feeds -->
+  {% include "views/home_feeds.html" %}
+
+</div>
 
 <script>
-$(document).ready(function() {
-  var socket = io.connect();
-  socket.on('intunecdrun', function(data) {
-    updateUI(data);
+  document.addEventListener('DOMContentLoaded', function() {
+    const socket = io.connect();
+    socket.on('intunecdrun', function(data) {
+      updateUI(data);
+    });
+    getSessionStorageData();
+
+    updateCounts({{ data.matchCount | default(0) }}, {{ data.diffCount | default(0) }}, {{ data.trackedCount | default(0) }});
+    drawLineChart("lineChartTracked", {{ data.labelsConfig | tojson }}, {{ data.config_counts | tojson }});
+    drawLineChart("lineChartAverage", {{ data.labelsAverage | tojson }}, {{ data.average_diffs | tojson }});
+    drawLineChart("lineChartDiffs", {{ data.labelsDiff | tojson }}, {{ data.diffs | tojson }});
+    handleTenantClick();
   });
-  getSessionStorageData();
-});
 </script>
-
-<script>
-$(document).ready(function() {
-  updateCounts({{ data.matchCount }}, {{ data.diffCount }}, {{ data.trackedCount }});
-  drawLineChart("lineChartTracked", {{ data.labelsConfig | safe }}, {{ data.config_counts | safe }});
-  drawLineChart("lineChartAverage", {{ data.labelsAverage | safe }}, {{ data.average_diffs | safe }});
-  drawLineChart("lineChartDiffs", {{ data.labelsDiff | safe }}, {{ data.diffs | safe }});
-  $('#dropdownMenuButton').text("{{ data.selected_tenant_name }}");
-  // Handle "Edit" button click
-  handleTenantClick();
-});
-</script>
-
-<style>
-    .dark-version .table> :not(caption)>*>* {
-    border-color: transparent !important;
-    color: rgba(255, 255, 255, 0.6) !important;
-}
-</style>
-
-{% endblock javascripts %}
+{% endblock %}

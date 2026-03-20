@@ -1,80 +1,100 @@
-from app import db, bcrypt
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Optional
+
+import bcrypt
+from sqlalchemy import String
+from sqlalchemy.orm import Mapped, mapped_column
+
+from app.database import Base
 
 
-class summary_config_count(db.Model):
-    id = db.Column(db.Integer, primary_key=True, unique=True)
-    config_count = db.Column(db.Integer, unique=False)
-    last_update = db.Column(db.String, unique=False)
-    tenant = db.Column(db.Integer, unique=False)
+class SummaryConfigCount(Base):
+    __tablename__ = "summary_config_count"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    config_count: Mapped[Optional[int]]
+    last_update: Mapped[Optional[datetime]]
+    tenant: Mapped[Optional[int]]
 
 
-class summary_diff_count(db.Model):
-    id = db.Column(db.Integer, primary_key=True, unique=True)
-    diff_count = db.Column(db.Integer, unique=False)
-    last_update = db.Column(db.String, unique=False)
-    tenant = db.Column(db.Integer, unique=False)
+class SummaryDiffCount(Base):
+    __tablename__ = "summary_diff_count"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    diff_count: Mapped[Optional[int]]
+    last_update: Mapped[Optional[datetime]]
+    tenant: Mapped[Optional[int]]
 
 
-class summary_average_diffs(db.Model):
-    id = db.Column(db.Integer, primary_key=True, unique=True)
-    average_diffs = db.Column(db.Float, unique=False)
-    last_update = db.Column(db.String, unique=False)
-    tenant = db.Column(db.Integer, unique=False)
+class SummaryAverageDiffs(Base):
+    __tablename__ = "summary_average_diffs"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    average_diffs: Mapped[Optional[float]]
+    last_update: Mapped[Optional[datetime]]
+    tenant: Mapped[Optional[int]]
 
 
-class summary_changes(db.Model):
-    id = db.Column(db.Integer, primary_key=True, unique=True)
-    name = db.Column(db.String, unique=False)
-    type = db.Column(db.String, unique=False)
-    diffs = db.Column(db.String, unique=False)
-    tenant = db.Column(db.Integer, unique=False)
+class SummaryChange(Base):
+    __tablename__ = "summary_changes"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[Optional[str]] = mapped_column(String)
+    type: Mapped[Optional[str]] = mapped_column(String)
+    diffs: Mapped[Optional[str]] = mapped_column(String)
+    tenant: Mapped[Optional[int]]
 
 
-class summary_assignments(db.Model):
-    id = db.Column(db.Integer, primary_key=True, unique=True)
-    name = db.Column(db.String, unique=False)
-    type = db.Column(db.String, unique=False)
-    membership_rule = db.Column(db.String, unique=False)
-    assigned_to = db.Column(db.String, unique=False)
-    tenant = db.Column(db.Integer, unique=False)
+class SummaryAssignment(Base):
+    __tablename__ = "summary_assignments"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[Optional[str]] = mapped_column(String)
+    type: Mapped[Optional[str]] = mapped_column(String)
+    membership_rule: Mapped[Optional[str]] = mapped_column(String)
+    assigned_to: Mapped[Optional[str]] = mapped_column(String)
+    tenant: Mapped[Optional[int]]
 
 
-class intunecd_tenants(db.Model):
-    id = db.Column(db.Integer, primary_key=True, unique=True)
-    display_name = db.Column(db.String, unique=False)
-    name = db.Column(db.String, unique=False)
-    repo = db.Column(db.String, unique=False)
-    vault_name = db.Column(db.String, unique=False)
-    update_args = db.Column(db.String, unique=False)
-    backup_args = db.Column(db.String, unique=False)
-    baseline = db.Column(db.String, unique=False)
-    update_feed = db.Column(db.String, unique=False)
-    backup_feed = db.Column(db.String, unique=False)
-    last_update = db.Column(db.String, unique=False)
-    last_update_status = db.Column(db.String, unique=False)
-    last_update_message = db.Column(db.String, unique=False)
-    last_task_id = db.Column(db.String, unique=False)
-    new_branch = db.Column(db.String, unique=False)
-    update_branch = db.Column(db.String, unique=False)
-    create_documentation = db.Column(db.String, unique=False)
+class Tenant(Base):
+    __tablename__ = "intunecd_tenants"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    display_name: Mapped[Optional[str]] = mapped_column(String)
+    name: Mapped[Optional[str]] = mapped_column(String)
+    repo: Mapped[Optional[str]] = mapped_column(String)
+    vault_name: Mapped[Optional[str]] = mapped_column(String)
+    update_args: Mapped[Optional[str]] = mapped_column(String)
+    backup_args: Mapped[Optional[str]] = mapped_column(String)
+    baseline: Mapped[Optional[str]] = mapped_column(String)
+    update_feed: Mapped[Optional[str]] = mapped_column(String)
+    backup_feed: Mapped[Optional[str]] = mapped_column(String)
+    last_update: Mapped[Optional[datetime]]
+    last_update_status: Mapped[Optional[str]] = mapped_column(String)
+    last_update_message: Mapped[Optional[str]] = mapped_column(String)
+    last_task_id: Mapped[Optional[str]] = mapped_column(String)
+    new_branch: Mapped[Optional[str]] = mapped_column(String)
+    update_branch: Mapped[Optional[str]] = mapped_column(String)
+    create_documentation: Mapped[Optional[str]] = mapped_column(String)
 
 
-class api_key(db.Model):
-    id = db.Column(db.Integer, primary_key=True, unique=True)
-    key_hash = db.Column(db.String(length=500), unique=True)
-    key_expiration = db.Column(db.DateTime, unique=True)
+class ApiKey(Base):
+    __tablename__ = "api_key"
 
-    @property
-    def key(self):
-        return self.key
+    id: Mapped[int] = mapped_column(primary_key=True)
+    key_hash: Mapped[Optional[str]] = mapped_column(String(500), unique=True)
+    key_expiration: Mapped[Optional[datetime]]
 
-    @key.setter
-    def key(self, plain_text_key):
-        self.key_hash = bcrypt.generate_password_hash(plain_text_key).decode("utf-8")
+    def set_key(self, plain_text_key: str) -> None:
+        self.key_hash = bcrypt.hashpw(
+            plain_text_key.encode("utf-8"), bcrypt.gensalt()
+        ).decode("utf-8")
 
-    def check_key_correction(self, attempted_key):
-        return bcrypt.check_password_hash(self.key_hash, attempted_key)
-
-
-db.create_all()
-db.session.commit()
+    def check_key(self, attempted_key: str) -> bool:
+        if not self.key_hash:
+            return False
+        return bcrypt.checkpw(
+            attempted_key.encode("utf-8"), self.key_hash.encode("utf-8")
+        )

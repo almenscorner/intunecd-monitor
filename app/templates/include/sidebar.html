@@ -1,131 +1,74 @@
-<aside
-  class="sidenav navbar navbar-vertical navbar-expand-xs border-0 border-radius-xl my-3 fixed-start ms-3 bg-gradient-dark"
-  id="sidenav-main">
-  <div class="sidenav-header">
-    <i class="fas fa-times p-3 cursor-pointer text-white opacity-5 position-absolute end-0 top-0 d-none d-xl-none"
-      aria-hidden="true" id="iconSidenav"></i>
-    {% if company_name %}
-    <a class="navbar-brand m-0" href=" {{ url_for('home') }} " target="_blank">
-      <span class="ms-1 font-weight-bold text-white">{{ company_name }}</span>
-      <br>
-      <span class="ms-1 text-white">IntuneCD Monitor</span>
+{% set pages = [
+  ("home",          "dashboard",              "Dashboard",     "/"),
+  ("changes",       "published_with_changes", "Changes",       "/changes"),
+  ("documentation", "article",                "Documentation", "/documentation"),
+  ("assignments",   "group",                  "Assignments",   "/assignments"),
+  ("schedules",     "calendar_month",         "Schedules",     "/schedules"),
+  ("settings",      "settings",               "Settings",      "/settings"),
+] %}
+
+<aside class="fixed top-0 left-0 h-screen w-64 bg-zinc-900 border-r border-zinc-800 flex flex-col z-30">
+
+  <!-- Brand -->
+  <div class="px-5 py-5 border-b border-zinc-800 flex-shrink-0">
+    <a href="/" class="flex items-center gap-2 text-zinc-100 font-semibold text-sm truncate">
+      <span class="material-icons-round text-indigo-500 text-xl">shield</span>
+      {{ company_name or "IntuneCD Monitor" }}
     </a>
-    {% else %}
-    <a class="navbar-brand m-0" href=" https://github.com/almenscorner/intunecd " target="_blank">
-      <span class="ms-1 font-weight-bold text-white">IntuneCD Monitor</span>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
+
+    <p class="text-xs font-semibold text-zinc-500 uppercase tracking-wider px-3 pb-2">Navigation</p>
+
+    {% for seg, icon, label, href in pages %}
+    <a href="{{ href }}"
+       class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+              {% if segment and seg in segment %}bg-indigo-600 text-white{% else %}text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800{% endif %}">
+      <span class="material-icons-round text-base">{{ icon }}</span>
+      {{ label }}
     </a>
-    {% endif %}
+    {% endfor %}
+
+    <p class="text-xs font-semibold text-zinc-500 uppercase tracking-wider px-3 pt-4 pb-2">Multi-Tenancy</p>
+
+    <a href="/tenants"
+       class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+              {% if segment and 'tenants' in segment %}bg-indigo-600 text-white{% else %}text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800{% endif %}">
+      <span class="material-icons-round text-base">account_tree</span>
+      Tenants
+    </a>
+
+    <p class="text-xs font-semibold text-zinc-500 uppercase tracking-wider px-3 pt-4 pb-2">Docs</p>
+
+    <a href="/docs" target="_blank"
+       class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors">
+      <span class="material-icons-round text-base">code</span>
+      API Docs
+    </a>
+
+    <a href="https://github.com/almenscorner/intunecd-monitor/wiki" target="_blank"
+       class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors">
+      <span class="material-icons-round text-base">menu_book</span>
+      Wiki
+    </a>
+
+  </nav>
+
+  <!-- Account -->
+  <div class="border-t border-zinc-800 px-3 py-3 space-y-0.5 flex-shrink-0">
+    <a href="/profile"
+       class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
+              {% if segment and 'profile' in segment %}bg-indigo-600 text-white{% else %}text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800{% endif %}">
+      <span class="material-icons-round text-base">person</span>
+      Profile
+    </a>
+    <a href="/logout"
+       class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-zinc-400 hover:text-rose-400 hover:bg-zinc-800 transition-colors">
+      <span class="material-icons-round text-base">logout</span>
+      Sign Out
+    </a>
   </div>
-  <hr class="horizontal light mt-0 mb-2">
-  <div class="collapse navbar-collapse  w-auto h-auto" id="sidenav-collapse-main">
-    <ul class="navbar-nav">
-      <li class="nav-item">
-        <a class="nav-link text-white {% if 'home' in segment %} active bg-gradient-primary {% endif %}"
-          href="{{ url_for('home') }}">
-          <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
-            <i class="material-icons opacity-10">dashboard</i>
-          </div>
-          <span class="nav-link-text ms-1">Dashboard</span>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link text-white {% if 'changes' in segment %} active bg-gradient-primary {% endif %}"
-          href="{{ url_for('changes') }}">
-          <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
-            <i class="material-icons opacity-10">published_with_changes</i>
-          </div>
-          <span class="nav-link-text ms-1">Changes</span>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link text-white {% if 'documentation' in segment %} active bg-gradient-primary {% endif %}"
-          href="{{ url_for('documentation') }}">
-          <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
-            <i class="material-icons opacity-10">article</i>
-          </div>
-          <span class="nav-link-text ms-1">Documentation</span>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link text-white {% if 'assignments' in segment %} active bg-gradient-primary {% endif %}"
-          href="{{ url_for('assignments') }}">
-          <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
-            <i class="material-icons opacity-10">group</i>
-          </div>
-          <span class="nav-link-text ms-1">Assignments</span>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link text-white {% if 'schedules' in segment %} active bg-gradient-primary {% endif %}"
-          href="{{ url_for('schedules') }}">
-          <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
-            <i class="material-icons opacity-10">calendar_month</i>
-          </div>
-          <span class="nav-link-text ms-1">Schedules</span>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link text-white {% if 'settings' in segment %} active bg-gradient-primary {% endif %}"
-          href="{{ url_for('settings') }}">
-          <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
-            <i class="material-icons opacity-10">settings</i>
-          </div>
-          <span class="nav-link-text ms-1">Settings</span>
-        </a>
-      </li>
-      <li class="nav-item mt-3">
-        <h6 class="ps-4 ms-2 text-uppercase text-xs text-white font-weight-bolder opacity-8">Multi Tenancy</h6>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link text-white {% if 'tenants' in segment %} active bg-gradient-primary {% endif %}"
-          href="{{ url_for('tenants') }}">
-          <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
-            <i class="material-icons opacity-10">account_tree</i>
-          </div>
-          <span class="nav-link-text ms-1">Tenants</span>
-        </a>
-      </li>
-      <li class="nav-item mt-3">
-        <h6 class="ps-4 ms-2 text-uppercase text-xs text-white font-weight-bolder opacity-8">Docs</h6>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link text-white"
-          href="/apidocs" target="_blank">
-          <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
-            <i class="material-icons opacity-10">code</i>
-          </div>
-          <span class="nav-link-text ms-1">API Docs</span>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link text-white"
-        href="https://github.com/almenscorner/intunecd-monitor/wiki" target="_blank">
-        <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
-          <i class="fa fa-github fa-lg opacity-10"></i>
-        </div>
-        <span class="nav-link-text ms-1">Wiki</span>
-      </a>
-      </li>
-      <li class="nav-item mt-3">
-        <h6 class="ps-4 ms-2 text-uppercase text-xs text-white font-weight-bolder opacity-8">Account</h6>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link text-white {% if 'profile' in segment %} active bg-gradient-primary {% endif %}"
-          href="{{ url_for('profile') }}">
-          <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
-            <i class="material-icons opacity-10">person</i>
-          </div>
-          <span class="nav-link-text ms-1">Profile</span>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link text-white " href="/logout">
-          <div class="text-white text-center me-2 d-flex align-items-center justify-content-center">
-            <i class="material-icons opacity-10">logout</i>
-          </div>
-          <span class="nav-link-text ms-1">Sign Out</span>
-        </a>
-      </li>
-    </ul>
-  </div>
+
 </aside>

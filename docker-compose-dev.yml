@@ -2,59 +2,82 @@ version: "3.8"
 
 services:
 
-  web:
-    build: ./
-    container_name: intunecd
-    restart: always
-    entrypoint: ./server-entrypoint.sh
-    env_file:
-      - .env
-    expose:
-     - 8080
+  db:
+    image: postgres:16-alpine
+    container_name: intunecd-db-dev
+    restart: unless-stopped
     environment:
-      - TZ=Europe/Stockholm
-    volumes:
-      - ./db:/intunecd/db
-      - ./documentation:/documentation
-      - ./:/intunecd
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: intunecd
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
-      image: "redis:6.0.5-buster"
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+      target: web
+    container_name: intunecd-dev
+    restart: unless-stopped
+    entrypoint: ./server-entrypoint.sh
+    env_file: .env
+    expose:
+      - 8080
+    volumes:
+      - ./:/intunecd
+      - ./documentation:/documentation
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   worker:
-    build: ./
-    entrypoint: celery
-    command: -A app.celery worker -l info
-    depends_on:
-      - "redis"
-    env_file:
-      - .env
-    environment:
-      - TZ=Europe/Stockholm
+    build:
+      context: ./
+      dockerfile: Dockerfile-worker
+      target: worker
+    entrypoint: ./worker-entrypoint.sh
+    env_file: .env
     volumes:
-      - ./db:/intunecd/db
-      - ./documentation:/documentation
+      - ./:/intunecd
+    depends_on:
+      redis:
+        condition: service_healthy
 
   beat:
-    build: ./
-    entrypoint: celery
-    command: -A app.celery beat -S sqlalchemy_celery_beat.schedulers:DatabaseScheduler -l info
-    depends_on:
-      - "redis"
-    env_file:
-      - .env
-    environment:
-      - TZ=Europe/Stockholm
+    build:
+      context: ./
+      dockerfile: Dockerfile-beat
+      target: beat
+    entrypoint: ./beat-entrypoint.sh
+    env_file: .env
     volumes:
-      - ./db:/intunecd/db
-      - ./documentation:/documentation
+      - ./:/intunecd
+    depends_on:
+      redis:
+        condition: service_healthy
 
   nginx:
     build: ./nginx-dev
-    container_name: nginx
-    restart: always
+    container_name: nginx-dev
+    restart: unless-stopped
     command: ["/bin/sh", "-c", "envsubst < /etc/nginx/conf.d/nginx.conf.template > /etc/nginx/conf.d/nginx.conf && exec nginx -g 'daemon off;'"]
     environment:
-      - SERVER_NAME=http://localhost
+      SERVER_NAME: localhost
     ports:
-      - 80:80
+      - "80:80"
+    depends_on:
+      - web

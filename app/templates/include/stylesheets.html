@@ -1,10 +1,55 @@
-  <!--     Fonts and icons     -->
-  <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700,900|Roboto+Slab:400,700" />
-  <link href="{{ url_for('static', filename='assets/css/nucleo-icons.css') }}" rel="stylesheet" />
-  <link href="{{ url_for('static', filename='assets/css/nucleo-svg.css') }}" rel="stylesheet" />
-  <!-- Font Awesome Icons -->
-  <script src="https://kit.fontawesome.com/42d5adcbca.js" crossorigin="anonymous"></script>
-  <!-- Material Icons -->
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-  <!-- CSS Files -->
-  <link id="pagestyle" href="{{ url_for('static', filename='assets/css/material-dashboard.css') }}?v=3.0.2" rel="stylesheet" />
+<!-- Inter font -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- Material Icons Round -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Icons+Round" rel="stylesheet">
+
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Inter', 'sans-serif'] }
+      }
+    }
+  }
+</script>
+
+<style type="text/tailwindcss">
+  @layer base {
+    html { @apply dark; }
+    body { @apply bg-zinc-950 text-zinc-100 font-sans antialiased; }
+    ::-webkit-scrollbar { @apply w-1.5; }
+    ::-webkit-scrollbar-track { @apply bg-zinc-900; }
+    ::-webkit-scrollbar-thumb { @apply bg-zinc-700 rounded-full; }
+  }
+  @layer components {
+    .btn-primary { @apply inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors; }
+    .btn-danger  { @apply inline-flex items-center gap-1.5 bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors; }
+    .btn-ghost   { @apply inline-flex items-center gap-1.5 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 px-3 py-2 rounded-lg text-sm transition-colors; }
+    .card        { @apply bg-zinc-900 border border-zinc-800 rounded-xl; }
+    .input       { @apply w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm; }
+    .label       { @apply block text-xs font-medium text-zinc-400 mb-1; }
+    .badge-success  { @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-500/10 text-emerald-400; }
+    .badge-warning  { @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-500/10 text-amber-400; }
+    .badge-danger   { @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-rose-500/10 text-rose-400; }
+    .badge-info     { @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-sky-500/10 text-sky-400; }
+    .prose-doc h1,
+    .prose-doc h2,
+    .prose-doc h3  { @apply text-zinc-100 font-semibold mt-6 mb-3; }
+    .prose-doc p   { @apply text-zinc-300 mb-3; }
+    .prose-doc code { @apply bg-zinc-800 text-indigo-300 px-1 rounded text-sm; }
+    .prose-doc pre  { @apply bg-zinc-900 border border-zinc-800 rounded-lg p-4 overflow-x-auto mb-4; }
+    .prose-doc a    { @apply text-indigo-400 hover:text-indigo-300; }
+    .prose-doc ul   { @apply list-disc list-inside text-zinc-300 mb-3; }
+    .prose-doc table { @apply w-full text-sm mb-4; }
+    .prose-doc th   { @apply text-left text-zinc-400 font-medium border-b border-zinc-800 pb-2 pr-4; }
+    .prose-doc td   { @apply py-2 border-b border-zinc-800 text-zinc-300 pr-4; }
+  }
+</style>
+
+{% block stylesheets %}{% endblock %}

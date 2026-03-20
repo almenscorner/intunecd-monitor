@@ -1,216 +1,196 @@
 {% extends "base/template.html" %}
-
-{% block title %} Schedules {% endblock title %}
-
-{% block stylesheets %}{% endblock stylesheets %}
+{% block title %}Schedules{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
-    <!-- Add New Modal -->
-    <div class="modal fade" id="new-schedule-form" tabindex="-1" role="dialog" aria-labelledby="modal-form" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
-            <div class="modal-content">
-            <div class="modal-body p-0">
-                <div class="card card-plain">
-                <div class="card-header pb-0 text-left">
-                    <h5 class="">Add new schedule</h5>
-                </div>
-                <div class="card-body">
-                    <form role="form text-left" action="/schedules/add" method="post">
-                        <div class="input-group input-group-outline my-3">
-                            <label class="form-label">Display Name</label>
-                            <input type="text" name="display_name" class="form-control" onfocus="focused(this)" onfocusout="defocused(this)" required>
-                        </div>
-                        <div class="form-check my-3" style="padding-left: 0;">
-                            <input class="form-check-input" type="checkbox" id="hourlyCheck" name="schedule_hourly" value="false" onclick="toggleOptions(); updateValue(this)">
-                            <label class="custom-control-label" for="hourlyCheck">Run hourly</label>
-                        </div>
-                        <div class="form-check my-3" style="padding-left: 0;">
-                            <input class="form-check-input" type="checkbox" id="dailyCheck" name="schedule_daily" value="false" onclick="toggleOptions(); updateValue(this)">
-                            <label class="custom-control-label" for="dailyCheck">Run daily</label>
-                        </div>
-                        <div class="form-check my-3" style="padding-left: 0;">
-                            <input class="form-check-input" type="checkbox" id="weeklyCheck" name="schedule_weekly" value="false" onclick="toggleOptions(); updateValue(this)">
-                            <label class="custom-control-label" for="weeklyCheck">Run weekly</label>
-                        </div>
-                          
-                        <div id="weeklyOptions" style="display: none;">
-                            <label for="dayOfWeek">Day of week:</label>
-                            <select name="dayOfWeek" id="dayOfWeek">
-                                <option value="0">Sunday</option>
-                                <option value="1">Monday</option>
-                                <option value="2">Tuesday</option>
-                                <option value="3">Wednesday</option>
-                                <option value="4">Thursday</option>
-                                <option value="5">Friday</option>
-                                <option value="6">Saturday</option>
-                            </select>
-                        </div>
-                        <div id="timeOptions" style="display: none">
-                            <label for="timeOfDay">Time of day:</label>
-                            <input type="time" id="timeOfDay" name="timeOfDay" value="12:00">
-                        </div>
-                        <div id="timeOptionsHourly" style="display: none">
-                            <label for="timeOfDayHourly">Start minute:</label>
-                            <select name="timeOfDayHourly" id="timeOfDayHourly">
-                                <option value="00">00</option>
-                                <option value="15">15</option>
-                                <option value="30">30</option>
-                                <option value="45">45</option>
-                            </select>
-                        </div>
+<div class="p-6" x-data="{ modalOpen: false }">
 
-                        <h6 class="mt-4">Tenant</h6>
-                        <label for="tenant">Select a tenant:</label>
-                        <select name="schedule_tenant" id="tenant" onchange="toggleTypes()">
-                            {% for tenant in tenants %}
-                                <option value="{{ tenant.id }}">{{ tenant.name }}</option>
-                            {% endfor %}
-                        </select>
-                        <h6 class="mt-4">Type</h6>
-                        <label for="type">Select a type:</label>
-                        <select name="schedule_type" id="type">
-                        </select>
-                        <div class="text-center">
-                            <button type="submit" class="btn btn-round bg-gradient-primary btn-lg w-100 mt-4 mb-0">Save</button>
-                        </div>
-                    </form>
-                </div>
-                </div>
-            </div>
-            </div>
+  <!-- Add Schedule Modal -->
+  <div x-show="modalOpen" x-transition class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-zinc-950/80" @click="modalOpen = false"></div>
+    <div class="relative bg-zinc-900 border border-zinc-700 rounded-2xl w-full max-w-md shadow-2xl overflow-y-auto max-h-[90vh]">
+      <div class="px-6 py-5 border-b border-zinc-800 flex items-center justify-between">
+        <h2 class="text-base font-semibold text-zinc-100">Add new schedule</h2>
+        <button @click="modalOpen = false" class="text-zinc-500 hover:text-zinc-300 transition-colors">
+          <span class="material-icons-round">close</span>
+        </button>
+      </div>
+      <form action="/schedules/add" method="post" class="px-6 py-5 space-y-4">
+        <div>
+          <label class="label">Display Name <span class="text-rose-400">*</span></label>
+          <input type="text" name="display_name" class="input w-full" required />
         </div>
+
+        <!-- Frequency -->
+        <div class="space-y-2">
+          <label class="label">Frequency</label>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" id="hourlyCheck" name="schedule_hourly" value="false"
+                   onclick="updateScheduleValue(this); toggleScheduleOptions()"
+                   class="rounded border-zinc-600 bg-zinc-800 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-zinc-900" />
+            <span class="text-sm text-zinc-300">Run hourly</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" id="dailyCheck" name="schedule_daily" value="false"
+                   onclick="updateScheduleValue(this); toggleScheduleOptions()"
+                   class="rounded border-zinc-600 bg-zinc-800 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-zinc-900" />
+            <span class="text-sm text-zinc-300">Run daily</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" id="weeklyCheck" name="schedule_weekly" value="false"
+                   onclick="updateScheduleValue(this); toggleScheduleOptions()"
+                   class="rounded border-zinc-600 bg-zinc-800 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-zinc-900" />
+            <span class="text-sm text-zinc-300">Run weekly</span>
+          </label>
+        </div>
+
+        <div id="weeklyOptions" class="hidden">
+          <label class="label">Day of week</label>
+          <select name="dayOfWeek" id="dayOfWeek" class="input w-full">
+            <option value="0">Sunday</option>
+            <option value="1">Monday</option>
+            <option value="2">Tuesday</option>
+            <option value="3">Wednesday</option>
+            <option value="4">Thursday</option>
+            <option value="5">Friday</option>
+            <option value="6">Saturday</option>
+          </select>
+        </div>
+
+        <div id="timeOptions" class="hidden">
+          <label class="label">Time of day</label>
+          <input type="time" id="timeOfDay" name="timeOfDay" value="12:00" class="input" />
+        </div>
+
+        <div id="timeOptionsHourly" class="hidden">
+          <label class="label">Start minute</label>
+          <select name="timeOfDayHourly" id="timeOfDayHourly" class="input w-full max-w-xs">
+            <option value="00">:00</option>
+            <option value="15">:15</option>
+            <option value="30">:30</option>
+            <option value="45">:45</option>
+          </select>
+        </div>
+
+        <!-- Tenant -->
+        <div>
+          <label class="label">Tenant</label>
+          <select name="schedule_tenant" id="tenant" onchange="toggleTypes()" class="input w-full">
+            {% for tenant in tenants %}
+            <option value="{{ tenant.id }}">{{ tenant.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Type -->
+        <div>
+          <label class="label">Type</label>
+          <select name="schedule_type" id="type" class="input w-full"></select>
+        </div>
+
+        <div class="pt-2">
+          <button type="submit" class="btn-primary w-full justify-center">Save</button>
+        </div>
+      </form>
     </div>
-    <!-- End Add New Modal -->
-    <div class="row mt-4">
-        <div class="col-lg-2">
-            <div class="position-sticky pb-lg-5 pb-3 mt-lg-0 mt-5 ps-2" style="top: 100px">
-                <h3>Schedules</h3>
-                <h6 class="text-secondary font-weight-normal pe-3">Overview of added scheduless
-            </div>
-        </div>
-        <div class="col-lg-9">
-            <div class="card" style="max-width: 70rem;">
-                <div class="card-header pb-0">
-                    <div class="row">
-                        <div class="col-lg-6 col-7">
-                            <button type="button" class="btn btn-link text-dark text-gradient px-3 mb-0" data-bs-toggle="modal" data-bs-target="#new-schedule-form" onclick="toggleTypes()">
-                                <i class="material-icons text-sm me-2" type="submit">add</i>new schedule
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-body px-4 pb-2">
-                    {% if schedules %}
-                    {% for schedule in schedules %}
-                        <ul class="list-group">
-                        <li class="list-group-item border-0 d-flex p-4 mb-2 bg-gray-100 border-radius-lg">
-                            <div class="d-flex flex-column">
-                            <h6 class="mb-3 text-sm">{{ schedule.name }}</h6>
-                            <span class="mb-2 text-xs">Type: <span class="text-dark ms-sm-2">{{ schedule.task }}</span></span>
-                            <span class="mb-2 text-xs">Tenant: <span class="text-dark ms-sm-2">{{ schedule.tenant }}</span></span>
-                            <span class="mb-2 text-xs">When: <span class="text-dark ms-sm-2">{{ schedule.run_when }}</span></span>
-                            <span class="mb-2 text-xs">Run count: <span class="text-dark ms-sm-2">{{ schedule.run_count }}</span></span>
-                            </div>
-                            <div class="ms-auto text-end">
-                                <a class="btn btn-link text-danger text-gradient px-3 mb-0" href="/schedules/delete/{{ schedule.name }}"><i
-                                    class="material-icons text-sm me-2" type="submit">delete</i>Delete</a>
-                            </div>
-                        </ul>
-                    {% endfor %}
-                    {% endif %}
-                </div>
-            </div>
-        </div>
+  </div>
+
+  <!-- Page header -->
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h2 class="text-base font-semibold text-zinc-100">Schedules</h2>
+      <p class="text-xs text-zinc-500 mt-0.5">Overview of added schedules</p>
     </div>
+    <button @click="modalOpen = true; $nextTick(() => toggleTypes())" class="btn-primary">
+      <span class="material-icons-round text-base">add</span>
+      New schedule
+    </button>
+  </div>
+
+  <!-- Schedule list -->
+  <div class="space-y-3 max-w-3xl">
+    {% if schedules %}
+    {% for schedule in schedules %}
+    <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 flex items-start justify-between gap-4">
+      <div class="space-y-1.5 min-w-0">
+        <h3 class="text-sm font-semibold text-zinc-100">{{ schedule.name }}</h3>
+        <p class="text-xs text-zinc-500">Type: <span class="text-zinc-300">{{ schedule.task }}</span></p>
+        <p class="text-xs text-zinc-500">Tenant: <span class="text-zinc-300">{{ schedule.tenant }}</span></p>
+        <p class="text-xs text-zinc-500">When: <span class="text-zinc-300">{{ schedule.run_when }}</span></p>
+        <p class="text-xs text-zinc-500">Run count: <span class="text-zinc-300">{{ schedule.run_count }}</span></p>
+      </div>
+      <a href="/schedules/delete/{{ schedule.name }}"
+         onclick="return confirm('Delete schedule {{ schedule.name }}?')"
+         class="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-rose-400 bg-zinc-800 border border-zinc-700 hover:border-rose-700/50 rounded-lg px-3 py-1.5 transition-colors flex-shrink-0">
+        <span class="material-icons-round text-sm">delete</span>
+        Delete
+      </a>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="text-center py-12 text-zinc-600">
+      <span class="material-icons-round text-4xl mb-2 block">calendar_month</span>
+      <p class="text-sm">No schedules added yet.</p>
+    </div>
+    {% endif %}
+  </div>
+
 </div>
-{% endblock content %}
 
-{% block javascripts %}
 <script>
-    function updateValue(checkbox) {
-        if (checkbox.checked) {
-            checkbox.value = "true";
-            var checkboxes = document.querySelectorAll("input[name^='schedule_']");
-            for (var i = 0; i < checkboxes.length; i++) {
-                if (checkboxes[i] != checkbox) {
-                    checkboxes[i].checked = false;
-                    checkboxes[i].value = "false";
-                    toggleOptions();
-                }
-            }
+  var _tenants = {{ tenants_toggle | tojson }};
+
+  function updateScheduleValue(checkbox) {
+    checkbox.value = checkbox.checked ? "true" : "false";
+    if (checkbox.checked) {
+      document.querySelectorAll("input[name^='schedule_']").forEach(function(cb) {
+        if (cb !== checkbox) {
+          cb.checked = false;
+          cb.value = "false";
+        }
+      });
+    }
+  }
+
+  function toggleScheduleOptions() {
+    var hourly = document.getElementById("hourlyCheck");
+    var daily = document.getElementById("dailyCheck");
+    var weekly = document.getElementById("weeklyCheck");
+    var weeklyOpts = document.getElementById("weeklyOptions");
+    var timeOpts = document.getElementById("timeOptions");
+    var timeOptsHourly = document.getElementById("timeOptionsHourly");
+    if (!weeklyOpts) return;
+
+    weeklyOpts.classList.add("hidden");
+    timeOpts.classList.add("hidden");
+    timeOptsHourly.classList.add("hidden");
+
+    if (weekly && weekly.checked) {
+      weeklyOpts.classList.remove("hidden");
+      timeOpts.classList.remove("hidden");
+    } else if (daily && daily.checked) {
+      timeOpts.classList.remove("hidden");
+    } else if (hourly && hourly.checked) {
+      timeOptsHourly.classList.remove("hidden");
+    }
+  }
+
+  function toggleTypes() {
+    var tenantSelect = document.getElementById("tenant");
+    var typeSelect = document.getElementById("type");
+    if (!tenantSelect || !typeSelect) return;
+    var selectedId = parseInt(tenantSelect.value);
+    typeSelect.innerHTML = "";
+    for (var i = 0; i < _tenants.length; i++) {
+      if (_tenants[i].id == selectedId) {
+        if (_tenants[i].repo) {
+          typeSelect.add(new Option("Backup", "backup"));
+          typeSelect.add(new Option("Update", "update"));
         } else {
-            checkbox.value = "false";
+          typeSelect.add(new Option("Update", "update"));
         }
+        break;
+      }
     }
+  }
 </script>
-
-<script>
-    function toggleOptions() {
-        var hourlyCheck = document.getElementById("hourlyCheck");
-        var dailyCheck = document.getElementById("dailyCheck");
-        var weeklyCheck = document.getElementById("weeklyCheck");
-        var weeklyOptions = document.getElementById("weeklyOptions");
-        var timeOptions = document.getElementById("timeOptions");
-        
-        if (weeklyCheck.checked) {
-            weeklyOptions.style.display = "block";
-            timeOptions.style.display = "block";
-            timeOptionsHourly.style.display = "none";
-
-        } 
-        else if (dailyCheck.checked) {
-            timeOptions.style.display = "block";
-            timeOptionsHourly.style.display = "none";
-            weeklyOptions.style.display = "none";
-        }
-        else if (hourlyCheck.checked) {
-            timeOptions.style.display = "none";
-            weeklyOptions.style.display = "none";
-            timeOptionsHourly.style.display = "block";
-        }
-        else {
-            timeOptions.style.display = "none";
-            weeklyOptions.style.display = "none";
-            timeOptionsHourly.style.display = "none";
-        }
-    }
-</script>
-
-<script>
-    function toggleTypes() {
-        // get the selected value
-        var selectedTenant = document.getElementById("tenant").value;
-        var typeSelect = document.getElementById("type");
-        // clear existing options
-        typeSelect.innerHTML = "";
-        var tenants = JSON.parse('{{ tenants_toggle|safe }}');
-        var option1 = document.createElement("option");
-        var option2 = document.createElement("option");
-        for (var i = 0; i < tenants.length; i++) {
-            if (tenants[i].id == selectedTenant) {
-                if (tenants[i].repo) {
-                    // add backup options
-                    option1.value = "backup";
-                    option1.text = "Backup";
-                    typeSelect.add(option1);
-                    option2.value = "update";
-                    option2.text = "Update";
-                    typeSelect.add(option2);
-                }
-                else {
-                    // add update option
-                    option1.value = "update";
-                    option1.text = "Update";
-                    typeSelect.add(option1);
-                }
-                break;
-            }
-        }
-    }
-    
-    window.onload = function() {
-        toggleTypes();
-    };
-</script>
-{% endblock javascripts %}
+{% endblock %}

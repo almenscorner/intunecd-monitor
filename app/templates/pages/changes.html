@@ -1,79 +1,63 @@
 {% extends "base/template.html" %}
-
-{% block title %} Changes {% endblock title %}
-
-{% block stylesheets %}{% endblock stylesheets %}
+{% block title %}Changes{% endblock %}
 
 {% block content %}
-{% for tenant in tenant_changes %}
-{% if tenant.data.changes %}
-<div class="container-fluid py-4">
-    <div class="row mt-4">
-        <div class="col-lg-2">
-            <div class="position-sticky pb-lg-5 pb-3 mt-lg-0 mt-5 ps-2" style="top: 100px">
-                <h3>{{ tenant.name }}</h3>
-                <h6 class="text-secondary font-weight-normal pe-3">Summary of changes from last 180 records</h6>
-            </div>
-        </div>
-        <div class="col-lg-9">
-
-            <div class="card">
-                <div class="card-body px-4 pb-2" style="height: calc(100vh - 360px); overflow: auto;">
-                    <input class="form-control" id="accordionSearch-{{ tenant.id }}" type="text" placeholder="Search.." onclick="attachAccordionListener({{ tenant.id }})">
-                    <div class="accordion accordion-flush" id="accordionFlush-{{ tenant.id }}">
-                        {% for change in tenant.data.changes %}
-                        <div class="accordion-item">
-                            <h2 class="accordion-header" id="flush-{{ change.id }}">
-                                <button class="accordion-button collapsed" type="button"
-                                    data-bs-toggle="collapse" data-bs-target="#flush-collapse-{{ change.id }}"
-                                    aria-expanded="false" aria-controls="flush-collapse-{{ change.id }}">
-                                    <p>
-                                        <strong>Name: </strong> {{ change.name }}
-                                        <br>
-                                        <strong>Type: </strong> {{ change.type }}
-                                    </p>
-                                </button>
-                            </h2>
-                            <div id="flush-collapse-{{ change.id }}" class="accordion-collapse collapse"
-                                aria-labelledby="flush-{{ change.id }}" data-bs-parent="#accordionFlush">
-                                <div class="accordion-body">
-                                    <div class="table-responsive">
-                                        <table class="table table-hover">
-                                            <thead>
-                                                <tr>
-                                                    <th>Setting</th>
-                                                    <th>New value</th>
-                                                    <th>Old value</th>
-                                                    <th>Date</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody class="table-body">
-                                            {% for diff in change.diffs %}
-                                                <tr>
-                                                    <td class="align-middle text-m">{{ diff.setting }}</td>
-                                                    <td class="align-middle text-m">{{ diff.new_val }}</td>
-                                                    <td class="align-middle text-m">{{ diff.old_val }}</td>
-                                                    <td class="align-middle text-m">{{ diff.change_date }}</td>
-                                                </tr>
-                                            {% endfor %}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                            <hr class="hr" />
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-
-        </div>
+<div class="p-6 space-y-8">
+  {% for tenant in tenant_changes %}
+  {% if tenant.data.changes %}
+  <div>
+    <div class="mb-4">
+      <h2 class="text-base font-semibold text-zinc-100">{{ tenant.name }}</h2>
+      <p class="text-xs text-zinc-500 mt-0.5">Summary of changes from last 180 records</p>
     </div>
-</div>
-{% endif %}
-{% endfor %}
-{% endblock content %}
 
-{% block javascripts %}
-{% endblock javascripts %}
+    <div class="card p-5">
+      <div class="mb-3">
+        <input id="accordionSearch-{{ tenant.id }}" type="text" placeholder="Search…"
+               onclick="attachAccordionListener({{ tenant.id }})"
+               class="input w-full text-sm" />
+      </div>
+
+      <div id="accordionFlush-{{ tenant.id }}" class="space-y-1">
+        {% for change in tenant.data.changes %}
+        <div class="accordion-item border border-zinc-800 rounded-lg overflow-hidden" x-data="{ open: false }">
+          <button type="button" @click="open = !open"
+                  class="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-zinc-800/50 transition-colors">
+            <div>
+              <p class="text-sm text-zinc-200"><span class="text-zinc-500">Name:</span> {{ change.name }}</p>
+              <p class="text-xs text-zinc-500 mt-0.5"><span>Type:</span> {{ change.type }}</p>
+            </div>
+            <span class="material-icons-round text-zinc-500 text-xl flex-shrink-0 ml-3"
+                  x-text="open ? 'expand_less' : 'expand_more'">expand_more</span>
+          </button>
+          <div x-show="open" x-transition class="border-t border-zinc-800 overflow-x-auto">
+            <table class="w-full text-xs">
+              <thead>
+                <tr class="border-b border-zinc-800">
+                  <th class="px-4 py-2.5 text-left font-semibold text-zinc-400 uppercase tracking-wider">Setting</th>
+                  <th class="px-4 py-2.5 text-left font-semibold text-zinc-400 uppercase tracking-wider">New value</th>
+                  <th class="px-4 py-2.5 text-left font-semibold text-zinc-400 uppercase tracking-wider">Old value</th>
+                  <th class="px-4 py-2.5 text-left font-semibold text-zinc-400 uppercase tracking-wider">Date</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-zinc-800">
+                {% for diff in change.diffs %}
+                <tr class="hover:bg-zinc-800/40 transition-colors">
+                  <td class="px-4 py-2.5 text-zinc-300">{{ diff.setting }}</td>
+                  <td class="px-4 py-2.5 text-emerald-400">{{ diff.new_val }}</td>
+                  <td class="px-4 py-2.5 text-rose-400">{{ diff.old_val }}</td>
+                  <td class="px-4 py-2.5 text-zinc-500">{{ diff.change_date }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  {% endfor %}
+</div>
+{% endblock %}

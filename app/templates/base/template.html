@@ -1,133 +1,33 @@
-<!--
-=========================================================
-* Material Dashboard 2 - v3.1.0
-=========================================================
-
-* Product Page: https://www.creative-tim.com/product/material-dashboard
-* Copyright 2022 Creative Tim (https://www.creative-tim.com)
-* Licensed under MIT (https://www.creative-tim.com/license)
-* Coded by Creative Tim
-
-=========================================================
-
-* The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
--->
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="en" class="dark">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-  <title>
-    {% block title %}{% endblock title %}
-  </title>
-
-  <!--     Fonts and icons     -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}IntuneCD Monitor{% endblock %}</title>
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='icon-72x72.png') }}" />
-  <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Dosis:300,400,700,300italic,400italic,700italic" />
-  <link href="{{ url_for('static', filename='assets/css/nucleo-icons.css') }}" rel="stylesheet" />
-  <link href="{{ url_for('static', filename='assets/css/nucleo-svg.css') }}" rel="stylesheet" />
-    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}"/>
-
-  <!-- Font Awesome Icons -->
-  <script src="https://kit.fontawesome.com/42d5adcbca.js" crossorigin="anonymous"></script>
-  <!-- Material Icons -->
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
-  <!-- CSS Files -->
-  <link id="pagestyle" href="{{ url_for('static', filename='assets/css/material-dashboard.css') }}?v=3.1.0" rel="stylesheet" />
-
-  {% block stylesheets %}{% endblock stylesheets %}
+  {% include 'include/stylesheets.html' %}
 </head>
 
-<body class="g-sidenav-show bg-gray-200">
+<body class="bg-zinc-950 text-zinc-100 h-screen flex overflow-hidden">
 
+  <!-- Sidebar -->
   {% include 'include/sidebar.html' %}
 
-  <main class="main-content position-relative max-height-vh-100 h-100 border-radius-lg ">
+  <!-- Main area -->
+  <div class="flex-1 flex flex-col overflow-hidden ml-64">
 
-      {% include 'include/navbar.html' %}
+    <!-- Top navbar -->
+    {% include 'include/navbar.html' %}
 
-      {% block content %}{% endblock content %}
+    <!-- Page content -->
+    <main class="flex-1 overflow-y-auto">
+      {% block content %}{% endblock %}
+    </main>
 
-      {% include 'include/footer.html' %}
-
-      {% include 'include/mobilenavbar.html' %}
-
-  </main>
+  </div>
 
   {% include 'include/scripts.html' %}
-
-  {% block javascripts %}{% endblock javascripts %}
-
-  <script>
-    var win = navigator.platform.indexOf('Win') > -1;
-    if (win && document.querySelector('#sidenav-scrollbar')) {
-      var options = {
-        damping: '0.5'
-      }
-      Scrollbar.init(document.querySelector('#sidenav-scrollbar'), options);
-    }
-  </script>
-  <script type="text/javascript">
-    document.addEventListener("DOMContentLoaded", function(){
-      el_autohide = document.querySelector('.autohide');
-      
-      // add padding-top to body (if necessary)
-      navbar_height = document.querySelector('.mobile-nav').offsetHeight;
-      document.body.style.paddingTop = navbar_height + 'px';
-  
-      if (el_autohide) {
-        var prevScrollpos = window.pageYOffset;
-        var isMobileNavHidden = false;
-        var scrollDistance = 0;
-  
-        window.addEventListener('scroll', function() {
-          var currentScrollPos = window.pageYOffset;
-          var scrollDelta = currentScrollPos - prevScrollpos;
-          scrollDistance += Math.abs(scrollDelta);
-  
-          if (prevScrollpos < currentScrollPos && currentScrollPos > 300 && currentScrollPos < (document.documentElement.scrollHeight - window.innerHeight)) {
-            // Scrolling down
-            if (!isMobileNavHidden) {
-              el_autohide.classList.remove('scrolled-up');
-              el_autohide.classList.add('scrolled-down');
-              isMobileNavHidden = true;
-            }
-          } else if (prevScrollpos > currentScrollPos && currentScrollPos > 0 && currentScrollPos < (document.documentElement.scrollHeight - window.innerHeight)) {
-            // Scrolling up
-            if (isMobileNavHidden) {
-              el_autohide.classList.remove('scrolled-down');
-              el_autohide.classList.add('scrolled-up');
-              isMobileNavHidden = false;
-            }
-          }	
-          prevScrollpos = currentScrollPos;
-          scrollDistance = 0; // Reset scrollDistance
-        });
-      }
-    });
-  </script>
-
-  <script async defer src="https://buttons.github.io/buttons.js"></script>
-  <script src="{{ url_for('static', filename='assets/js/material-dashboard.min.js') }}?v=3.1.0"></script>
-
-  {% block serviceworker %}
-  <script type="text/javascript">
-    if ("serviceWorker" in navigator) {
-        window.addEventListener("load", () => {
-        navigator.serviceWorker
-            .register("/sw.js")
-            .then((registration) => {
-              console.log(`Fantastic, the service worker is loaded`)
-            })
-            .catch((err) => {
-              console.log(`Oops, the service worker failed to load: ${err}`);
-            });
-        });
-    }
-  </script>
-  {% endblock serviceworker %}
+  {% block javascripts %}{% endblock %}
 
 </body>
-
 </html>

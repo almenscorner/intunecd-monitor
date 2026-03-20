@@ -1,53 +1,34 @@
-import pytz
 import os
-
 from datetime import datetime
 
+import pytz
+import socketio
 
-def emit_message(message, status, task, TENANT_ID, socket) -> None:
-    """Emits a message to the frontend.
+# Redis manager for emitting from external processes (Celery workers).
+# The FastAPI server connects to the same Redis channel to relay messages to browsers.
+_broker_url = os.environ.get("CELERY_BROKER_URL", "redis://redis:6379/0")
+_mgr = socketio.RedisManager(_broker_url, write_only=True)
 
-    Args:
-        message (str): message to display
-        status (str): status of the run
-        task (str): task that is running
-        TENANT_ID (int): ID of the tenant
-    """
-    date_now = get_now()
-    socket.emit(
+
+def get_now() -> str:
+    tz = pytz.timezone(os.environ.get("TIMEZONE", "UTC"))
+    return datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
+
+
+def emit_message(message: str, status: str, task: str, tenant_id: int) -> None:
+    _mgr.emit(
         "intunecdrun",
         {
             "status": status,
             "task": task,
             "message": message,
-            "date": date_now,
-            "tenant_id": TENANT_ID,
+            "date": get_now(),
+            "tenant_id": tenant_id,
         },
     )
 
 
-def update_tenant_status_data(TENANT, status, message) -> None:
-    """Updates the status data for the tenant.
-
-    Args:
-        TENANT (object): tenant object
-        status (str): status of the run
-        message (str): message to display
-    """
-    TENANT.last_update = get_now()
-    TENANT.last_update_status = status
-    TENANT.last_update_message = message
-
-
-def get_now() -> str:
-    """Returns current date in the Timezone specified in
-       ENV vars. If nothing is specifiec UTC is used.
-
-    Returns:
-        str: current date
-    """
-    tz = pytz.timezone(os.environ.get("TIMEZONE", "UTC"))
-    now = datetime.now(tz)
-    date_now = now.strftime("%Y-%m-%d %H:%M:%S")
-
-    return date_now
+def update_tenant_status_data(tenant, status: str, message: str) -> None:
+    tenant.last_update = datetime.now()
+    tenant.last_update_status = status
+    tenant.last_update_message = message

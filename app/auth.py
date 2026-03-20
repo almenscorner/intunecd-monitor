@@ -1,40 +1,47 @@
 import msal
-from app import app_config
-from flask import session, url_for
+from starlette.requests import Request
+
+from app.config import settings
 
 
-def _load_cache():
+def _load_cache(request: Request) -> msal.SerializableTokenCache:
     cache = msal.SerializableTokenCache()
-    if session.get("token_cache"):
-        cache.deserialize(session["token_cache"])
+    token_cache = request.session.get("token_cache")
+    if token_cache:
+        cache.deserialize(token_cache)
     return cache
 
 
-def _save_cache(cache):
+def _save_cache(request: Request, cache: msal.SerializableTokenCache) -> None:
     if cache.has_state_changed:
-        session["token_cache"] = cache.serialize()
+        request.session["token_cache"] = cache.serialize()
 
 
-def _build_msal_app(cache=None, authority=None):
+def _build_msal_app(
+    cache: msal.SerializableTokenCache = None,
+    authority: str = None,
+) -> msal.ConfidentialClientApplication:
     return msal.ConfidentialClientApplication(
-        app_config.AZURE_CLIENT_ID,
-        authority=authority or app_config.AUTHORITY,
-        client_credential=app_config.AZURE_CLIENT_SECRET,
+        settings.AZURE_CLIENT_ID,
+        authority=authority or settings.AUTHORITY,
+        client_credential=settings.AZURE_CLIENT_SECRET,
         token_cache=cache,
     )
 
 
-def _build_auth_code_flow(authority=None, scopes=None):
+def _build_auth_code_flow(request: Request, authority: str = None, scopes: list = None) -> dict:
     return _build_msal_app(authority=authority).initiate_auth_code_flow(
-        scopes or [], redirect_uri=url_for("authorized", _external=True)
+        scopes or [],
+        redirect_uri=str(request.url_for("authorized")),
     )
 
 
-def _get_token_from_cache(scope=None):
-    cache = _load_cache()  # This web app maintains one cache per session
+def _get_token_from_cache(request: Request, scope: list = None):
+    cache = _load_cache(request)
     cca = _build_msal_app(cache=cache)
     accounts = cca.get_accounts()
-    if accounts:  # So all account(s) belong to the current signed-in user
+    if accounts:
         result = cca.acquire_token_silent(scope, account=accounts[0])
-        _save_cache(cache)
+        _save_cache(request, cache)
         return result
+    return None

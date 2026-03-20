@@ -1,316 +1,221 @@
 // #region Home route scripts
 function drawLineChart(id, labels, data) {
-    var ctx = document.getElementById(id).getContext("2d");
-    var lineChart = new Chart(ctx, {
-        type: "line",
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: 'count',
-                    data: data,
-                    fill: false,
-                    borderColor: "white",
-                    lineTension: 0.1
-                },
-            ]
+  const canvas = document.getElementById(id);
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'count',
+        data: data,
+        fill: false,
+        borderColor: "rgba(255,255,255,0.7)",
+        borderWidth: 2,
+        pointRadius: 2,
+        tension: 0.3
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false }
+      },
+      interaction: {
+        intersect: false,
+        mode: 'index',
+      },
+      scales: {
+        y: {
+          border: { display: false, dash: [5, 5] },
+          grid: { display: true, color: 'rgba(255,255,255,0.08)' },
+          ticks: {
+            beginAtZero: true,
+            padding: 8,
+            font: { size: 11, family: "Inter, sans-serif" },
+            color: "rgba(255,255,255,0.4)"
+          }
         },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false,
-                }
-            },
-            interaction: {
-                intersect: false,
-                mode: 'index',
-            },
-            scales: {
-                y: {
-                    grid: {
-                        drawBorder: false,
-                        display: true,
-                        drawOnChartArea: true,
-                        drawTicks: false,
-                        borderDash: [5,],
-                        color: 'rgba(255, 255, 255, .2)'
-                    },
-                    ticks: {
-                        suggestedMin: 0,
-                        suggestedMax: 500,
-                        beginAtZero: true,
-                        padding: 10,
-                        font: {
-                            size: 14,
-                            weight: 300,
-                            family: "Roboto",
-                            style: 'normal',
-                            lineHeight: 2
-                        },
-                        color: "#fff"
-                    },
-                },
-                x: {
-                    grid: {
-                        drawBorder: false,
-                        display: true,
-                        drawOnChartArea: true,
-                        drawTicks: false,
-                        borderDash: [5, 5],
-                        color: 'rgba(255, 255, 255, .2)'
-                    },
-                    ticks: {
-                        display: false
-                    },
-                }
-            }
+        x: {
+          border: { display: false },
+          grid: { display: false },
+          ticks: { display: false }
         }
-    });
+      }
+    }
+  });
 }
 
 function updateCounts(matchCount, diffCount, trackedCount) {
-    var matchCount = new CountUp('match', 0, matchCount);
-    if (!matchCount.error) {
-        matchCount.start();
-    } else {
-        console.error(matchCount.error);
-    }
-    var diffCount = new CountUp('diff', 0, diffCount);
-    if (!diffCount.error) {
-        diffCount.start();
-    } else {
-        console.error(diffCount.error);
-    }
-    var trackedCount = new CountUp('tracked', 0, trackedCount);
-    if (!trackedCount.error) {
-        trackedCount.start();
-    } else {
-        console.error(trackedCount.error);
-    }
+  const opts = { startVal: 0, duration: 1.5 };
+  [['match', matchCount], ['diff', diffCount], ['tracked', trackedCount]].forEach(([id, val]) => {
+    const counter = new CountUp(id, val, opts);
+    if (!counter.error) counter.start();
+    else console.error(counter.error);
+  });
 }
 
 function handleTenantClick() {
-    $('a[href^="/home/tenant/"]').click(function(event) {
-          event.preventDefault(); // Prevent the default behavior of the anchor tag
-          var url = this.href;
-          $.ajax({
-              url: url,
-              type: 'GET',
-              cache: false,
-              success: function(data) {
-                  // Return data from AJAX request
-                  updateCounts(data.matchCount, data.diffCount, data.trackedCount)
-                  // destroy the old chart instance
-                  Chart.helpers.each(Chart.instances, function(instance) {
-                    instance.destroy();
-                  });
-                  drawLineChart("lineChartTracked", data.labelsConfig, data.configCounts);
-                  drawLineChart("lineChartAverage", data.labelsAverage, data.averageDiffs);
-                  drawLineChart("lineChartDiffs", data.labelsDiff, data.diffs);
-                  $('#dropdownMenuButton').text(data.selectedTenantName);
-                  $('#diff-len').text("change average per last " + data.diff_len + " records");
-                  $('#diff-last-update').text("Updated on: " + data.diff_data_last_update);
-                  $.ajax({
-                    url: url + '/feeds',
-                    type: 'POST',
-                    cache: false,
-                    data: JSON.stringify({feeds: data.feeds}),
-                    contentType: "application/json",
-                    success: function(data) {
-                      $('#feeds').html(data);
-                    },
-                    error: function() {
-                        alert('An error occurred while loading the page.');
-                    }
-                  });
-              },
-              error: function() {
-                  alert('An error occurred while loading the page.');
-              }
+  document.querySelectorAll('a[href^="/home/tenant/"]').forEach(link => {
+    link.addEventListener('click', function(event) {
+      event.preventDefault();
+      const url = this.href;
+      fetch(url, { cache: 'no-store' })
+        .then(r => r.json())
+        .then(data => {
+          updateCounts(data.matchCount, data.diffCount, data.trackedCount);
+          Object.values(Chart.instances).forEach(i => i.destroy());
+          drawLineChart("lineChartTracked", data.labelsConfig, data.configCounts);
+          drawLineChart("lineChartAverage", data.labelsAverage, data.averageDiffs);
+          drawLineChart("lineChartDiffs", data.labelsDiff, data.diffs);
+          const btn = document.getElementById('tenantDropdownBtn');
+          if (btn) btn.childNodes[0].textContent = data.selectedTenantName + ' ';
+          const diffLen = document.getElementById('diff-len');
+          if (diffLen) diffLen.textContent = `change average per last ${data.diff_len} records`;
+          const diffLastUpdate = document.getElementById('diff-last-update');
+          if (diffLastUpdate) diffLastUpdate.textContent = `Updated on: ${data.diff_data_last_update}`;
+          return fetch(url + '/feeds', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ feeds: data.feeds })
           });
-      });
+        })
+        .then(r => r.text())
+        .then(html => {
+          const feeds = document.getElementById('feeds');
+          if (feeds) feeds.innerHTML = html;
+        })
+        .catch(() => alert('An error occurred while loading tenant data.'));
+    });
+  });
 }
 
 function updateUI(data) {
-    var statusData = {};
   const { status, message, date, tenant_id } = data;
   const el = document.getElementById(`current-message-${tenant_id}`);
   const updateButton = document.getElementById(`update-${tenant_id}`);
   const backupButton = document.getElementById(`backup-${tenant_id}`);
   const cancelButton = document.getElementById(`cancel-${tenant_id}`);
-  const ellipsis = document.getElementById(`ellipsis-${tenant_id}`);
+  const spinner = document.getElementById(`spinner-${tenant_id}`);
   const ls = document.getElementById(`last-status-${tenant_id}`);
   const updateDate = document.getElementById(`updateDate-${tenant_id}`);
 
-  el.innerText = message;
-  ls.innerText = status;
-  ls.classList.remove('text-success', 'text-danger', 'text-warning');
-  updateDate.innerText = date;
+  if (!el || !ls) return;
 
-  if (backupButton) backupButton.style.removeProperty('display');
-  if (updateButton) updateButton.style.removeProperty('display');
-  if (cancelButton) cancelButton.style.display = 'none';
-  if (ellipsis) ellipsis.style.display = 'none';
+  el.textContent = message;
+  ls.textContent = status;
+  ls.classList.remove('text-emerald-400', 'text-rose-400', 'text-amber-400', 'text-sky-400');
+  if (updateDate) updateDate.textContent = date;
 
-  if (status === 'error' || status === 'success' || status === 'cancelled' || status === 'unknown') {
-    if (backupButton) backupButton.style.removeProperty('display');
-    if (updateButton) updateButton.style.removeProperty('display');
-    if (ellipsis) ellipsis.style.display = 'none';
-    if (status === 'error') {
-      ls.classList.add('text-danger');
-      ls.classList.remove('text-warning', 'text-success', 'text-info');
-    } else if (status === 'success') {
-      ls.classList.add('text-success');
-      ls.classList.remove('text-warning', 'text-danger', 'text-info');
-    } else if (status === 'cancelled') {
-      ls.classList.add('text-danger');
-      ls.classList.remove('text-success', 'text-warning', 'text-info');
-    }
-    else {
-      ls.classList.add('text-warning');
-      ls.classList.remove('text-success', 'text-danger', 'text-info');
-    }
+  // Reset visibility
+  if (backupButton) backupButton.classList.remove('hidden');
+  if (updateButton) updateButton.classList.remove('hidden');
+  if (cancelButton) cancelButton.classList.add('hidden');
+  if (spinner) spinner.classList.add('hidden');
+
+  const terminal = ['error', 'success', 'cancelled', 'unknown'];
+  if (terminal.includes(status)) {
+    if (status === 'error' || status === 'cancelled') ls.classList.add('text-rose-400');
+    else if (status === 'success') ls.classList.add('text-emerald-400');
+    else ls.classList.add('text-amber-400');
   } else {
-    if (!backupButton && ellipsis) {
-      if (updateButton.style.display != 'none' && ellipsis.style.display === 'none') {
-        ellipsis.style = '';
-        if (status != 'pending') {
-          cancelButton.style.removeProperty('display');
-        }
-        ls.innerText = status;
-        ls.classList.add('text-info')
-        updateButton.style.display = 'none';
-      }
-    } else if (updateButton && backupButton && ellipsis) {
-      if (updateButton.style.display != 'none' && backupButton.style.display != 'none' && ellipsis.style.display === 'none') {
-        ellipsis.style = '';
-        if (status != 'pending') {
-          cancelButton.style.removeProperty('display');
-        }
-        ls.innerText = status;
-        ls.classList.add('text-info')
-        updateButton.style.display = 'none';
-        backupButton.style.display = 'none';
-      }
+    // Running / pending
+    const updateVisible = updateButton && !updateButton.classList.contains('hidden');
+    if (updateVisible) {
+      if (spinner) spinner.classList.remove('hidden');
+      if (status !== 'pending' && cancelButton) cancelButton.classList.remove('hidden');
+      ls.textContent = status;
+      ls.classList.add('text-sky-400');
+      if (updateButton) updateButton.classList.add('hidden');
+      if (backupButton) backupButton.classList.add('hidden');
     }
   }
 
-  // Store the status data in local storage
-  statusData[tenant_id] = { status, message, date };
-  sessionStorage.setItem('statusData', JSON.stringify(statusData));
+  const stored = JSON.parse(sessionStorage.getItem('statusData') || '{}');
+  stored[tenant_id] = { status, message, date };
+  sessionStorage.setItem('statusData', JSON.stringify(stored));
 }
 
 function handleTaskClick(tenant_id, task_type) {
-    const endpoint = 'intunecd/run';
-    fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ tenant_id: tenant_id, task_type: task_type }),
-    });
+  fetch('intunecd/run', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tenant_id, task_type })
+  });
 }
 
 function handleCancelClick(tenant_id) {
-    const endpoint = 'intunecd/cancel';
-    fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ tenant_id: tenant_id }),
-    });
+  fetch('intunecd/cancel', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tenant_id })
+  });
 }
 
 function getSessionStorageData() {
-    // Retrieve the status data from session storage when the page is loaded
-    var statusData = {};
-    var storedStatusData = sessionStorage.getItem('statusData');
-    if (storedStatusData) {
-      statusData = JSON.parse(storedStatusData);
-      Object.keys(statusData).forEach(function(tenant_id) {
-        const data = statusData[tenant_id];
-        const ls = document.getElementById(`last-status-${tenant_id}`);
-        const el = document.getElementById(`current-message-${tenant_id}`);
-
-        if (!ls) {
-          // The tenant is not on the page anymore so remove it from data
-          delete statusData[tenant_id];
-          sessionStorage.setItem('statusData', JSON.stringify(statusData));
-          return; // Exit the forEach loop for this tenant
-        }
-
-        const lastStatus = ls.innerText.toLowerCase();
-        const lastMessage = el.innerText;
-
-        if (data.status != lastStatus) {
-          data.status = lastStatus;
-        }
-        if (data.message != lastMessage) {
-          data.message = lastMessage;
-        }
-
-        updateUI({ ...data, tenant_id });
-      });
-    }
-    else {
-      // No status data in local storage so get it from the page
-      const statusElements = document.querySelectorAll('[id^="last-status-"]');
-      statusElements.forEach(function(el) {
-        const tenant_id = el.id.split('-')[2];
-        const st = document.getElementById(`last-status-${tenant_id}`);
-        const cm = document.getElementById(`current-message-${tenant_id}`);
-        const date = document.getElementById(`updateDate-${tenant_id}`).innerText;
-        const status = st.innerText.toLowerCase();
-        const message = cm.innerText;
-        // do not store if status is success or error
-        if (status === 'running' || status == 'pending') {
-          statusData[tenant_id] = { status, message, date };
-        }
-      });
-      sessionStorage.setItem('statusData', JSON.stringify(statusData));
-
-      // Update the UI
-      Object.keys(statusData).forEach(function(tenant_id) {
-        const data = statusData[tenant_id];
-        updateUI({ ...data, tenant_id });
-      });
-    }
+  let statusData = {};
+  const stored = sessionStorage.getItem('statusData');
+  if (stored) {
+    statusData = JSON.parse(stored);
+    Object.keys(statusData).forEach(tenant_id => {
+      const data = statusData[tenant_id];
+      const ls = document.getElementById(`last-status-${tenant_id}`);
+      const el = document.getElementById(`current-message-${tenant_id}`);
+      if (!ls) {
+        delete statusData[tenant_id];
+        sessionStorage.setItem('statusData', JSON.stringify(statusData));
+        return;
+      }
+      data.status = ls.textContent.toLowerCase();
+      data.message = el ? el.textContent : data.message;
+      updateUI({ ...data, tenant_id });
+    });
+  } else {
+    document.querySelectorAll('[id^="last-status-"]').forEach(el => {
+      const tenant_id = el.id.split('-')[2];
+      const st = el.textContent.toLowerCase();
+      const cm = document.getElementById(`current-message-${tenant_id}`);
+      const dateEl = document.getElementById(`updateDate-${tenant_id}`);
+      if (st === 'running' || st === 'pending') {
+        statusData[tenant_id] = {
+          status: st,
+          message: cm ? cm.textContent : '',
+          date: dateEl ? dateEl.textContent : ''
+        };
+      }
+    });
+    sessionStorage.setItem('statusData', JSON.stringify(statusData));
+    Object.keys(statusData).forEach(tenant_id => {
+      updateUI({ ...statusData[tenant_id], tenant_id });
+    });
+  }
 }
 
 // #endregion
 
 // #region listeners
 function attachAccordionListener(tenant_id) {
-  $(document).ready(function(){
-    const searchInput = $('#accordionSearch-' + tenant_id);
-    const accordion = $('#accordionFlush-' + tenant_id);
-
-    searchInput.on('keyup', function(event) {
-      const searchTerm = event.target.value.toLowerCase();
-      const accordionItems = accordion.find('.accordion-item');
-      accordionItems.each(function() {
-        const itemName = $(this).find('.accordion-header p').text().toLowerCase();
-
-        if (itemName.includes(searchTerm)) {
-          $(this).css('display', 'block');
-        } else {
-          $(this).css('display', 'none');
-        }
-      });
+  const searchInput = document.getElementById(`accordionSearch-${tenant_id}`);
+  const accordion = document.getElementById(`accordionFlush-${tenant_id}`);
+  if (!searchInput || !accordion) return;
+  searchInput.addEventListener('keyup', function() {
+    const term = this.value.toLowerCase();
+    accordion.querySelectorAll('.accordion-item').forEach(item => {
+      item.style.display = item.textContent.toLowerCase().includes(term) ? '' : 'none';
     });
   });
 }
 
-function attachTableListener(formId, tableId) {
-  $(document).ready(function(){
-    $(formId).on("keyup", function() {
-      var value = $(this).val().toLowerCase();
-      $(`${tableId} tr`).filter(function() {
-        $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
-      });
+function attachTableListener(inputId, tableId) {
+  const input = document.querySelector(inputId);
+  const table = document.querySelector(tableId);
+  if (!input || !table) return;
+  input.addEventListener('keyup', function() {
+    const val = this.value.toLowerCase();
+    table.querySelectorAll('tr').forEach(row => {
+      row.style.display = row.textContent.toLowerCase().includes(val) ? '' : 'none';
     });
   });
 }

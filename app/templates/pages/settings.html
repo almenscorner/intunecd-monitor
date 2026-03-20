@@ -1,224 +1,175 @@
 {% extends "base/template.html" %}
-
-{% block title %} Settings {% endblock title %}
-
-{% block stylesheets %}{% endblock stylesheets %}
+{% block title %}Settings{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
+<div class="p-6 space-y-8">
 
-    <div class="row mt-4">
-        <div class="col-lg-3">
-            <div class="position-sticky pb-lg-5 pb-3 mt-lg-0 mt-5 ps-2" style="top: 100px">
-                <h3>Settings</h3>
-                <h6 class="text-secondary font-weight-normal pe-3">Environment variables configured</h6>
-            </div>
-        </div>
-        <div class="col-lg-9">
-            <div class="card">
-                <div class="card-body px-4 pb-2">
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>setting</th>
-                                    <th>value</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody class="table-body">
-                                <tr>
-                                    <td class="align-middle text-sm"> Version </td>
-                                    <td class="align-middle text-sm"> {{ app_version }} </td>
-                                </tr>
-                                <tr>
-                                    <td class="align-middle text-sm"> Admin Role </td>
-                                    <td class="align-middle text-sm"> {{ settings.ADMIN_ROLE }} </td>
-                                </tr>
-                                <tr>
-                                    <td class="align-middle text-sm"> Authority </td>
-                                    <td class="align-middle text-sm"> {{ settings.AUTHORITY }} </td>
-                                </tr>
-                                <tr>
-                                    <td class="align-middle text-sm"> Azure Client ID </td>
-                                    <td class="align-middle text-sm"> {{ settings.AZURE_CLIENT_ID }} </td>
-                                </tr>
-                                <tr>
-                                    <td class="align-middle text-sm"> Azure Tenant ID </td>
-                                    <td class="align-middle text-sm"> {{ settings.AZURE_TENANT_ID }} </td>
-                                </tr>
-                                <tr>
-                                    <td class="align-middle text-sm"> Azure SQL DB Driver </td>
-                                    <td class="align-middle text-sm"> {{ settings.AZ_DB_DRIVER}} </td>
-                                </tr>
-                                <tr>
-                                    <td class="align-middle text-sm"> Azure SQL DB Server </td>
-                                    <td class="align-middle text-sm"> {{ settings.AZ_DB_SERVER}} </td>
-                                </tr>
-                                <tr>
-                                    <td class="align-middle text-sm"> Azure SQL DB Name </td>
-                                    <td class="align-middle text-sm"> {{ settings.AZ_DB_NAME }} </td>
-                                </tr>
-                                <tr>
-                                    <td class="align-middle text-sm"> Azure SQL DB User </td>
-                                    <td class="align-middle text-sm"> {{ settings.AZ_DB_USER }} </td>
-                                </tr>
-                                <tr>
-                                    <td class="align-middle text-sm"> Company Name </td>
-                                    <td class="align-middle text-sm"> {{ settings.COMPANY_NAME }} </td>
-                                </tr>
-                                <tr>
-                                    <td class="align-middle text-sm"> Documentation Active </td>
-                                    <td class="align-middle text-sm"> {{ settings.DOCUMENTATION}} </td>
-                                </tr>
-                                <tr>
-                                    <td class="align-middle text-sm"> Documentation Container Name </td>
-                                    <td class="align-middle text-sm"> {{ settings.AZURE_CONTAINER_NAME }} </td>
-                                </tr>
-                                <tr>
-                                    <td class="align-middle text-sm"> Documentation File Name </td>
-                                    <td class="align-middle text-sm"> {{ settings.DOCUMENTATION_FILE_NAME }} </td>
-                                </tr>
-                                <tr>
-                                    <td class="align-middle text-sm"> Redirect path </td>
-                                    <td class="align-middle text-sm"> {{ settings.REDIRECT_PATH }} </td>
-                                </tr>
-                                <tr>
-                                    <td class="align-middle text-sm"> Timezone </td>
-                                    <td class="align-middle text-sm"> {{ settings.TIMEZONE }} </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <input type="button" value="Purge tasks" class="btn btn-sm bg-gradient-danger my-auto mb-3 mt-3" id="purge">
-                </div>
-            </div>
-        </div>
+  <!-- Environment Settings -->
+  <div class="max-w-3xl">
+    <div class="mb-4">
+      <h2 class="text-base font-semibold text-zinc-100">Settings</h2>
+      <p class="text-xs text-zinc-500 mt-0.5">Environment variables configured</p>
     </div>
-
-    <div class="row mt-4">
-        <div class="col-lg-3">
-            <div class="position-sticky pb-lg-5 pb-3 mt-lg-0 mt-5 ps-2" style="top: 100px">
-                <h3>API Keys</h3>
-                <h6 class="text-secondary font-weight-normal pe-3">Overview of generated API keys and their
-                    expiration date <br>
-                    Delete or generate new keys</h6>
-            </div>
-        </div>
-        <div class="col-lg-9">
-            <div class="card">
-                <div class="card-header pb-0">
-                    <div class="row">
-                        <div class="col-lg-6 col-7">
-                            <form method="POST" action="/settings/key/create" style="color:white">
-                                <button type="submit" class="btn btn-link text-dark text-gradient px-3 mb-0">
-                                    <i class="material-icons text-sm me-2" type="submit">add</i>new key
-                                </button>
-                            </form>
-                            <br>
-                            {% if new_key %}
-                            <span id="copykey" class="text-success">{{ new_key }}</span>
-                            <a id="copybtn" data-clipboard-action="copy" data-clipboard-target="#copykey" role="button"
-                                aria-label="Copied">
-                                <i id="copyicon" class="material-icons text-secondary">content_copy</i>
-                            </a>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-                <div class="card-body px-4 pb-2">
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>id</th>
-                                    <th>expiration</th>
-                                    <th>actions</th>
-                                </tr>
-                            </thead>
-                            <tbody class="table-body">
-                                {% if keys_td %}
-                                {% for item in keys_td %}
-                                <tr>
-                                    <td class="align-middle text-sm">
-                                        <p>{{ item.id }}</p>
-                                    </td>
-                                    {% if item.expiration > 30 %}
-                                    <td class="align-middle text-sm">
-                                        <span class="badge bg-gradient-success">{{item.expiration }} days</span>
-                                    </td>
-                                    {% elif item.expiration <= 0 %} <td class="align-middle text-sm">
-                                        <span class="badge bg-gradient-danger">expired</span>
-                                        </td>
-                                        {% elif item.expiration < 30 %} <td class="align-middle text-sm">
-                                            <span class="badge bg-gradient-warning">{{
-                                                item.expiration }} days</span>
-                                            </td>
-                                            {% endif %}
-
-                                            <td class="align-middle text-sm">
-                                                <span>
-                                                    <form method="POST" action="/settings/key/delete"
-                                                        style="color:white">
-                                                        <button type="submit" class="btn btn-link text-danger text-gradient px-3 mb-0"  name="{{ item.id }}" value="delete">
-                                                            <i class="material-icons text-sm me-2" type="submit">delete</i>Delete
-                                                        </button>
-                                                    </form>
-                                                </span>
-                                            </td>
-                                </tr>
-                                {% endfor %}
-                                {% endif %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <div class="card overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-zinc-800">
+            <th class="px-4 py-2.5 text-left text-xs font-semibold text-zinc-400 uppercase tracking-wider">Setting</th>
+            <th class="px-4 py-2.5 text-left text-xs font-semibold text-zinc-400 uppercase tracking-wider">Value</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-zinc-800">
+          <tr class="hover:bg-zinc-800/40 transition-colors">
+            <td class="px-4 py-2.5 text-zinc-400">Version</td>
+            <td class="px-4 py-2.5 text-zinc-200">{{ app_version }}</td>
+          </tr>
+          <tr class="hover:bg-zinc-800/40 transition-colors">
+            <td class="px-4 py-2.5 text-zinc-400">Admin Role</td>
+            <td class="px-4 py-2.5 text-zinc-200">{{ settings.ADMIN_ROLE }}</td>
+          </tr>
+          <tr class="hover:bg-zinc-800/40 transition-colors">
+            <td class="px-4 py-2.5 text-zinc-400">Authority</td>
+            <td class="px-4 py-2.5 text-zinc-200 break-all">{{ settings.AUTHORITY }}</td>
+          </tr>
+          <tr class="hover:bg-zinc-800/40 transition-colors">
+            <td class="px-4 py-2.5 text-zinc-400">Azure Client ID</td>
+            <td class="px-4 py-2.5 text-zinc-200">{{ settings.AZURE_CLIENT_ID }}</td>
+          </tr>
+          <tr class="hover:bg-zinc-800/40 transition-colors">
+            <td class="px-4 py-2.5 text-zinc-400">Azure Tenant ID</td>
+            <td class="px-4 py-2.5 text-zinc-200">{{ settings.AZURE_TENANT_ID }}</td>
+          </tr>
+          <tr class="hover:bg-zinc-800/40 transition-colors">
+            <td class="px-4 py-2.5 text-zinc-400">Database URL</td>
+            <td class="px-4 py-2.5 text-zinc-200 break-all">{{ settings.DATABASE_URL }}</td>
+          </tr>
+          <tr class="hover:bg-zinc-800/40 transition-colors">
+            <td class="px-4 py-2.5 text-zinc-400">Company Name</td>
+            <td class="px-4 py-2.5 text-zinc-200">{{ settings.COMPANY_NAME or '—' }}</td>
+          </tr>
+          <tr class="hover:bg-zinc-800/40 transition-colors">
+            <td class="px-4 py-2.5 text-zinc-400">Documentation Active</td>
+            <td class="px-4 py-2.5">
+              {% if settings.DOCUMENTATION_ACTIVE %}
+              <span class="badge-success">enabled</span>
+              {% else %}
+              <span class="badge text-zinc-500 bg-zinc-800 border border-zinc-700 rounded px-2 py-0.5 text-xs">disabled</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% if settings.AZURE_CONTAINER_NAME %}
+          <tr class="hover:bg-zinc-800/40 transition-colors">
+            <td class="px-4 py-2.5 text-zinc-400">Documentation Container</td>
+            <td class="px-4 py-2.5 text-zinc-200">{{ settings.AZURE_CONTAINER_NAME }}</td>
+          </tr>
+          {% endif %}
+          {% if settings.DOCUMENTATION_FILE_NAME %}
+          <tr class="hover:bg-zinc-800/40 transition-colors">
+            <td class="px-4 py-2.5 text-zinc-400">Documentation File</td>
+            <td class="px-4 py-2.5 text-zinc-200">{{ settings.DOCUMENTATION_FILE_NAME }}</td>
+          </tr>
+          {% endif %}
+          <tr class="hover:bg-zinc-800/40 transition-colors">
+            <td class="px-4 py-2.5 text-zinc-400">Redirect Path</td>
+            <td class="px-4 py-2.5 text-zinc-200">{{ settings.REDIRECT_PATH }}</td>
+          </tr>
+          <tr class="hover:bg-zinc-800/40 transition-colors">
+            <td class="px-4 py-2.5 text-zinc-400">Timezone</td>
+            <td class="px-4 py-2.5 text-zinc-200">{{ settings.TIMEZONE }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="mt-4 pt-4 border-t border-zinc-800 px-4 pb-4">
+        <button id="purge"
+                onclick="if(confirm('This will purge all tasks from Celery. This cannot be undone. Continue?')) { fetch('/intunecd/purge', { method: 'POST' }).then(() => alert('Tasks purged.')).catch(() => alert('Error purging tasks.')); }"
+                class="flex items-center gap-2 text-xs bg-rose-600/20 hover:bg-rose-600/30 border border-rose-700/40 text-rose-400 rounded-lg px-4 py-2 transition-colors">
+          <span class="material-icons-round text-sm">delete_sweep</span>
+          Purge all tasks
+        </button>
+      </div>
     </div>
+  </div>
+
+  <!-- API Keys -->
+  <div class="max-w-3xl">
+    <div class="mb-4">
+      <h2 class="text-base font-semibold text-zinc-100">API Keys</h2>
+      <p class="text-xs text-zinc-500 mt-0.5">Overview of generated API keys and their expiration date</p>
+    </div>
+    <div class="card p-5">
+      <div class="flex items-center gap-4 mb-4 pb-4 border-b border-zinc-800">
+        <form method="POST" action="/settings/key/create">
+          <button type="submit" class="btn-primary">
+            <span class="material-icons-round text-base">add</span>
+            New key
+          </button>
+        </form>
+        {% if new_key %}
+        <div class="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-3 py-1.5">
+          <span id="copykey" class="text-sm text-emerald-300 font-mono">{{ new_key }}</span>
+          <button id="copybtn" data-clipboard-action="copy" data-clipboard-target="#copykey"
+                  class="text-zinc-400 hover:text-zinc-100 transition-colors" title="Copy to clipboard">
+            <span id="copyicon" class="material-icons-round text-base">content_copy</span>
+          </button>
+        </div>
+        {% endif %}
+      </div>
+
+      {% if keys_td %}
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-zinc-800">
+            <th class="px-4 py-2.5 text-left text-xs font-semibold text-zinc-400 uppercase tracking-wider">ID</th>
+            <th class="px-4 py-2.5 text-left text-xs font-semibold text-zinc-400 uppercase tracking-wider">Expiration</th>
+            <th class="px-4 py-2.5 text-left text-xs font-semibold text-zinc-400 uppercase tracking-wider">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-zinc-800">
+          {% for item in keys_td %}
+          <tr class="hover:bg-zinc-800/40 transition-colors">
+            <td class="px-4 py-2.5 text-zinc-300">{{ item.id }}</td>
+            <td class="px-4 py-2.5">
+              {% if item.expiration <= 0 %}
+              <span class="badge-danger">expired</span>
+              {% elif item.expiration < 30 %}
+              <span class="badge-warning">{{ item.expiration }} days</span>
+              {% else %}
+              <span class="badge-success">{{ item.expiration }} days</span>
+              {% endif %}
+            </td>
+            <td class="px-4 py-2.5">
+              <form method="POST" action="/settings/key/delete">
+                <button type="submit" name="{{ item.id }}" value="delete"
+                        class="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-rose-400 transition-colors">
+                  <span class="material-icons-round text-sm">delete</span>
+                  Delete
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="text-sm text-zinc-500 text-center py-6">No API keys generated yet.</p>
+      {% endif %}
+    </div>
+  </div>
 
 </div>
 
-{% block javascripts %}
-<script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.10/dist/clipboard.min.js" integrity="sha256-uv91Qb6cIPf5d/aZPOOc+pN6e95p22577ruPaDcmgqE=" crossorigin="anonymous"></script>
 {% if new_key %}
 <script>
-    var btn = document.getElementById('copybtn');
-    var clipboard = new ClipboardJS(btn);
-</script>
-
-<script>
-    $(document).ready(function() {
-      $('#copybtn').click(function() {
-        $('#copyicon').text('check');
+  document.addEventListener('DOMContentLoaded', function() {
+    const btn = document.getElementById('copybtn');
+    if (btn && typeof ClipboardJS !== 'undefined') {
+      const clipboard = new ClipboardJS(btn);
+      btn.addEventListener('click', function() {
+        const icon = document.getElementById('copyicon');
+        if (icon) { icon.textContent = 'check'; setTimeout(() => { icon.textContent = 'content_copy'; }, 2000); }
       });
-    }); 
+    }
+  });
 </script>
 {% endif %}
-<script>
-    $(document).ready(function() {
-      $(document).off('click', '#purge').on('click', '#purge', function() {
-        $.ajax({
-          url: '/intunecd/purge',
-          type: 'POST',
-          beforeSend: function() {
-            if (confirm('This will purge all tasks from celery. This action cannot be undone. Are you sure you want to proceed?')) {
-              return true;
-            } else {
-              return false;
-            }
-          },
-          success: function() {
-            alert('Tasks purged');
-          },
-          error: function(error) {
-            console.log(error);
-            alert('Something went wrong. Check the console for more information.');
-          }
-        });
-      });
-    });
-  </script>
-{% endblock javascripts %}
-
-{% endblock content %}
+{% endblock %}

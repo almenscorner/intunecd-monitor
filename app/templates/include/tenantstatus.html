@@ -1,107 +1,70 @@
-<div id="tenant-status" class="row">
-    {% for item in data.tenants %}
-    {% if item.baseline %}
-    <div class="col-xl-4 col-lg-6 col-md-6 col-sm-6 mb-5">
-      <div class="card card-stats">
-        <div class="card-header p-3 pt-2 mt-2">
-            <span class="text-sm mb-0 text">Last message:
-                <span class="text-sm text-info" id="current-message-{{ item.id }}">{{ item.last_update_message }}</span>
-            </span>
-            <div class="text-sm"> Last status:
-                {% if item.last_update_status == 'error' or item.last_update_status == 'cancelled' %}
-                <span id="last-status-{{ item.id }}" class="text-sm mb-0 text-capitalize text-danger">{{ item.last_update_status }}</span>
-                {% elif item.last_update_status == 'success' %}
-                <span id="last-status-{{ item.id }}" class="text-sm mb-0 text-capitalize text-success">{{ item.last_update_status }}</span>
-                {% else %}
-                <span id="last-status-{{ item.id }}" class="text-sm mb-0 text-capitalize text-warning">{{ item.last_update_status }}</span>
-                {% endif %}
-            </div>
-            <div class="row mt-2">
-                <div class="col-6 mt-2">
-                    <span class="lds-ellipsis" id="ellipsis-{{ item.id }}" style="display: none;">
-                        <div></div>
-                        <div></div>
-                        <div></div>
-                        <div></div>
-                    </span>
-                </div>
-                <div class="text-end col-6">
-                    <h4 class="mb-0 text-warning">{{ item.display_name }}</h4>
-                </div>
-            </div>
+<div id="tenant-status" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
+  {% for item in data.tenants %}
+  <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex flex-col gap-3">
+
+    <!-- Header row -->
+    <div class="flex items-start justify-between gap-2">
+      <div class="min-w-0">
+        <p class="text-xs text-zinc-500 mb-0.5">Last message</p>
+        <p class="text-xs text-zinc-300 truncate" id="current-message-{{ item.id }}">{{ item.last_update_message or '—' }}</p>
       </div>
-      <hr class="dark horizontal my-0">
-      <div class="card-footer d-flex">
-        <input type="button" class="btn btn-sm bg-gradient-primary my-auto" id="update-{{ item.id }}" onclick="handleTaskClick({{ item.id }}, 'update')" value="Update" style="
-            width: 8rem;
-            margin-right: 1.5rem;
-        "/>
-        <input type="button" class="btn btn-sm bg-gradient-primary my-auto" id="backup-{{ item.id }}" onclick="handleTaskClick({{ item.id }}, 'backup')" value="Backup" style="
-            width: 8rem;
-            margin-right: 1.5rem;
-        "/>
-        <input type="button" class="btn btn-sm bg-gradient-danger my-auto" id="cancel-{{ item.id }}" onclick="handleCancelClick({{ item.id }})" value="Cancel" style="
-        width: 8rem;
-        margin-right: 1.5rem;
-        display: none;
-        "/>
-        <i class="material-icons position-relative ms-auto text-lg me-1 my-auto">date_range</i>
-        <span class="font-weight-normal my-auto" id="updateDate-{{ item.id }}">{{ item.last_update }}</span>
-      </div>
-    </div>
-    </div>
-    {% else %}
-    <div class="col-xl-4 col-lg-6 col-md-6 col-sm-6 mb-5">
-      <div class="card card-stats">
-        <div class="card-header p-3 pt-2 mt-2">
-            <span class="text-sm mb-0 text">Last message: 
-                <span class="text-sm text-info" id="current-message-{{ item.id }}">{{ item.last_update_message }}</span>
-            </span>
-            <div class="text-sm"> Last status:
-                {% if item.last_update_status == 'error' or item.last_update_status == 'cancelled' %}
-                <span id="last-status-{{ item.id }}" class="text-sm mb-0 text-capitalize text-danger">{{ item.last_update_status }}</span>
-                {% elif item.last_update_status == 'success' %}
-                <span id="last-status-{{ item.id }}" class="text-sm mb-0 text-capitalize text-success">{{ item.last_update_status }}</span>
-                {% else %}
-                <span id="last-status-{{ item.id }}" class="text-sm mb-0 text-capitalize text-warning">{{ item.last_update_status }}</span>
-                {% endif %}
-            </div>
-            <div class="row mt-2">
-                <div class="col-6 mt-2">
-                    <span class="lds-ellipsis" id="ellipsis-{{ item.id }}" style="display: none;">
-                        <div></div>
-                        <div></div>
-                        <div></div>
-                        <div></div>
-                    </span>
-                </div>
-                <div class="text-end col-6">
-                    <h4 class="mb-0">{{ item.display_name }}</h4>
-                </div>
-            </div>
-      </div>
-      <hr class="dark horizontal my-0">
-      <div class="card-footer d-flex">
-        <input type="button" class="btn btn-sm bg-gradient-primary my-auto" id="update-{{ item.id }}" onclick="handleTaskClick({{ item.id }}, 'update')" value="Update" style="
-            width: 8rem;
-            margin-right: 1.5rem;
-        "/>
-        {% if item.repo %}
-        <input type="button" class="btn btn-sm bg-gradient-primary my-auto" id="backup-{{ item.id }}" onclick="handleTaskClick({{ item.id }}, 'backup')" value="Backup" style="
-            width: 8rem;
-            margin-right: 1.5rem;
-        "/>
+      <div class="text-right flex-shrink-0">
+        <p class="text-xs text-zinc-500 mb-0.5">Status</p>
+        {% if item.last_update_status == 'error' or item.last_update_status == 'cancelled' %}
+        <span id="last-status-{{ item.id }}" class="text-xs font-semibold capitalize text-rose-400">{{ item.last_update_status or '—' }}</span>
+        {% elif item.last_update_status == 'success' %}
+        <span id="last-status-{{ item.id }}" class="text-xs font-semibold capitalize text-emerald-400">{{ item.last_update_status }}</span>
+        {% else %}
+        <span id="last-status-{{ item.id }}" class="text-xs font-semibold capitalize text-amber-400">{{ item.last_update_status or '—' }}</span>
         {% endif %}
-        <input type="button" class="btn btn-sm bg-gradient-danger my-auto" id="cancel-{{ item.id }}" onclick="handleCancelClick({{ item.id }})" value="Cancel" style="
-        width: 8rem;
-        margin-right: 1.5rem;
-        display: none;
-        "/>
-        <i class="material-icons position-relative ms-auto text-lg me-1 my-auto">date_range</i>
-        <span class="font-weight-normal my-auto" id="updateDate-{{ item.id }}">{{ item.last_update }}</span>
       </div>
     </div>
+
+    <!-- Tenant name + spinner -->
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <!-- Spinner (hidden by default, shown when running) -->
+        <span id="spinner-{{ item.id }}" class="hidden">
+          <svg class="animate-spin h-4 w-4 text-indigo-400" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.568 3 7.291l3-3.291z"></path>
+          </svg>
+        </span>
+      </div>
+      {% if item.baseline %}
+      <h3 class="text-sm font-semibold text-amber-400">{{ item.display_name }}</h3>
+      {% else %}
+      <h3 class="text-sm font-semibold text-zinc-100">{{ item.display_name }}</h3>
+      {% endif %}
     </div>
-    {% endif %}
-    {% endfor %}
+
+    <div class="border-t border-zinc-800"></div>
+
+    <!-- Footer: buttons + date -->
+    <div class="flex items-center gap-2 flex-wrap">
+      <button id="update-{{ item.id }}"
+              onclick="handleTaskClick({{ item.id }}, 'update')"
+              class="btn-primary text-xs px-3 py-1.5">
+        Update
+      </button>
+      {% if item.baseline or item.repo %}
+      <button id="backup-{{ item.id }}"
+              onclick="handleTaskClick({{ item.id }}, 'backup')"
+              class="btn-primary text-xs px-3 py-1.5">
+        Backup
+      </button>
+      {% endif %}
+      <button id="cancel-{{ item.id }}"
+              onclick="handleCancelClick({{ item.id }})"
+              class="hidden bg-rose-600 hover:bg-rose-500 text-white rounded-lg font-medium transition-colors text-xs px-3 py-1.5">
+        Cancel
+      </button>
+      <div class="flex items-center gap-1 ml-auto text-zinc-500">
+        <span class="material-icons-round text-sm">date_range</span>
+        <span class="text-xs" id="updateDate-{{ item.id }}">{{ item.last_update or '—' }}</span>
+      </div>
+    </div>
+
+  </div>
+  {% endfor %}
 </div>
