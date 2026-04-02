@@ -102,8 +102,7 @@ $Hostname    = "${DnsLabel}.${Location}.cloudapp.azure.com"
 $RedirectUri = "https://${Hostname}/authorized"
 $RedirectUriTenants = "https://$Hostname/tenants"
 $SecretKey   = -join ((33..126) | Get-Random -Count 48 | ForEach-Object { [char]$_ })
-#$GhcrBase    = "ghcr.io/${GhcrOwner}/intunecd-monitor"
-$GhcrBase    = "superduper.azurecr.io/intunecd"
+$GhcrBase    = "ghcr.io/almenscorner/intunecd-monitor"
 
 Write-Host ""
 Write-OK "App will be deployed to: https://$Hostname"
