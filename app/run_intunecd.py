@@ -1,17 +1,18 @@
 import json
+import logging
 import os
 import random
 import shutil
 import subprocess
 
 import mistune
-from azure.identity import DefaultAzureCredential
-from azure.keyvault.secrets import SecretClient
 from celery import Celery, shared_task
+from cryptography.fernet import InvalidToken
 from git import Remote, Repo
 
 from app.config import settings
 from app.database import SessionLocal
+from app.encryption import decrypt_pat
 from app.models import (
     SummaryAssignment,
     SummaryAverageDiffs,
@@ -20,13 +21,15 @@ from app.models import (
     SummaryDiffCount,
     Tenant,
 )
-from app.socket_tasks import emit_message, get_now, update_tenant_status_data
+from app.socket_tasks import emit_message, get_now, get_now_dt, update_tenant_status_data
 
 # Celery app used for task result inspection inside tasks
 _celery = Celery(
-    broker=os.environ.get("CELERY_BROKER_URL", "redis://redis:6379/0"),
-    backend=os.environ.get("CELERY_RESULT_BACKEND", "redis://redis:6379/0"),
+    broker=settings.CELERY_BROKER_URL,
+    backend=settings.CELERY_RESULT_BACKEND,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def get_prefix_name(options: str) -> str:
@@ -71,20 +74,33 @@ def configure_git(path: str) -> None:
 def get_connection_info(tenant_id: int) -> tuple:
     db = SessionLocal()
     try:
-        credential = DefaultAzureCredential()
-        client = SecretClient(settings.AZURE_VAULT_URL, credential)
         tenant = db.get(Tenant, tenant_id)
+        if not tenant:
+            raise ValueError(f"Tenant {tenant_id} not found")
+
         baseline = db.query(Tenant).filter_by(baseline="true").first()
 
-        if not tenant.repo or tenant.baseline == "true":
-            repo_url_base = baseline.repo
-            pat = client.get_secret(baseline.vault_name).value
-        elif tenant.repo and tenant.name == baseline.name and not tenant.baseline:
-            repo_url_base = tenant.repo
-            pat = client.get_secret(baseline.vault_name).value
-        else:
-            repo_url_base = tenant.repo
-            pat = client.get_secret(tenant.vault_name).value
+        try:
+            if not tenant.repo or tenant.baseline == "true":
+                if not baseline or not baseline.encrypted_pat:
+                    raise ValueError("Baseline tenant has no encrypted PAT configured")
+                repo_url_base = baseline.repo
+                pat = decrypt_pat(baseline.encrypted_pat)
+            elif tenant.repo and baseline and tenant.name == baseline.name and not tenant.baseline:
+                if not baseline.encrypted_pat:
+                    raise ValueError("Baseline tenant has no encrypted PAT configured")
+                repo_url_base = tenant.repo
+                pat = decrypt_pat(baseline.encrypted_pat)
+            else:
+                if not tenant.encrypted_pat:
+                    raise ValueError(f"Tenant '{tenant.display_name}' has no encrypted PAT configured")
+                repo_url_base = tenant.repo
+                pat = decrypt_pat(tenant.encrypted_pat)
+        except InvalidToken:
+            raise ValueError(
+                f"Could not decrypt PAT for tenant '{tenant.display_name}'. "
+                "The token may be corrupted or the SECRET_KEY may have changed."
+            )
 
         return f"https://IntuneCDMonitor:{pat}@{repo_url_base}", tenant.name
     finally:
@@ -107,21 +123,23 @@ def create_documentation(path: str, tenant_id: int) -> None:
         update_tenant_status_data(tenant, "running", "Creating documentation...")
         db.commit()
 
-        result = subprocess.run(" ".join(cmd_parts), shell=True)
+        result = subprocess.run(" ".join(cmd_parts), shell=True, capture_output=True, text=True)
 
         if result.returncode != 0:
+            logger.error("IntuneCD-startdocumentation failed (exit %s):\nSTDOUT: %s\nSTDERR: %s",
+                         result.returncode, result.stdout, result.stderr)
             update_tenant_status_data(tenant, "error", "Could not run documentation")
             emit_message("Could not run documentation", "error", "backup", tenant_id)
         else:
             try:
                 with open(f"{path}/IntuneCD-documentation.md", "r") as f:
                     html = mistune.html(f.read())
-                with open("/documentation/documentation.html", "w") as f:
-                    f.write(html)
+                tenant.documentation_html = html
                 message = "Backup and documentation complete"
                 emit_message(message, "success", "backup", tenant_id)
                 update_tenant_status_data(tenant, "success", message)
             except Exception:
+                logger.exception("Failed to write documentation.html")
                 emit_message("Could not create documentation", "error", "backup", tenant_id)
                 update_tenant_status_data(tenant, "error", "Could not create documentation")
 
@@ -134,7 +152,17 @@ def create_documentation(path: str, tenant_id: int) -> None:
 def run_intunecd_update(tenant_id: int) -> dict:
     db = SessionLocal()
     try:
-        repo_url, aad_tenant_name = get_connection_info(tenant_id)
+        try:
+            repo_url, aad_tenant_name = get_connection_info(tenant_id)
+        except ValueError as e:
+            logger.error("get_connection_info failed for tenant %s: %s", tenant_id, e)
+            tenant = db.query(Tenant).filter_by(id=tenant_id).first()
+            message = str(e)
+            if tenant:
+                update_tenant_status_data(tenant, "error", message)
+                db.commit()
+            emit_message(message, "error", "update", tenant_id)
+            return {"status": "error", "message": message}
         os.environ["TENANT_NAME"] = aad_tenant_name
         os.environ["CLIENT_ID"] = settings.AZURE_CLIENT_ID
         os.environ["CLIENT_SECRET"] = settings.AZURE_CLIENT_SECRET
@@ -146,6 +174,7 @@ def run_intunecd_update(tenant_id: int) -> dict:
 
         emit_message("Update in progress...", "running", "update", tenant_id)
         date_now = get_now()
+        date_now_dt = get_now_dt()
 
         # Clone repository
         try:
@@ -191,14 +220,14 @@ def run_intunecd_update(tenant_id: int) -> dict:
         diff_count_entry = SummaryDiffCount(
             tenant=tenant_id,
             diff_count=summary["diff_count"],
-            last_update=date_now,
+            last_update=date_now_dt,
         )
         db.add(diff_count_entry)
         db.flush()
 
         records = db.query(SummaryDiffCount).filter_by(tenant=tenant_id).all()[-30:]
         average_count = sum(r.diff_count for r in records) / len(records) if records else 0
-        db.add(SummaryAverageDiffs(tenant=tenant_id, average_diffs=average_count, last_update=date_now))
+        db.add(SummaryAverageDiffs(tenant=tenant_id, average_diffs=average_count, last_update=date_now_dt))
 
         tenant.update_feed = summary.get("feed")
         message = "Update successful"
@@ -216,7 +245,17 @@ def run_intunecd_update(tenant_id: int) -> dict:
 def run_intunecd_backup(tenant_id: int, new_branch=None) -> dict:
     db = SessionLocal()
     try:
-        repo_url, aad_tenant_name = get_connection_info(tenant_id)
+        try:
+            repo_url, aad_tenant_name = get_connection_info(tenant_id)
+        except ValueError as e:
+            logger.error("get_connection_info failed for tenant %s: %s", tenant_id, e)
+            tenant = db.query(Tenant).filter_by(id=tenant_id).first()
+            message = str(e)
+            if tenant:
+                update_tenant_status_data(tenant, "error", message)
+                db.commit()
+            emit_message(message, "error", "backup", tenant_id)
+            return {"status": "error", "message": message}
         os.environ["TENANT_NAME"] = aad_tenant_name
         os.environ["CLIENT_ID"] = settings.AZURE_CLIENT_ID
         os.environ["CLIENT_SECRET"] = settings.AZURE_CLIENT_SECRET
@@ -280,10 +319,11 @@ def run_intunecd_backup(tenant_id: int, new_branch=None) -> dict:
                 assignment_summary = json.load(f)
 
         date_now = get_now()
+        date_now_dt = get_now_dt()
         db.add(SummaryConfigCount(
             tenant=tenant_id,
             config_count=summary["config_count"],
-            last_update=date_now,
+            last_update=date_now_dt,
         ))
 
         if assignment_summary:
@@ -325,8 +365,8 @@ def run_intunecd_backup(tenant_id: int, new_branch=None) -> dict:
                 repo.index.commit("Changes pushed by IntuneCD")
                 repo.remote("origin").push(refspec="HEAD")
 
-            if tenant.create_documentation == "true":
-                create_documentation(local_path, tenant_id)
+        if tenant.create_documentation == "true":
+            create_documentation(local_path, tenant_id)
 
         shutil.rmtree(local_path)
         return {"status": "success", "message": message, "date": date_now}

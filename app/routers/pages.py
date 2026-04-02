@@ -1,5 +1,4 @@
 import json
-import os
 from datetime import datetime, timedelta
 from typing import Annotated
 
@@ -45,6 +44,22 @@ def get_icon_and_color(item: str, feed_type: str = "update"):
 templates.env.globals["get_icon_and_color"] = get_icon_and_color
 
 
+def get_feed_type(item: str) -> str:
+    if "[ERROR]" in item or "Removing" in item:
+        return "error"
+    elif "[WARNING]" in item:
+        return "warning"
+    elif "No changes" in item or "Checking if" in item:
+        return "ok"
+    elif "***" in item:
+        return "info"
+    else:
+        return "update"
+
+
+templates.env.globals["get_feed_type"] = get_feed_type
+
+
 def base_ctx(request: Request, db: Session, user: dict = None) -> dict:
     tenant_list = db.query(Tenant).all()
     return {
@@ -59,8 +74,9 @@ def base_ctx(request: Request, db: Session, user: dict = None) -> dict:
 
 # ── Home ──────────────────────────────────────────────────────────────────────
 
-@router.get("/", response_class=HTMLResponse)
-@router.get("/home", response_class=HTMLResponse)
+
+@router.get("/", response_class=HTMLResponse, include_in_schema=False)
+@router.get("/home", response_class=HTMLResponse, include_in_schema=False)
 async def home(
     request: Request,
     db: Annotated[Session, Depends(get_db)],
@@ -72,24 +88,25 @@ async def home(
     is_admin = settings.ADMIN_ROLE in user.get("roles", [])
 
     alert_expiring = is_admin and any(
-        k.key_expiration and k.key_expiration < now + timedelta(days=30)
-        for k in keys
+        k.key_expiration and k.key_expiration < now + timedelta(days=30) for k in keys
     )
     alert_expired = is_admin and any(
         k.key_expiration and k.key_expiration < now for k in keys
     )
 
     ctx = base_ctx(request, db, user)
-    ctx.update({
-        "segment": get_segment(request),
-        "data": data,
-        "alert_expiring_api_keys": alert_expiring,
-        "alert_expired_api_keys": alert_expired,
-    })
+    ctx.update(
+        {
+            "segment": get_segment(request),
+            "data": data,
+            "alert_expiring_api_keys": alert_expiring,
+            "alert_expired_api_keys": alert_expired,
+        }
+    )
     return templates.TemplateResponse("pages/home.html", ctx)
 
 
-@router.get("/home/tenant/{tenant_id}")
+@router.get("/home/tenant/{tenant_id}", include_in_schema=False)
 async def home_tenant(
     tenant_id: int,
     request: Request,
@@ -97,28 +114,43 @@ async def home_tenant(
     user: Annotated[dict, Depends(require_role)],
 ):
     data = tenant_home_data(db, tenant_id)
-    return JSONResponse({
-        "matchCount": data["matchCount"],
-        "trackedCount": data["trackedCount"],
-        "diffCount": data["diffCount"],
-        "labelsConfig": data["labelsConfig"],
-        "configCounts": data["config_counts"],
-        "labelsAverage": data["labelsAverage"],
-        "averageDiffs": data["average_diffs"],
-        "labelsDiff": data["labelsDiff"],
-        "diffs": data["diffs"],
-        "diff_len": data["diff_len"],
-        "diff_data_last_update": str(data["diff_data_last_update"]),
-        "config_data_last_update": str(data["config_data_last_update"]),
-        "selectedTenantName": data["selected_tenant_name"],
-        "feeds": {
-            "backup_feed": data["backup_feed"],
-            "update_feed": data["update_feed"],
-        },
-    })
+    return JSONResponse(
+        {
+            "matchCount": data["matchCount"],
+            "trackedCount": data["trackedCount"],
+            "diffCount": data["diffCount"],
+            "labelsConfig": data["labelsConfig"],
+            "configCounts": data["config_counts"],
+            "labelsAverage": data["labelsAverage"],
+            "averageDiffs": data["average_diffs"],
+            "labelsDiff": data["labelsDiff"],
+            "diffs": data["diffs"],
+            "diff_len": data["diff_len"],
+            "diff_data_last_update": str(data["diff_data_last_update"]),
+            "config_data_last_update": str(data["config_data_last_update"]),
+            "selectedTenantName": data["selected_tenant_name"],
+            "feeds": {
+                "backup_feed": data["backup_feed"],
+                "update_feed": data["update_feed"],
+            },
+            "recentChanges": [
+                {
+                    "name": c["name"],
+                    "type": c["type"],
+                    "diffCount": c["diff_count"],
+                    "lastChanged": c["last_changed"],
+                }
+                for c in data.get("recent_changes", [])
+            ],
+        }
+    )
 
 
-@router.post("/home/tenant/{tenant_id}/feeds", response_class=HTMLResponse)
+@router.post(
+    "/home/tenant/{tenant_id}/feeds",
+    response_class=HTMLResponse,
+    include_in_schema=False,
+)
 async def home_tenant_feeds(
     tenant_id: int,
     request: Request,
@@ -135,7 +167,8 @@ async def home_tenant_feeds(
 
 # ── Changes ───────────────────────────────────────────────────────────────────
 
-@router.get("/changes", response_class=HTMLResponse)
+
+@router.get("/changes", response_class=HTMLResponse, include_in_schema=False)
 async def changes(
     request: Request,
     db: Annotated[Session, Depends(get_db)],
@@ -151,13 +184,19 @@ async def changes(
             "data": {"changes": []},
         }
         for change in change_data:
-            diffs = change.diffs.replace("'", '"').replace("None", "null") if change.diffs else "[]"
-            tenant_entry["data"]["changes"].append({
-                "id": change.id,
-                "name": change.name,
-                "type": change.type,
-                "diffs": json.loads(diffs),
-            })
+            diffs = (
+                change.diffs.replace("'", '"').replace("None", "null")
+                if change.diffs
+                else "[]"
+            )
+            tenant_entry["data"]["changes"].append(
+                {
+                    "id": change.id,
+                    "name": change.name,
+                    "type": change.type,
+                    "diffs": json.loads(diffs),
+                }
+            )
         tenant_entry["data"]["changes"].reverse()
         tenant_changes.append(tenant_entry)
 
@@ -168,7 +207,8 @@ async def changes(
 
 # ── Assignments ───────────────────────────────────────────────────────────────
 
-@router.get("/assignments", response_class=HTMLResponse)
+
+@router.get("/assignments", response_class=HTMLResponse, include_in_schema=False)
 async def assignments(
     request: Request,
     db: Annotated[Session, Depends(get_db)],
@@ -184,25 +224,36 @@ async def assignments(
             "data": {"assignments": []},
         }
         for a in assignment_data:
-            assigned_to = a.assigned_to.replace("'", '"').replace("\\", "\\\\") if a.assigned_to else "[]"
-            tenant_entry["data"]["assignments"].append({
-                "id": a.id,
-                "name": a.name,
-                "type": a.type,
-                "membership_rule": a.membership_rule,
-                "assigned_to": json.loads(assigned_to),
-            })
-        tenant_entry["data"]["assignments"].sort(key=lambda x: (x["name"] or "").lower())
+            assigned_to = (
+                a.assigned_to.replace("'", '"').replace("\\", "\\\\")
+                if a.assigned_to
+                else "[]"
+            )
+            tenant_entry["data"]["assignments"].append(
+                {
+                    "id": a.id,
+                    "name": a.name,
+                    "type": a.type,
+                    "membership_rule": a.membership_rule,
+                    "assigned_to": json.loads(assigned_to),
+                }
+            )
+        tenant_entry["data"]["assignments"].sort(
+            key=lambda x: (x["name"] or "").lower()
+        )
         tenant_assignments.append(tenant_entry)
 
     ctx = base_ctx(request, db, user)
-    ctx.update({"segment": get_segment(request), "tenant_assignments": tenant_assignments})
+    ctx.update(
+        {"segment": get_segment(request), "tenant_assignments": tenant_assignments}
+    )
     return templates.TemplateResponse("pages/assignments.html", ctx)
 
 
 # ── Documentation ─────────────────────────────────────────────────────────────
 
-@router.get("/documentation", response_class=HTMLResponse)
+
+@router.get("/documentation", response_class=HTMLResponse, include_in_schema=False)
 async def documentation(
     request: Request,
     db: Annotated[Session, Depends(get_db)],
@@ -214,38 +265,26 @@ async def documentation(
     baseline_tenant = db.query(Tenant).filter_by(baseline="true").first()
 
     if baseline_tenant and baseline_tenant.create_documentation == "true":
-        if os.path.exists("/documentation/documentation.html"):
+        if baseline_tenant.documentation_html:
             htmldoc = True
-            with open("/documentation/documentation.html", "r") as f:
-                html = f.read()
-    elif settings.DOCUMENTATION_ACTIVE:
-        from azure.storage.blob import BlobServiceClient
-        try:
-            client = BlobServiceClient.from_connection_string(settings.AZURE_CONNECTION_STRING)
-            blob = client.get_blob_client(
-                container=settings.AZURE_CONTAINER_NAME,
-                blob=settings.DOCUMENTATION_FILE_NAME,
-            )
-            local_path = "/intunecd/app/templates/include/documentation.html"
-            with open(local_path, "wb") as f:
-                f.write(blob.download_blob().readall())
-            active = True
-        except Exception:
-            pass
+            html = baseline_tenant.documentation_html
 
     ctx = base_ctx(request, db, user)
-    ctx.update({
-        "segment": get_segment(request),
-        "active": active,
-        "htmldoc": htmldoc,
-        "html": html,
-    })
+    ctx.update(
+        {
+            "segment": get_segment(request),
+            "active": active,
+            "htmldoc": htmldoc,
+            "html": html,
+        }
+    )
     return templates.TemplateResponse("pages/documentation.html", ctx)
 
 
 # ── Profile ───────────────────────────────────────────────────────────────────
 
-@router.get("/profile", response_class=HTMLResponse)
+
+@router.get("/profile", response_class=HTMLResponse, include_in_schema=False)
 async def profile(
     request: Request,
     db: Annotated[Session, Depends(get_db)],

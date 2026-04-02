@@ -7,12 +7,20 @@
   ("settings",      "settings",               "Settings",      "/settings"),
 ] %}
 
-<aside class="fixed top-0 left-0 h-screen w-64 bg-zinc-900 border-r border-zinc-800 flex flex-col z-30">
+<div x-cloak x-show="sidebarOpen" x-transition.opacity class="fixed inset-0 z-30 bg-zinc-950/70 backdrop-blur-sm lg:hidden" @click="sidebarOpen = false"></div>
+
+<aside class="fixed top-0 left-0 h-screen w-64 bg-zinc-900/70 backdrop-blur-xl border-r border-zinc-800/50 flex flex-col z-40 transition-transform duration-200 ease-out lg:z-30"
+       :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'">
+
+  <!-- Animated gradient edge -->
+  <div class="sidebar-glow-edge"></div>
 
   <!-- Brand -->
-  <div class="px-5 py-5 border-b border-zinc-800 flex-shrink-0">
-    <a href="/" class="flex items-center gap-2 text-zinc-100 font-semibold text-sm truncate">
-      <span class="material-icons-round text-indigo-500 text-xl">shield</span>
+  <div class="px-5 h-16 border-b border-zinc-800/50 flex-shrink-0 flex items-center">
+    <a href="/" @click="sidebarOpen = false" class="flex items-center gap-2.5 text-zinc-100 font-semibold text-sm truncate group">
+      <span class="relative w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-indigo-600/40 group-hover:shadow-indigo-500/50 group-hover:scale-105 transition-all duration-200">
+        <span class="material-icons-round text-white text-base">bolt</span>
+      </span>
       {{ company_name or "IntuneCD Monitor" }}
     </a>
   </div>
@@ -23,32 +31,32 @@
     <p class="text-xs font-semibold text-zinc-500 uppercase tracking-wider px-3 pb-2">Navigation</p>
 
     {% for seg, icon, label, href in pages %}
-    <a href="{{ href }}"
-       class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
-              {% if segment and seg in segment %}bg-indigo-600 text-white{% else %}text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800{% endif %}">
-      <span class="material-icons-round text-base">{{ icon }}</span>
+    <a href="{{ href }}" @click="sidebarOpen = false"
+       class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150
+              {% if segment and seg in segment %}bg-gradient-to-r from-indigo-500/15 to-indigo-500/5 text-indigo-300 ring-1 ring-inset ring-indigo-500/25 shadow-sm shadow-indigo-900/20{% else %}text-zinc-400 hover:text-zinc-100 hover:bg-white/[0.04]{% endif %}">
+      <span class="material-icons-round text-base {% if segment and seg in segment %}text-indigo-400{% endif %}">{{ icon }}</span>
       {{ label }}
     </a>
     {% endfor %}
 
     <p class="text-xs font-semibold text-zinc-500 uppercase tracking-wider px-3 pt-4 pb-2">Multi-Tenancy</p>
 
-    <a href="/tenants"
-       class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
-              {% if segment and 'tenants' in segment %}bg-indigo-600 text-white{% else %}text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800{% endif %}">
-      <span class="material-icons-round text-base">account_tree</span>
+    <a href="/tenants" @click="sidebarOpen = false"
+       class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150
+              {% if segment and 'tenants' in segment %}bg-gradient-to-r from-indigo-500/15 to-indigo-500/5 text-indigo-300 ring-1 ring-inset ring-indigo-500/25 shadow-sm shadow-indigo-900/20{% else %}text-zinc-400 hover:text-zinc-100 hover:bg-white/[0.04]{% endif %}">
+      <span class="material-icons-round text-base {% if segment and 'tenants' in segment %}text-indigo-400{% endif %}">account_tree</span>
       Tenants
     </a>
 
     <p class="text-xs font-semibold text-zinc-500 uppercase tracking-wider px-3 pt-4 pb-2">Docs</p>
 
-    <a href="/docs" target="_blank"
+    <a href="/docs" target="_blank" @click="sidebarOpen = false"
        class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors">
       <span class="material-icons-round text-base">code</span>
       API Docs
     </a>
 
-    <a href="https://github.com/almenscorner/intunecd-monitor/wiki" target="_blank"
+    <a href="https://github.com/almenscorner/intunecd-monitor/wiki" target="_blank" @click="sidebarOpen = false"
        class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors">
       <span class="material-icons-round text-base">menu_book</span>
       Wiki
@@ -57,15 +65,15 @@
   </nav>
 
   <!-- Account -->
-  <div class="border-t border-zinc-800 px-3 py-3 space-y-0.5 flex-shrink-0">
-    <a href="/profile"
-       class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors
-              {% if segment and 'profile' in segment %}bg-indigo-600 text-white{% else %}text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800{% endif %}">
+  <div class="border-t border-zinc-800/50 px-3 py-3 space-y-0.5 flex-shrink-0">
+    <a href="/profile" @click="sidebarOpen = false"
+       class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150
+              {% if segment and 'profile' in segment %}bg-gradient-to-r from-indigo-500/15 to-indigo-500/5 text-indigo-300 ring-1 ring-inset ring-indigo-500/25{% else %}text-zinc-400 hover:text-zinc-100 hover:bg-white/[0.04]{% endif %}">
       <span class="material-icons-round text-base">person</span>
       Profile
     </a>
-    <a href="/logout"
-       class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-zinc-400 hover:text-rose-400 hover:bg-zinc-800 transition-colors">
+    <a href="/logout" @click="sidebarOpen = false"
+       class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-zinc-400 hover:text-rose-400 hover:bg-rose-500/[0.06] transition-all duration-150">
       <span class="material-icons-round text-base">logout</span>
       Sign Out
     </a>

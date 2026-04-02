@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Optional
 
 import bcrypt
-from sqlalchemy import String
+from sqlalchemy import String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -65,7 +65,7 @@ class Tenant(Base):
     display_name: Mapped[Optional[str]] = mapped_column(String)
     name: Mapped[Optional[str]] = mapped_column(String)
     repo: Mapped[Optional[str]] = mapped_column(String)
-    vault_name: Mapped[Optional[str]] = mapped_column(String)
+    encrypted_pat: Mapped[Optional[str]] = mapped_column(String)
     update_args: Mapped[Optional[str]] = mapped_column(String)
     backup_args: Mapped[Optional[str]] = mapped_column(String)
     baseline: Mapped[Optional[str]] = mapped_column(String)
@@ -78,6 +78,7 @@ class Tenant(Base):
     new_branch: Mapped[Optional[str]] = mapped_column(String)
     update_branch: Mapped[Optional[str]] = mapped_column(String)
     create_documentation: Mapped[Optional[str]] = mapped_column(String)
+    documentation_html: Mapped[Optional[str]] = mapped_column(Text)
 
 
 class ApiKey(Base):

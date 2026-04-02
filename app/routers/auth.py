@@ -1,9 +1,8 @@
-import msal
 from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 
-from app.auth import _build_auth_code_flow, _build_msal_app, _load_cache, _save_cache
+from app.auth import _build_auth_code_flow, _build_msal_app
 from app.config import settings
 
 router = APIRouter()
@@ -11,7 +10,7 @@ templates = Jinja2Templates(directory="app/templates")
 
 
 @router.get("/login", include_in_schema=False)
-async def login(request: Request):
+def login(request: Request):
     flow = _build_auth_code_flow(request, scopes=settings.SCOPE)
     request.session["flow"] = flow
     return templates.TemplateResponse(
@@ -26,11 +25,11 @@ async def login(request: Request):
 
 
 @router.get("/authorized", name="authorized", include_in_schema=False)
-async def authorized(request: Request):
+def authorized(request: Request):
     try:
-        cache = _load_cache(request)
-        result = _build_msal_app(cache=cache).acquire_token_by_auth_code_flow(
-            request.session.get("flow", {}),
+        flow = request.session.pop("flow", {})
+        result = _build_msal_app().acquire_token_by_auth_code_flow(
+            flow,
             dict(request.query_params),
         )
         if "error" in result:
@@ -38,16 +37,16 @@ async def authorized(request: Request):
                 "pages/auth_error.html",
                 {"request": request, "result": result},
             )
+        request.session.clear()
         request.session["user"] = result.get("id_token_claims")
-        _save_cache(request, cache)
     except ValueError:
         pass  # simply not authenticated yet, redirect to login
 
-    return RedirectResponse(url="/")
+    return RedirectResponse(url="/", status_code=302)
 
 
 @router.get("/logout", include_in_schema=False)
-async def logout(request: Request):
+def logout(request: Request):
     request.session.clear()
     logout_url = (
         f"https://login.microsoftonline.com/{settings.AZURE_TENANT_ID}/oauth2/v2.0/logout"

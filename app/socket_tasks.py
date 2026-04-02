@@ -10,9 +10,13 @@ _broker_url = os.environ.get("CELERY_BROKER_URL", "redis://redis:6379/0")
 _mgr = socketio.RedisManager(_broker_url, write_only=True)
 
 
-def get_now() -> str:
+def get_now_dt() -> datetime:
     tz = pytz.timezone(os.environ.get("TIMEZONE", "UTC"))
-    return datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
+    return datetime.now(tz)
+
+
+def get_now() -> str:
+    return get_now_dt().strftime("%Y-%m-%d %H:%M:%S")
 
 
 def emit_message(message: str, status: str, task: str, tenant_id: int) -> None:

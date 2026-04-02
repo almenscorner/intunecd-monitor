@@ -1,9 +1,11 @@
 import base64
+import json
 
 from sqlalchemy.orm import Session
 
 from app.models import (
     SummaryAverageDiffs,
+    SummaryChange,
     SummaryConfigCount,
     SummaryDiffCount,
     Tenant,
@@ -51,6 +53,31 @@ def get_line_data_config(db: Session, baseline_id):
     return labels, data
 
 
+def get_recent_changes(db: Session, tenant_id, limit: int = 10):
+    if not tenant_id:
+        return []
+    records = (
+        db.query(SummaryChange)
+        .filter_by(tenant=tenant_id)
+        .order_by(SummaryChange.id.desc())
+        .limit(limit)
+        .all()
+    )
+    result = []
+    for c in records:
+        try:
+            diffs = json.loads(c.diffs.replace("'", '"').replace("None", "null")) if c.diffs else []
+        except Exception:
+            diffs = []
+        result.append({
+            "name": c.name or "Unknown",
+            "type": c.type or "",
+            "diff_count": len(diffs),
+            "last_changed": diffs[0].get("change_date", "") if diffs else "",
+        })
+    return result
+
+
 def get_line_data_average(db: Session, tenant_id):
     records = db.query(SummaryAverageDiffs).filter_by(tenant=tenant_id).all()[-30:]
     labels = [str(r.last_update) for r in records]
@@ -80,6 +107,7 @@ def tenant_home_data(db: Session, tenant_id=None):
         else 0
     )
 
+    recent_changes = get_recent_changes(db, tenant_id)
     feed_backup, feed_update = get_feeds(db, tenant_id)
 
     labels_diff, chart_diffs, diff_len = get_line_data_diff(db, tenant_id)
@@ -91,6 +119,7 @@ def tenant_home_data(db: Session, tenant_id=None):
 
     return {
         "tenants": tenants,
+        "selected_tenant": tenant_id,
         "selected_tenant_name": selected_tenant_name,
         "trackedCount": tracked_count,
         "diffCount": diff_count,
@@ -106,4 +135,5 @@ def tenant_home_data(db: Session, tenant_id=None):
         "average_diffs": average_diffs,
         "diff_data_last_update": diff_data.last_update if diff_data else None,
         "config_data_last_update": count_data.last_update if count_data else None,
+        "recent_changes": recent_changes,
     }

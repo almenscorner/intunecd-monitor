@@ -1,10 +1,18 @@
 {% extends "base/template.html" %}
-{% block title %}Error{% endblock %} 
+{% block title %}Error{% endblock %}
+
 {% block content %}
-<div class="container-fluid py-4">
-    <div class="col-8">
-      <h1>Oops! Something went wrong.</h1>
-    <p>{{ error }}</p>
-</div>
+<div class="p-6 flex items-center justify-center" style="min-height: calc(100vh - 64px);">
+  <div class="text-center max-w-md">
+    <div class="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mx-auto mb-6 shadow-lg shadow-rose-900/20">
+      <span class="material-icons-round text-rose-400" style="font-size:32px">error_outline</span>
+    </div>
+    <h1 class="text-2xl font-bold text-zinc-100 mb-3 tracking-tight">Something went wrong</h1>
+    <p class="text-sm text-zinc-400 mb-8 leading-relaxed">{{ error }}</p>
+    <a href="/" class="btn-primary">
+      <span class="material-icons-round text-base">arrow_back</span>
+      Back to Dashboard
+    </a>
+  </div>
 </div>
 {% endblock %}

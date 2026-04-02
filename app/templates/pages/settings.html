@@ -41,21 +41,11 @@
           </tr>
           <tr class="hover:bg-zinc-800/40 transition-colors">
             <td class="px-4 py-2.5 text-zinc-400">Database URL</td>
-            <td class="px-4 py-2.5 text-zinc-200 break-all">{{ settings.DATABASE_URL }}</td>
+            <td class="px-4 py-2.5 text-zinc-200 break-all">{{ database_url }}</td>
           </tr>
           <tr class="hover:bg-zinc-800/40 transition-colors">
             <td class="px-4 py-2.5 text-zinc-400">Company Name</td>
             <td class="px-4 py-2.5 text-zinc-200">{{ settings.COMPANY_NAME or '—' }}</td>
-          </tr>
-          <tr class="hover:bg-zinc-800/40 transition-colors">
-            <td class="px-4 py-2.5 text-zinc-400">Documentation Active</td>
-            <td class="px-4 py-2.5">
-              {% if settings.DOCUMENTATION_ACTIVE %}
-              <span class="badge-success">enabled</span>
-              {% else %}
-              <span class="badge text-zinc-500 bg-zinc-800 border border-zinc-700 rounded px-2 py-0.5 text-xs">disabled</span>
-              {% endif %}
-            </td>
           </tr>
           {% if settings.AZURE_CONTAINER_NAME %}
           <tr class="hover:bg-zinc-800/40 transition-colors">

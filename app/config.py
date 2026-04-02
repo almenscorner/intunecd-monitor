@@ -20,24 +20,22 @@ class Settings(BaseSettings):
     # Authorization
     ADMIN_ROLE: str
 
-    # Optional Azure Key Vault (required when using tenant PAT storage)
-    AZURE_VAULT_URL: Optional[str] = None
-
     # Application
     COMPANY_NAME: str = ""
     TIMEZONE: str = "UTC"
     SESSION_LIFETIME_HOURS: int = 3
-    APP_VERSION: str = "2.2.0"
+    APP_VERSION: str = "3.0.0"
+
+    SERVER_NAME: str = ""
+    HTTPS_ONLY: bool = False
 
     # Celery / Redis
     CELERY_BROKER_URL: str = "redis://redis:6379/0"
     CELERY_RESULT_BACKEND: str = "redis://redis:6379/0"
+    REDIS_SESSION_URL: str = "redis://redis:6379/1"
     BEAT_DB_URI: Optional[str] = None
 
     # Optional documentation feature
-    DOCUMENTATION_ACTIVE: bool = False
-    AZURE_CONNECTION_STRING: Optional[str] = None
-    AZURE_CONTAINER_NAME: Optional[str] = None
     DOCUMENTATION_FILE_NAME: Optional[str] = None
     DOCUMENTATION_MAX_LENGTH: Optional[int] = None
 

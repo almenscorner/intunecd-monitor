@@ -1,12 +1,21 @@
 from datetime import datetime
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, Request, status
+from fastapi import Depends, HTTPException, Request, Security, status
+from fastapi.security import APIKeyHeader
 from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.database import get_db
 from app.models import ApiKey
+
+
+api_key_header = APIKeyHeader(
+    name="X-Api-Key",
+    auto_error=False,
+    scheme_name="X-Api-Key",
+    description="API key created in the Settings page.",
+)
 
 
 def get_current_user(request: Request) -> dict:
@@ -43,10 +52,9 @@ def require_admin(user: Annotated[dict, Depends(get_current_user)]) -> dict:
 
 
 def require_api_key(
-    request: Request,
+    key_header: Annotated[str | None, Security(api_key_header)],
     db: Annotated[Session, Depends(get_db)],
 ) -> None:
-    key_header = request.headers.get("X-Api-Key")
     if not key_header:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -54,9 +62,13 @@ def require_api_key(
         )
 
     now = datetime.now()
-    keys = db.query(ApiKey).all()
-    for k in keys:
-        if k.key_expiration and k.key_expiration > now and k.check_key(key_header):
+    valid_keys = (
+        db.query(ApiKey)
+        .filter(ApiKey.key_expiration > now)
+        .all()
+    )
+    for k in valid_keys:
+        if k.check_key(key_header):
             return
 
     raise HTTPException(

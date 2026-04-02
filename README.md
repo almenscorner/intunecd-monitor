@@ -8,9 +8,9 @@
 # IntuneCD Monitor
 This app is a frontend solution to the [IntuneCD python package](https://github.com/almenscorner/intunecd) that allows you to easily monitor tracked configurations, trends over time, differences between configurations across multiple tenants.
 
-It's built using Flask and running in a docker container behind an NGINX proxy. Since it is deployed to Azure App Service, SSL is handled by Microsoft and there's no need to build SSL support into the application.
+It's built using **FastAPI** and runs as a Docker stack (web, worker, beat) behind a **Caddy** reverse proxy with automatic TLS. The database backend is **PostgreSQL** (SQLite supported for local development).
 
-The API to the application is protected by an API Key that is generated from the console and is hashed and stored in the Azure SQL database. Many of the actions in IntuneCD Monitor is protected by assignment to an admin role on the Entra ID app.
+The REST API is protected by an API key that is generated from the settings page, hashed with bcrypt, and stored in the database. UI access is gated by assignment to an app role on the Entra ID App Registration.
 
 ### Getting started
 

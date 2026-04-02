@@ -2,18 +2,32 @@
 
   <!-- Update feed -->
   <div>
-    <h2 class="text-sm font-semibold text-zinc-300 mb-3">Update feed</h2>
-    <div class="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
-      <div class="p-3 border-b border-zinc-800">
-        <input id="updateSearch" type="text" placeholder="Search…"
-               onclick="attachTableListener('#updateSearch', '#updateTable')"
-               class="input w-full text-sm" />
+    <h2 class="section-title flex items-center gap-2">
+      <span class="w-1 h-3.5 rounded-full bg-gradient-to-b from-indigo-400 to-indigo-600"></span>
+      Update feed
+    </h2>
+    <div class="card overflow-hidden">
+      <div class="p-3 border-b border-zinc-800/50 space-y-2">
+        <div class="relative">
+          <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" style="font-size:15px">search</span>
+          <input id="updateSearch" type="text" placeholder="Search…"
+                 oninput="filterFeed('updateTable', this.value, null)"
+                 class="input pl-9 w-full text-sm" />
+        </div>
+        <div class="flex items-center gap-1.5">
+          <button onclick="filterFeed('updateTable', null, '')"    class="feed-filter px-2 py-0.5 rounded text-[10px] font-medium bg-zinc-700 text-zinc-300 hover:bg-zinc-600 transition-colors">All</button>
+          <button onclick="filterFeed('updateTable', null, 'error')"   class="feed-filter px-2 py-0.5 rounded text-[10px] font-medium bg-zinc-800 text-rose-400   ring-1 ring-inset ring-rose-500/25   hover:bg-rose-500/10  transition-colors">Errors</button>
+          <button onclick="filterFeed('updateTable', null, 'warning')" class="feed-filter px-2 py-0.5 rounded text-[10px] font-medium bg-zinc-800 text-amber-400  ring-1 ring-inset ring-amber-500/25  hover:bg-amber-500/10 transition-colors">Warnings</button>
+          <button onclick="filterFeed('updateTable', null, 'update')"  class="feed-filter px-2 py-0.5 rounded text-[10px] font-medium bg-zinc-800 text-zinc-400   ring-1 ring-inset ring-zinc-700/50   hover:bg-zinc-700/60  transition-colors">Changes</button>
+          <button onclick="filterFeed('updateTable', null, 'ok')" class="feed-filter px-2 py-0.5 rounded text-[10px] font-medium bg-zinc-800 text-green-400    ring-1 ring-inset ring-green-500/25    hover:bg-green-500/10   transition-colors">Matchings</button>
+        </div>
       </div>
       <div class="overflow-y-auto" style="max-height: 480px;">
         <table class="w-full text-sm">
-          <tbody id="updateTable" class="divide-y divide-zinc-800">
+          <tbody id="updateTable" class="divide-y divide-zinc-800/50">
             {% for item in data.update_feed %}
-            <tr class="hover:bg-zinc-800/50 transition-colors">
+            {% set feed_type = get_feed_type(item) %}
+            <tr class="feed-row feed-row-update hover:bg-indigo-500/[0.04] transition-colors" data-feed-type="{{ feed_type }}">
               <td class="px-4 py-2.5">
                 {% set icon, color = get_icon_and_color(item) %}
                 <div class="flex items-center gap-3">
@@ -31,18 +45,30 @@
 
   <!-- Backup feed -->
   <div>
-    <h2 class="text-sm font-semibold text-zinc-300 mb-3">Backup feed</h2>
-    <div class="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
-      <div class="p-3 border-b border-zinc-800">
-        <input id="backupSearch" type="text" placeholder="Search…"
-               onclick="attachTableListener('#backupSearch', '#backupTable')"
-               class="input w-full text-sm" />
+    <h2 class="section-title flex items-center gap-2">
+      <span class="w-1 h-3.5 rounded-full bg-gradient-to-b from-sky-400 to-sky-600"></span>
+      Backup feed
+    </h2>
+    <div class="card overflow-hidden">
+      <div class="p-3 border-b border-zinc-800/50 space-y-2">
+        <div class="relative">
+          <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" style="font-size:15px">search</span>
+          <input id="backupSearch" type="text" placeholder="Search…"
+                 oninput="filterFeed('backupTable', this.value, null)"
+                 class="input pl-9 w-full text-sm" />
+        </div>
+        <div class="flex items-center gap-1.5">
+          <button onclick="filterFeed('backupTable', null, '')"    class="feed-filter px-2 py-0.5 rounded text-[10px] font-medium bg-zinc-700 text-zinc-300 hover:bg-zinc-600 transition-colors">All</button>
+          <button onclick="filterFeed('backupTable', null, 'error')"   class="feed-filter px-2 py-0.5 rounded text-[10px] font-medium bg-zinc-800 text-rose-400   ring-1 ring-inset ring-rose-500/25   hover:bg-rose-500/10  transition-colors">Errors</button>
+          <button onclick="filterFeed('backupTable', null, 'warning')" class="feed-filter px-2 py-0.5 rounded text-[10px] font-medium bg-zinc-800 text-amber-400  ring-1 ring-inset ring-amber-500/25  hover:bg-amber-500/10 transition-colors">Warnings</button>
+        </div>
       </div>
       <div class="overflow-y-auto" style="max-height: 480px;">
         <table class="w-full text-sm">
-          <tbody id="backupTable" class="divide-y divide-zinc-800">
+          <tbody id="backupTable" class="divide-y divide-zinc-800/50">
             {% for item in data.backup_feed %}
-            <tr class="hover:bg-zinc-800/50 transition-colors">
+            {% set feed_type = get_feed_type(item) %}
+            <tr class="feed-row feed-row-backup hover:bg-sky-500/[0.04] transition-colors" data-feed-type="{{ feed_type }}">
               <td class="px-4 py-2.5">
                 {% set icon, color = get_icon_and_color(item, "backup") %}
                 <div class="flex items-center gap-3">

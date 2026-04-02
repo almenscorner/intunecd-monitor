@@ -137,3 +137,12 @@ flask_session/
 
 #DB
 db/*
+
+# caddy
+Caddyfile
+
+# claude
+.claude/
+
+# git/
+git/

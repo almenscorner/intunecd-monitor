@@ -1,5 +1,5 @@
 # ── Base image ────────────────────────────────────────────────────────────────
-FROM --platform=linux/amd64 python:3.12-slim-bookworm AS base
+FROM python:3.12-slim-bookworm AS base
 
 WORKDIR /intunecd
 
@@ -25,8 +25,8 @@ RUN useradd -m -u 1000 appuser
 FROM base AS web
 
 COPY . /intunecd
-RUN mkdir -p /intunecd/db /documentation /intunecd/git \
- && chown -R appuser:appuser /intunecd /documentation
+RUN mkdir -p /intunecd/db /intunecd/git \
+ && chown -R appuser:appuser /intunecd
 
 RUN chmod u+x ./server-entrypoint.sh
 

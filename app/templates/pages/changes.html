@@ -2,62 +2,127 @@
 {% block title %}Changes{% endblock %}
 
 {% block content %}
-<div class="p-6 space-y-8">
+<div class="p-6 space-y-6">
+
+  <!-- Page header -->
+  <div>
+    <h1 class="text-xl font-semibold text-zinc-100 tracking-tight">Changes</h1>
+    <p class="text-sm text-zinc-500 mt-0.5">Configuration modification history across all tenants</p>
+  </div>
+
   {% for tenant in tenant_changes %}
   {% if tenant.data.changes %}
-  <div>
-    <div class="mb-4">
-      <h2 class="text-base font-semibold text-zinc-100">{{ tenant.name }}</h2>
-      <p class="text-xs text-zinc-500 mt-0.5">Summary of changes from last 180 records</p>
-    </div>
+  <div class="card overflow-hidden" x-data="{ open: true }">
 
-    <div class="card p-5">
-      <div class="mb-3">
-        <input id="accordionSearch-{{ tenant.id }}" type="text" placeholder="Search…"
-               onclick="attachAccordionListener({{ tenant.id }})"
-               class="input w-full text-sm" />
+    <!-- Tenant header -->
+    <button type="button" @click="open = !open"
+            class="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-zinc-800/40 transition-colors group">
+      <div class="flex items-center gap-3">
+        <div class="w-7 h-7 rounded-lg bg-indigo-500/10 ring-1 ring-inset ring-indigo-500/20 flex items-center justify-center flex-shrink-0">
+          <span class="material-icons-round text-indigo-400" style="font-size:14px">corporate_fare</span>
+        </div>
+        <div>
+          <h2 class="text-sm font-semibold text-zinc-100">{{ tenant.name }}</h2>
+          <p class="text-xs text-zinc-500">Last 180 records</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="badge-info">{{ tenant.data.changes | length }} changes</span>
+        <span class="material-icons-round text-zinc-500 text-base transition-transform duration-200"
+              :class="open ? 'rotate-180' : ''">expand_more</span>
+      </div>
+    </button>
+
+    <div x-show="open"
+         x-transition:enter="transition ease-out duration-150"
+         x-transition:enter-start="opacity-0 -translate-y-1"
+         x-transition:enter-end="opacity-100 translate-y-0"
+         class="border-t border-zinc-800/60">
+
+      <!-- Search -->
+      <div class="px-4 pt-4 pb-2">
+        <div class="relative">
+          <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" style="font-size:16px">search</span>
+          <input id="accordionSearch-{{ tenant.id }}"
+                 type="text"
+                 placeholder="Filter changes…"
+                 oninput="filterAccordion({{ tenant.id }}, this.value)"
+                 class="input pl-9 w-full text-sm" />
+        </div>
       </div>
 
-      <div id="accordionFlush-{{ tenant.id }}" class="space-y-1">
+      <div id="accordionFlush-{{ tenant.id }}" class="px-4 pb-4 space-y-2 mt-2">
         {% for change in tenant.data.changes %}
-        <div class="accordion-item border border-zinc-800 rounded-lg overflow-hidden" x-data="{ open: false }">
+        <div class="accordion-item border border-zinc-800/80 rounded-xl overflow-hidden"
+             x-data="{ open: false }">
+
+          <!-- Change header -->
           <button type="button" @click="open = !open"
-                  class="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-zinc-800/50 transition-colors">
-            <div>
-              <p class="text-sm text-zinc-200"><span class="text-zinc-500">Name:</span> {{ change.name }}</p>
-              <p class="text-xs text-zinc-500 mt-0.5"><span>Type:</span> {{ change.type }}</p>
+                  class="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-zinc-800/30 transition-colors group">
+            <div class="w-7 h-7 rounded-lg bg-zinc-800/80 ring-1 ring-inset ring-zinc-700/60 flex items-center justify-center flex-shrink-0">
+              <span class="material-icons-round text-zinc-400" style="font-size:13px">edit_note</span>
             </div>
-            <span class="material-icons-round text-zinc-500 text-xl flex-shrink-0 ml-3"
-                  x-text="open ? 'expand_less' : 'expand_more'">expand_more</span>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-medium text-zinc-200 group-hover:text-zinc-100 transition-colors truncate">{{ change.name }}</p>
+              <div class="flex items-center gap-2 mt-0.5 flex-wrap">
+                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-zinc-800/80 text-zinc-400 ring-1 ring-inset ring-zinc-700/50">{{ change.type }}</span>
+                <span class="text-[11px] text-zinc-600">{{ change.diffs | length }} setting{{ '' if change.diffs | length == 1 else 's' }} changed</span>
+              </div>
+            </div>
+            <span class="material-icons-round text-zinc-600 group-hover:text-zinc-400 text-xl flex-shrink-0 transition-transform duration-200"
+                  :class="open ? 'rotate-180 text-zinc-400' : ''">expand_more</span>
           </button>
-          <div x-show="open" x-transition class="border-t border-zinc-800 overflow-x-auto">
-            <table class="w-full text-xs">
-              <thead>
-                <tr class="border-b border-zinc-800">
-                  <th class="px-4 py-2.5 text-left font-semibold text-zinc-400 uppercase tracking-wider">Setting</th>
-                  <th class="px-4 py-2.5 text-left font-semibold text-zinc-400 uppercase tracking-wider">New value</th>
-                  <th class="px-4 py-2.5 text-left font-semibold text-zinc-400 uppercase tracking-wider">Old value</th>
-                  <th class="px-4 py-2.5 text-left font-semibold text-zinc-400 uppercase tracking-wider">Date</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-zinc-800">
-                {% for diff in change.diffs %}
-                <tr class="hover:bg-zinc-800/40 transition-colors">
-                  <td class="px-4 py-2.5 text-zinc-300">{{ diff.setting }}</td>
-                  <td class="px-4 py-2.5 text-emerald-400">{{ diff.new_val }}</td>
-                  <td class="px-4 py-2.5 text-rose-400">{{ diff.old_val }}</td>
-                  <td class="px-4 py-2.5 text-zinc-500">{{ diff.change_date }}</td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
+
+          <!-- Diff detail -->
+          <div x-show="open"
+               x-transition:enter="transition ease-out duration-150"
+               x-transition:enter-start="opacity-0"
+               x-transition:enter-end="opacity-100"
+               class="border-t border-zinc-800/60 bg-zinc-950/50 divide-y divide-zinc-800/40">
+            {% for diff in change.diffs %}
+            <div class="px-4 py-3">
+              <div class="flex items-start justify-between gap-4 mb-2.5">
+                <p class="text-xs font-mono font-medium text-zinc-300">{{ diff.setting }}</p>
+                <span class="text-[11px] text-zinc-600 whitespace-nowrap flex-shrink-0">{{ diff.change_date }}</span>
+              </div>
+              <div class="space-y-1.5">
+                {% if diff.old_val is not none %}
+                <div class="flex items-start gap-2">
+                  <span class="text-[11px] font-mono font-bold text-rose-500 w-3 flex-shrink-0 mt-0.5 leading-relaxed">−</span>
+                  <code class="text-xs font-mono text-rose-300/90 bg-rose-500/10 px-2.5 py-1.5 rounded-md break-all leading-relaxed flex-1">{{ diff.old_val }}</code>
+                </div>
+                {% endif %}
+                {% if diff.new_val is not none %}
+                <div class="flex items-start gap-2">
+                  <span class="text-[11px] font-mono font-bold text-emerald-500 w-3 flex-shrink-0 mt-0.5 leading-relaxed">+</span>
+                  <code class="text-xs font-mono text-emerald-300/90 bg-emerald-500/10 px-2.5 py-1.5 rounded-md break-all leading-relaxed flex-1">{{ diff.new_val }}</code>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+            {% endfor %}
           </div>
+
         </div>
         {% endfor %}
       </div>
     </div>
+
   </div>
   {% endif %}
   {% endfor %}
+
+  {% set has_changes = namespace(value=false) %}
+  {% for tenant in tenant_changes %}
+    {% if tenant.data.changes %}{% set has_changes.value = true %}{% endif %}
+  {% endfor %}
+  {% if not has_changes.value %}
+  <div class="card p-16 text-center">
+    <span class="material-icons-round text-zinc-700 mb-3" style="font-size:40px">history</span>
+    <p class="text-sm font-medium text-zinc-400">No changes recorded yet</p>
+    <p class="text-xs text-zinc-600 mt-1">Changes will appear here once configurations are tracked</p>
+  </div>
+  {% endif %}
+
 </div>
 {% endblock %}

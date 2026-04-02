@@ -1,23 +1,30 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Sign In — IntuneCD Monitor</title>
-  <link rel="icon" type="image/png" href="{{ url_for('static', filename='icon-72x72.png') }}" />
+  <link rel="icon" type="image/png" href="/static/icon-72x72.png" />
   {% include 'include/stylesheets.html' %}
 </head>
 
-<body class="bg-zinc-950 min-h-screen flex items-center justify-center px-4">
+<body class="bg-zinc-950 min-h-screen flex items-center justify-center px-4" style="background-image: radial-gradient(ellipse 100% 70% at 50% -10%, rgba(99,102,241,0.18) 0%, transparent 60%), radial-gradient(ellipse 50% 50% at 85% 90%, rgba(139,92,246,0.12) 0%, transparent 50%), radial-gradient(ellipse 40% 40% at 10% 80%, rgba(56,189,248,0.06) 0%, transparent 50%);">
 
-  <div class="w-full max-w-sm">
+  <!-- dot grid -->
+  <div class="fixed inset-0 pointer-events-none select-none" aria-hidden="true"
+       style="background-image: radial-gradient(rgba(255,255,255,0.04) 1px, transparent 1px); background-size: 28px 28px;"></div>
+
+  <div class="relative w-full max-w-sm" style="animation: fade-up 0.4s cubic-bezier(0.22,1,0.36,1) both;">
 
     <!-- Card -->
-    <div class="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl">
+    <div class="relative">
+      <div class="absolute -inset-4 bg-gradient-to-tr from-indigo-600/25 via-violet-500/15 to-sky-600/15 rounded-[2.5rem] blur-3xl pointer-events-none animate-pulse" style="animation-duration: 4s;"></div>
+      <div class="relative bg-zinc-900/90 backdrop-blur-sm border border-zinc-800/60 rounded-2xl overflow-hidden shadow-2xl shadow-black/60">
 
-      <!-- Header -->
-      <div class="bg-gradient-to-br from-indigo-600 to-indigo-800 px-8 py-8 text-center">
-        <span class="material-icons-round text-white text-4xl mb-2 block">shield</span>
+        <!-- Header -->
+        <div class="relative bg-gradient-to-br from-indigo-500 via-indigo-600 to-violet-700 px-8 py-8 text-center overflow-hidden">
+        <div class="absolute inset-0 opacity-[0.07]" style="background-image: radial-gradient(rgba(255,255,255,0.8) 1px, transparent 1px); background-size: 20px 20px;"></div>
+        <span class="relative material-icons-round text-white text-4xl mb-2 block drop-shadow-lg">bolt</span>
         {% if company_name %}
         <h1 class="text-white font-bold text-xl">{{ company_name }}</h1>
         <p class="text-indigo-200 text-sm mt-1">IntuneCD Monitor</p>
@@ -52,12 +59,13 @@
       <div class="px-8 py-8">
         <p class="text-zinc-400 text-sm text-center mb-6">Sign in with your Entra ID account to continue</p>
         <a href="{{ auth_url }}"
-           class="flex items-center justify-center gap-2 w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 rounded-lg transition-colors text-sm">
+           class="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white font-medium py-2.5 rounded-lg transition-all duration-200 text-sm shadow-lg shadow-indigo-900/40 hover:shadow-indigo-800/50 active:scale-[0.98]">
           <span class="material-icons-round text-base">login</span>
           Sign in with Microsoft
         </a>
       </div>
 
+      </div>
     </div>
 
     <!-- Footer -->

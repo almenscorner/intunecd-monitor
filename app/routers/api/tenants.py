@@ -3,9 +3,9 @@ from typing import Annotated, List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.config import settings
 from app.database import get_db
 from app.deps import require_api_key
+from app.encryption import encrypt_pat
 from app.models import (
     SummaryAssignment,
     SummaryAverageDiffs,
@@ -59,11 +59,8 @@ def patch_tenant(
     elif body.baseline is not None:
         tenant.baseline = ""
 
-    if body.pat and tenant.vault_name and settings.AZURE_VAULT_URL:
-        from azure.identity import DefaultAzureCredential
-        from azure.keyvault.secrets import SecretClient
-        client = SecretClient(settings.AZURE_VAULT_URL, DefaultAzureCredential())
-        client.set_secret(tenant.vault_name, body.pat)
+    if body.pat:
+        tenant.encrypted_pat = encrypt_pat(body.pat)
 
     db.commit()
     db.refresh(tenant)
@@ -81,14 +78,6 @@ def delete_tenant(tenant_id: int, db: Annotated[Session, Depends(get_db)]):
     db.query(SummaryConfigCount).filter_by(tenant=tenant_id).delete()
     db.query(SummaryDiffCount).filter_by(tenant=tenant_id).delete()
     db.query(SummaryAverageDiffs).filter_by(tenant=tenant_id).delete()
-
-    if tenant.vault_name and settings.AZURE_VAULT_URL:
-        from azure.identity import DefaultAzureCredential
-        from azure.keyvault.secrets import SecretClient
-        client = SecretClient(settings.AZURE_VAULT_URL, DefaultAzureCredential())
-        op = client.begin_delete_secret(tenant.vault_name)
-        op.wait()
-        client.purge_deleted_secret(tenant.vault_name)
 
     db.delete(tenant)
     db.commit()

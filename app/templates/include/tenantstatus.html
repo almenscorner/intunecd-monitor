@@ -1,44 +1,65 @@
 <div id="tenant-status" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
   {% for item in data.tenants %}
-  <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex flex-col gap-3">
+  {% if item.last_update_status == 'error' or item.last_update_status == 'cancelled' %}
+    {% set status_border = 'border-l-rose-500' %}
+    {% set status_badge  = 'badge-danger' %}
+    {% set status_glow   = 'glow-rose' %}
+    {% set dot_color     = 'bg-rose-500 status-dot status-dot-rose' %}
+  {% elif item.last_update_status == 'success' %}
+    {% set status_border = 'border-l-emerald-500' %}
+    {% set status_badge  = 'badge-success' %}
+    {% set status_glow   = '' %}
+    {% set dot_color     = 'bg-emerald-500' %}
+  {% elif item.last_update_status == 'running' or item.last_update_status == 'pending' %}
+    {% set status_border = 'border-l-sky-500' %}
+    {% set status_badge  = 'badge-info' %}
+    {% set status_glow   = 'glow-sky' %}
+    {% set dot_color     = 'bg-sky-500 status-dot status-dot-sky' %}
+  {% elif item.last_update_status %}
+    {% set status_border = 'border-l-amber-500' %}
+    {% set status_badge  = 'badge-warning' %}
+    {% set status_glow   = '' %}
+    {% set dot_color     = 'bg-amber-500 status-dot status-dot-amber' %}
+  {% else %}
+    {% set status_border = 'border-l-zinc-700' %}
+    {% set status_badge  = '' %}
+    {% set status_glow   = '' %}
+    {% set dot_color     = 'bg-zinc-600' %}
+  {% endif %}
+  <div id="tenant-card-{{ item.id }}" class="bg-zinc-900/80 backdrop-blur-sm border border-zinc-800/60 border-l-4 {{ status_border }} rounded-xl p-4 flex flex-col gap-3 {{ status_glow }} hover:bg-zinc-900/95 transition-all duration-200">
 
-    <!-- Header row -->
-    <div class="flex items-start justify-between gap-2">
-      <div class="min-w-0">
-        <p class="text-xs text-zinc-500 mb-0.5">Last message</p>
-        <p class="text-xs text-zinc-300 truncate" id="current-message-{{ item.id }}">{{ item.last_update_message or '—' }}</p>
-      </div>
-      <div class="text-right flex-shrink-0">
-        <p class="text-xs text-zinc-500 mb-0.5">Status</p>
-        {% if item.last_update_status == 'error' or item.last_update_status == 'cancelled' %}
-        <span id="last-status-{{ item.id }}" class="text-xs font-semibold capitalize text-rose-400">{{ item.last_update_status or '—' }}</span>
-        {% elif item.last_update_status == 'success' %}
-        <span id="last-status-{{ item.id }}" class="text-xs font-semibold capitalize text-emerald-400">{{ item.last_update_status }}</span>
-        {% else %}
-        <span id="last-status-{{ item.id }}" class="text-xs font-semibold capitalize text-amber-400">{{ item.last_update_status or '—' }}</span>
-        {% endif %}
-      </div>
-    </div>
-
-    <!-- Tenant name + spinner -->
-    <div class="flex items-center justify-between">
-      <div class="flex items-center gap-2">
+    <!-- Tenant name + status dot + spinner -->
+    <div class="flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2.5 min-w-0">
+        <!-- Status dot with pulse -->
+        <span class="relative flex-shrink-0">
+          <span id="status-dot-{{ item.id }}" class="w-2 h-2 rounded-full {{ dot_color }} block"></span>
+        </span>
         <!-- Spinner (hidden by default, shown when running) -->
-        <span id="spinner-{{ item.id }}" class="hidden">
+        <span id="spinner-{{ item.id }}" class="hidden flex-shrink-0">
           <svg class="animate-spin h-4 w-4 text-indigo-400" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.568 3 7.291l3-3.291z"></path>
           </svg>
         </span>
+        {% if item.baseline %}
+        <h3 class="text-sm font-semibold text-amber-400 truncate">{{ item.display_name }}</h3>
+        {% else %}
+        <h3 class="text-sm font-semibold text-zinc-100 truncate">{{ item.display_name }}</h3>
+        {% endif %}
+        {% if item.baseline %}<span class="badge-warning text-xs flex-shrink-0">baseline</span>{% endif %}
       </div>
-      {% if item.baseline %}
-      <h3 class="text-sm font-semibold text-amber-400">{{ item.display_name }}</h3>
+      {% if status_badge %}
+      <span id="last-status-{{ item.id }}" class="{{ status_badge }} capitalize flex-shrink-0">{{ item.last_update_status }}</span>
       {% else %}
-      <h3 class="text-sm font-semibold text-zinc-100">{{ item.display_name }}</h3>
+      <span id="last-status-{{ item.id }}" class="text-xs text-zinc-600">—</span>
       {% endif %}
     </div>
 
-    <div class="border-t border-zinc-800"></div>
+    <!-- Last message -->
+    <p class="text-xs text-zinc-500 truncate" id="current-message-{{ item.id }}">{{ item.last_update_message or 'No recent activity' }}</p>
+
+    <div class="border-t border-zinc-800/50"></div>
 
     <!-- Footer: buttons + date -->
     <div class="flex items-center gap-2 flex-wrap">
@@ -56,7 +77,7 @@
       {% endif %}
       <button id="cancel-{{ item.id }}"
               onclick="handleCancelClick({{ item.id }})"
-              class="hidden bg-rose-600 hover:bg-rose-500 text-white rounded-lg font-medium transition-colors text-xs px-3 py-1.5">
+              class="hidden btn-danger text-xs px-3 py-1.5">
         Cancel
       </button>
       <div class="flex items-center gap-1 ml-auto text-zinc-500">

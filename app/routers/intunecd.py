@@ -16,7 +16,7 @@ from app.socket_tasks import emit_message, update_tenant_status_data
 router = APIRouter()
 
 
-@router.post("/intunecd/run")
+@router.post("/intunecd/run", include_in_schema=False)
 async def run_intunecd(
     request: Request,
     db: Annotated[Session, Depends(get_db)],
@@ -42,7 +42,7 @@ async def run_intunecd(
     return JSONResponse({"task_id": result.id}, status_code=202)
 
 
-@router.post("/intunecd/cancel")
+@router.post("/intunecd/cancel", include_in_schema=False)
 async def cancel_intunecd(
     request: Request,
     db: Annotated[Session, Depends(get_db)],
@@ -56,7 +56,10 @@ async def cancel_intunecd(
 
     try:
         from celery import Celery
-        celery_app = Celery(broker=settings.CELERY_BROKER_URL, backend=settings.CELERY_RESULT_BACKEND)
+
+        celery_app = Celery(
+            broker=settings.CELERY_BROKER_URL, backend=settings.CELERY_RESULT_BACKEND
+        )
         celery_app.control.revoke(tenant.last_task_id, terminate=True)
         emit_message("Task cancelled", "cancelled", tenant.last_task_id, tenant_id)
         update_tenant_status_data(tenant, "cancelled", "Task cancelled")
@@ -69,7 +72,7 @@ async def cancel_intunecd(
         return JSONResponse({"error": str(e)}, status_code=500)
 
 
-@router.post("/intunecd/purge")
+@router.post("/intunecd/purge", include_in_schema=False)
 async def purge_intunecd(
     request: Request,
     db: Annotated[Session, Depends(get_db)],
@@ -77,7 +80,10 @@ async def purge_intunecd(
 ):
     try:
         from celery import Celery
-        celery_app = Celery(broker=settings.CELERY_BROKER_URL, backend=settings.CELERY_RESULT_BACKEND)
+
+        celery_app = Celery(
+            broker=settings.CELERY_BROKER_URL, backend=settings.CELERY_RESULT_BACKEND
+        )
         celery_app.control.purge()
 
         db_tenants = db.query(Tenant).all()

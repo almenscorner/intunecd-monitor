@@ -76,16 +76,20 @@ services:
       redis:
         condition: service_healthy
 
-  nginx:
-    build: ./nginx
-    container_name: nginx
+  caddy:
+    image: caddy:2-alpine
+    container_name: intunecd-caddy
     restart: unless-stopped
-    command: ["/bin/sh", "-c", "envsubst < /etc/nginx/conf.d/nginx.conf.template > /etc/nginx/conf.d/nginx.conf && exec nginx -g 'daemon off;'"]
     ports:
       - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
     depends_on:
       web:
         condition: service_healthy
 
 volumes:
   postgres_data:
+  caddy_data:

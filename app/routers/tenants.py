@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database import get_db
 from app.deps import require_admin
+from app.encryption import encrypt_pat
 from app.models import (
     SummaryAssignment,
     SummaryAverageDiffs,
@@ -26,7 +27,7 @@ router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 
 
-@router.get("/tenants", response_class=HTMLResponse)
+@router.get("/tenants", response_class=HTMLResponse, include_in_schema=False)
 async def tenants_page(
     request: Request,
     db: Annotated[Session, Depends(get_db)],
@@ -34,16 +35,36 @@ async def tenants_page(
 ):
     tenant_list = db.query(Tenant).all()
     baseline = db.query(Tenant).filter_by(baseline="true").first() is not None
+    tenants_json = json.dumps(
+        [
+            {
+                "id": t.id,
+                "display_name": t.display_name,
+                "name": t.name,
+                "repo": t.repo or "",
+                "update_args": t.update_args or "",
+                "backup_args": t.backup_args or "",
+                "baseline": t.baseline == "true",
+                "new_branch": t.new_branch == "true",
+                "create_documentation": t.create_documentation == "true",
+                "update_branch": t.update_branch or "main",
+            }
+            for t in tenant_list
+        ]
+    )
     ctx = base_ctx(request, db, user)
-    ctx.update({
-        "segment": get_segment(request),
-        "tenants": tenant_list,
-        "baseline": baseline,
-    })
+    ctx.update(
+        {
+            "segment": get_segment(request),
+            "tenants": tenant_list,
+            "baseline": baseline,
+            "tenants_json": tenants_json,
+        }
+    )
     return templates.TemplateResponse("pages/tenants.html", ctx)
 
 
-@router.post("/tenants/add")
+@router.post("/tenants/add", include_in_schema=False)
 async def add_tenant(
     request: Request,
     db: Annotated[Session, Depends(get_db)],
@@ -53,35 +74,23 @@ async def add_tenant(
     display_name = form.get("tenant_display_name")
     tenant_name = form.get("tenant_name")
     tenant_repo = form.get("tenant_repo")
-    tenant_pat = form.get("tenant_pat")
+    tenant_pat = (form.get("tenant_pat") or "").strip()
     update_args = form.get("tenant_update_args")
     backup_args = form.get("tenant_backup_args")
     baseline = form.get("tenant_baseline")
     new_branch = form.get("tenant_new_branch")
 
-    vault_name = ""
-    if tenant_repo and tenant_pat and settings.AZURE_VAULT_URL:
-        from azure.identity import DefaultAzureCredential
-        from azure.keyvault.secrets import SecretClient
-
+    encrypted = None
+    if tenant_repo:
         tenant_repo = re.sub(r"^https?://", "", tenant_repo)
-        vault_name = re.sub(r"[^a-zA-Z0-9]+", "-", tenant_name)
-
-        credential = DefaultAzureCredential()
-        client = SecretClient(settings.AZURE_VAULT_URL, credential)
-        try:
-            client.get_secret(vault_name)
-        except Exception as e:
-            if "SecretNotFound" in str(e):
-                client.set_secret(vault_name, tenant_pat)
-            else:
-                raise
+    if tenant_pat:
+        encrypted = encrypt_pat(tenant_pat)
 
     tenant = Tenant(
         display_name=display_name,
         name=tenant_name,
         repo=tenant_repo,
-        vault_name=vault_name,
+        encrypted_pat=encrypted,
         update_args=update_args,
         backup_args=backup_args,
         baseline=baseline,
@@ -94,7 +103,7 @@ async def add_tenant(
 
     base_url = "https://login.microsoftonline.com/organizations/v2.0/adminconsent"
     scope = "https://graph.microsoft.com/.default"
-    redirect_uri = f"{os.getenv('SERVER_NAME', '')}/tenants"
+    redirect_uri = f"{request.base_url}tenants"
     consent_url = (
         f"{base_url}?client_id={settings.AZURE_CLIENT_ID}"
         f"&scope={scope}&redirect_uri={redirect_uri}"
@@ -102,7 +111,7 @@ async def add_tenant(
     return RedirectResponse(url=consent_url, status_code=303)
 
 
-@router.get("/tenants/delete/{tenant_id}")
+@router.get("/tenants/delete/{tenant_id}", include_in_schema=False)
 async def delete_tenant(
     tenant_id: int,
     request: Request,
@@ -120,22 +129,14 @@ async def delete_tenant(
     db.query(SummaryDiffCount).filter_by(tenant=tenant_id).delete()
     db.query(SummaryAverageDiffs).filter_by(tenant=tenant_id).delete()
 
-    if tenant.vault_name and settings.AZURE_VAULT_URL:
-        from azure.identity import DefaultAzureCredential
-        from azure.keyvault.secrets import SecretClient
-
-        credential = DefaultAzureCredential()
-        client = SecretClient(settings.AZURE_VAULT_URL, credential)
-        op = client.begin_delete_secret(tenant.vault_name)
-        op.wait()
-        client.purge_deleted_secret(tenant.vault_name)
-
     db.delete(tenant)
     db.commit()
     return RedirectResponse(url="/tenants", status_code=303)
 
 
-@router.get("/tenants/edit/{tenant_id}", response_class=HTMLResponse)
+@router.get(
+    "/tenants/edit/{tenant_id}", response_class=HTMLResponse, include_in_schema=False
+)
 async def edit_tenant(
     tenant_id: int,
     request: Request,
@@ -169,7 +170,7 @@ async def edit_tenant(
     return templates.TemplateResponse("views/edit_tenant.html", ctx)
 
 
-@router.post("/tenants/edit/{tenant_id}/save")
+@router.post("/tenants/edit/{tenant_id}/save", include_in_schema=False)
 async def save_tenant(
     tenant_id: int,
     request: Request,
@@ -189,7 +190,7 @@ async def save_tenant(
     tenant.update_branch = form.get("tenant_update_branch")
     tenant.create_documentation = form.get("tenant_create_documentation")
     tenant_baseline = form.get("tenant_baseline")
-    tenant_pat = form.get("tenant_pat")
+    tenant_pat = (form.get("tenant_pat") or "").strip()
 
     if tenant_baseline == "true":
         current_baseline = db.query(Tenant).filter_by(baseline="true").first()
@@ -200,13 +201,8 @@ async def save_tenant(
     else:
         tenant.baseline = ""
 
-    if tenant.repo and tenant_pat and tenant.vault_name and settings.AZURE_VAULT_URL:
-        from azure.identity import DefaultAzureCredential
-        from azure.keyvault.secrets import SecretClient
-
-        credential = DefaultAzureCredential()
-        client = SecretClient(settings.AZURE_VAULT_URL, credential)
-        client.set_secret(tenant.vault_name, tenant_pat)
+    if tenant_pat:
+        tenant.encrypted_pat = encrypt_pat(tenant_pat)
 
     db.commit()
     return RedirectResponse(url="/tenants", status_code=303)

@@ -6,114 +6,164 @@
 
   <!-- Alerts -->
   {% if alert_expiring_api_keys %}
-  <div class="flex items-start gap-3 bg-amber-500/10 border border-amber-500/30 text-amber-300 rounded-xl px-4 py-3 mb-5 text-sm">
-    <span class="material-icons-round text-base mt-0.5">warning</span>
-    <span><strong>Warning:</strong> There are API keys expiring soon. Make sure to replace them.</span>
+  <div id="alert-expiring-api-keys" class="flex items-center gap-3 bg-amber-500/10 border border-amber-500/25 text-amber-300 rounded-xl px-4 py-3 mb-5 text-sm backdrop-blur-sm" style="box-shadow: 0 0 30px -8px rgba(251,191,36,0.1);">
+    <span class="material-icons-round text-base flex-shrink-0">warning</span>
+    <div class="flex-1 min-w-0 leading-6">
+      <strong>Warning:</strong> There are API keys expiring soon. Make sure to replace them.
+    </div>
+    <button type="button" class="text-amber-300/80 hover:text-amber-200 transition-colors flex-shrink-0" aria-label="Dismiss warning" onclick="dismissHomeAlert('alert-expiring-api-keys')">
+      <span class="material-icons-round text-base">close</span>
+    </button>
   </div>
   {% endif %}
   {% if alert_expired_api_keys %}
-  <div class="flex items-start gap-3 bg-rose-500/10 border border-rose-500/30 text-rose-300 rounded-xl px-4 py-3 mb-5 text-sm">
-    <span class="material-icons-round text-base mt-0.5">error</span>
-    <span><strong>Expired:</strong> One or more API keys has expired.</span>
+  <div id="alert-expired-api-keys" class="flex items-center gap-3 bg-rose-500/10 border border-rose-500/25 text-rose-300 rounded-xl px-4 py-3 mb-5 text-sm backdrop-blur-sm" style="box-shadow: 0 0 30px -8px rgba(244,63,94,0.12);">
+    <span class="material-icons-round text-base flex-shrink-0">error</span>
+    <div class="flex-1 min-w-0 leading-6">
+      <strong>Expired:</strong> One or more API keys has expired.
+    </div>
+    <button type="button" class="text-rose-300/80 hover:text-rose-200 transition-colors flex-shrink-0" aria-label="Dismiss expired warning" onclick="dismissHomeAlert('alert-expired-api-keys')">
+      <span class="material-icons-round text-base">close</span>
+    </button>
   </div>
   {% endif %}
 
   <!-- Tenant status cards -->
   {% include "include/tenantstatus.html" %}
 
-  <!-- Tenant selector -->
+  <!-- Tenant selector — pill tabs -->
   {% if data and data.tenants %}
-  <div class="flex items-center gap-3 mb-6" x-data="{ open: false }">
-    <span class="text-xs text-zinc-500">Viewing:</span>
-    <div class="relative">
-      <button id="tenantDropdownBtn" @click="open = !open"
-              class="flex items-center gap-1.5 text-sm font-medium text-zinc-100 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg px-3 py-1.5 transition-colors">
-        {{ data.selected_tenant_name }}
-        <span class="material-icons-round text-base" x-text="open ? 'expand_less' : 'expand_more'">expand_more</span>
-      </button>
-      <div x-show="open" @click.away="open = false" x-transition
-           class="absolute left-0 top-full mt-1 z-10 bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl py-1 min-w-max">
-        {% for tenant in data.tenants %}
-        <a href="/home/tenant/{{ tenant.id }}" @click="open = false"
-           class="flex items-center gap-2 px-4 py-2 text-sm hover:bg-zinc-800 transition-colors
-                  {% if tenant.id == data.selected_tenant %}text-indigo-400 font-semibold{% else %}text-zinc-300{% endif %}">
-          {% if tenant.baseline %}
-          <span class="badge-warning text-xs">baseline</span>
-          {% endif %}
-          {{ tenant.display_name }}
-        </a>
-        {% endfor %}
-      </div>
-    </div>
+  <div class="flex items-center gap-2 mb-6 overflow-x-auto pb-1 scrollbar-none">
+    <span class="text-xs text-zinc-600 flex-shrink-0 mr-1">Tenant:</span>
+    {% for tenant in data.tenants %}
+    <a href="/home/tenant/{{ tenant.id }}"
+       class="flex items-center gap-1.5 flex-shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200
+              {% if tenant.id == data.selected_tenant %}
+              bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-md shadow-indigo-900/50 ring-1 ring-inset ring-white/10
+              {% else %}
+              bg-zinc-800/60 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-700/80 border border-zinc-700/50 hover:border-zinc-600/60
+              {% endif %}">
+      {% if tenant.baseline %}
+      <span class="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0 shadow-sm shadow-amber-400/50"></span>
+      {% endif %}
+      {{ tenant.display_name }}
+    </a>
+    {% endfor %}
   </div>
   {% endif %}
 
-  <!-- Metric cards -->
-  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+  <!-- Metric + chart cards (merged) -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-6">
 
-    <div class="card p-4">
-      <div class="bg-sky-600/20 border border-sky-600/30 rounded-lg px-4 py-6 text-center mb-3">
-        <span id="tracked" class="text-3xl font-bold text-sky-300">0</span>
+    <div class="card border-t-2 border-t-sky-500/70 glow-sky overflow-hidden hover:border-t-sky-400/80 transition-all duration-300 group">
+      <div class="px-5 pt-5 pb-3 flex items-start justify-between">
+        <div>
+          <p class="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">Tracked</p>
+          <p id="tracked" class="text-4xl font-bold text-zinc-50 tabular-nums leading-none">0</p>
+          <p id="delta-tracked" class="text-xs mt-1.5 h-4 text-zinc-600"></p>
+        </div>
+        <span class="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-500/20 to-sky-600/10 ring-1 ring-inset ring-sky-500/20 flex items-center justify-center flex-shrink-0 group-hover:from-sky-500/30 group-hover:to-sky-600/15 transition-all duration-300">
+          <span class="material-icons-round text-sky-400" style="font-size:18px">inventory_2</span>
+        </span>
       </div>
-      <h4 class="text-sm font-medium text-zinc-300">Tracked configurations</h4>
-      <p class="text-xs text-zinc-500 mt-1 flex items-center gap-1">
-        <span class="material-icons-round text-xs">schedule</span>
-        Updated: {{ data.config_data_last_update or '—' }}
-      </p>
-    </div>
-
-    <div class="card p-4">
-      <div class="bg-emerald-600/20 border border-emerald-600/30 rounded-lg px-4 py-6 text-center mb-3">
-        <span id="match" class="text-3xl font-bold text-emerald-300">0</span>
-      </div>
-      <h4 class="text-sm font-medium text-zinc-300">Matching</h4>
-      <p class="text-xs text-zinc-500 mt-1 flex items-center gap-1">
-        <span class="material-icons-round text-xs">schedule</span>
-        Updated: {{ data.config_data_last_update or '—' }}
-      </p>
-    </div>
-
-    <div class="card p-4">
-      <div class="bg-amber-600/20 border border-amber-600/30 rounded-lg px-4 py-6 text-center mb-3">
-        <span id="diff" class="text-3xl font-bold text-amber-300">0</span>
-      </div>
-      <h4 class="text-sm font-medium text-zinc-300">Not matching</h4>
-      <p class="text-xs text-zinc-500 mt-1 flex items-center gap-1" id="diff-last-update">
-        <span class="material-icons-round text-xs">schedule</span>
-        Updated: {{ data.diff_data_last_update or '—' }}
-      </p>
-    </div>
-
-  </div>
-
-  <!-- Trend charts -->
-  <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-6">
-
-    <div class="card p-4">
-      <div class="bg-sky-700/30 border border-sky-700/40 rounded-lg p-3 mb-3" style="height: 160px;">
+      <div style="height:90px;">
         <canvas id="lineChartTracked"></canvas>
       </div>
-      <h3 class="text-sm font-semibold text-zinc-200">Tracked</h3>
-      <p class="text-xs text-zinc-500 mt-0.5">Trend over tracked configurations</p>
+      <p class="text-xs text-zinc-600 flex items-center gap-1 px-5 py-3 border-t border-zinc-800/40">
+        <span class="material-icons-round text-xs">schedule</span>
+        {{ data.config_data_last_update or '—' }}
+      </p>
     </div>
 
-    <div class="card p-4">
-      <div class="bg-amber-700/30 border border-amber-700/40 rounded-lg p-3 mb-3" style="height: 160px;">
-        <canvas id="lineChartDiffs"></canvas>
+    <div class="card border-t-2 border-t-emerald-500/70 glow-emerald overflow-hidden hover:border-t-emerald-400/80 transition-all duration-300 group">
+      <div class="px-5 pt-5 pb-3 flex items-start justify-between">
+        <div>
+          <p class="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">Matching</p>
+          <p id="match" class="text-4xl font-bold text-zinc-50 tabular-nums leading-none">0</p>
+          <p id="delta-match" class="text-xs mt-1.5 h-4 text-zinc-600"></p>
+        </div>
+        <span class="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 ring-1 ring-inset ring-emerald-500/20 flex items-center justify-center flex-shrink-0 group-hover:from-emerald-500/30 group-hover:to-emerald-600/15 transition-all duration-300">
+          <span class="material-icons-round text-emerald-400" style="font-size:18px">check_circle</span>
+        </span>
       </div>
-      <h3 class="text-sm font-semibold text-zinc-200">Changes</h3>
-      <p class="text-xs text-zinc-500 mt-0.5">Trend over changes between configurations</p>
-    </div>
-
-    <div class="card p-4">
-      <div class="bg-indigo-700/30 border border-indigo-700/40 rounded-lg p-3 mb-3" style="height: 160px;">
+      <div style="height:90px;">
         <canvas id="lineChartAverage"></canvas>
       </div>
-      <h3 class="text-sm font-semibold text-zinc-200">Average</h3>
-      <p class="text-xs text-zinc-500 mt-0.5" id="diff-len">change average per last {{ data.diff_len or 0 }} records</p>
+      <p class="text-xs text-zinc-600 flex items-center gap-1 px-5 py-3 border-t border-zinc-800/40" id="diff-len">
+        <span class="material-icons-round text-xs">schedule</span>
+        {{ data.config_data_last_update or '—' }}
+      </p>
+    </div>
+
+    <div class="card border-t-2 border-t-amber-500/70 glow-amber overflow-hidden hover:border-t-amber-400/80 transition-all duration-300 group">
+      <div class="px-5 pt-5 pb-3 flex items-start justify-between">
+        <div>
+          <p class="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-2">Not matching</p>
+          <p id="diff" class="text-4xl font-bold text-zinc-50 tabular-nums leading-none">0</p>
+          <p id="delta-diff" class="text-xs mt-1.5 h-4 text-zinc-600"></p>
+        </div>
+        <span class="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 ring-1 ring-inset ring-amber-500/20 flex items-center justify-center flex-shrink-0 group-hover:from-amber-500/30 group-hover:to-amber-600/15 transition-all duration-300">
+          <span class="material-icons-round text-amber-400" style="font-size:18px">difference</span>
+        </span>
+      </div>
+      <div style="height:90px;">
+        <canvas id="lineChartDiffs"></canvas>
+      </div>
+      <p class="text-xs text-zinc-600 flex items-center gap-1 px-5 py-3 border-t border-zinc-800/40" id="diff-last-update">
+        <span class="material-icons-round text-xs">schedule</span>
+        {{ data.diff_data_last_update or '—' }}
+      </p>
     </div>
 
   </div>
+
+  <!-- Match rate health bar -->
+  <div class="card px-5 py-3.5 mb-6 flex items-center gap-4">
+    <div class="flex items-center gap-2 flex-shrink-0">
+      <span class="material-icons-round text-zinc-500" style="font-size:16px">bolt</span>
+      <span class="text-xs font-medium text-zinc-400">Match rate</span>
+    </div>
+    <div class="flex-1 h-2 bg-zinc-800/80 rounded-full overflow-hidden">
+      <div id="match-pct-bar" class="h-full rounded-full transition-all duration-700" style="width: 0%; background: #10b981;"></div>
+    </div>
+    <span id="match-pct-text" class="text-sm font-semibold tabular-nums flex-shrink-0 w-10 text-right text-zinc-400">—</span>
+  </div>
+
+  <!-- Recent changes -->
+  {% if data.recent_changes %}
+  <div class="mb-6">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="section-title mb-0 flex items-center gap-2">
+        <span class="w-1 h-3.5 rounded-full bg-gradient-to-b from-amber-400 to-amber-600"></span>
+        Recent changes
+      </h2>
+      <a href="/changes" class="text-xs text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1">
+        View all <span class="material-icons-round" style="font-size:14px">arrow_forward</span>
+      </a>
+    </div>
+    <div id="recent-changes-list" class="card divide-y divide-zinc-800/40">
+      {% for change in data.recent_changes %}
+      <a href="/changes" class="flex items-center gap-3 px-4 py-3 hover:bg-zinc-800/30 transition-colors group">
+        <div class="w-6 h-6 rounded-lg bg-amber-500/10 ring-1 ring-inset ring-amber-500/20 flex items-center justify-center flex-shrink-0">
+          <span class="material-icons-round text-amber-400" style="font-size:12px">edit_note</span>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-xs font-medium text-zinc-300 group-hover:text-zinc-100 truncate transition-colors">{{ change.name }}</p>
+          <p class="text-[10px] text-zinc-600 mt-0.5">{{ change.type }}</p>
+        </div>
+        <div class="flex items-center gap-2.5 flex-shrink-0">
+          {% if change.diff_count %}
+          <span class="badge-warning" style="font-size:10px">{{ change.diff_count }} setting{{ '' if change.diff_count == 1 else 's' }}</span>
+          {% endif %}
+          {% if change.last_changed %}
+          <span class="text-[10px] text-zinc-600">{{ change.last_changed }}</span>
+          {% endif %}
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
 
   <!-- Feeds -->
   {% include "views/home_feeds.html" %}
@@ -121,18 +171,52 @@
 </div>
 
 <script>
+  function dismissHomeAlert(id) {
+    var alert = document.getElementById(id);
+    if (!alert) return;
+    alert.style.display = 'none';
+    try {
+      localStorage.setItem(id, 'dismissed');
+    } catch (error) {
+    }
+  }
+
   document.addEventListener('DOMContentLoaded', function() {
-    const socket = io.connect();
-    socket.on('intunecdrun', function(data) {
-      updateUI(data);
+    ['alert-expiring-api-keys', 'alert-expired-api-keys'].forEach(function(id) {
+      try {
+        if (localStorage.getItem(id) === 'dismissed') {
+          var alert = document.getElementById(id);
+          if (alert) {
+            alert.style.display = 'none';
+          }
+        }
+      } catch (error) {
+      }
     });
+
+    handleTenantClick();
     getSessionStorageData();
 
-    updateCounts({{ data.matchCount | default(0) }}, {{ data.diffCount | default(0) }}, {{ data.trackedCount | default(0) }});
-    drawLineChart("lineChartTracked", {{ data.labelsConfig | tojson }}, {{ data.config_counts | tojson }});
-    drawLineChart("lineChartAverage", {{ data.labelsAverage | tojson }}, {{ data.average_diffs | tojson }});
-    drawLineChart("lineChartDiffs", {{ data.labelsDiff | tojson }}, {{ data.diffs | tojson }});
-    handleTenantClick();
+    try {
+      const socket = io.connect();
+      socket.on('intunecdrun', function(data) { updateUI(data); });
+    } catch (e) {
+      console.warn('Socket.IO unavailable:', e);
+    }
+
+    const matchCount   = {{ data.matchCount   | default(0) | int }};
+    const diffCount    = {{ data.diffCount    | default(0) | int }};
+    const trackedCount = {{ data.trackedCount | default(0) | int }};
+    const configCounts = {{ data.config_counts | tojson }};
+    const averageDiffs = {{ data.average_diffs | tojson }};
+    const diffs        = {{ data.diffs | tojson }};
+
+    updateCounts(matchCount, diffCount, trackedCount);
+    updateMatchBar(matchCount, trackedCount);
+    updateDeltas(configCounts, diffs, averageDiffs);
+    drawLineChart("lineChartTracked", {{ data.labelsConfig  | tojson }}, configCounts, '#38bdf8');
+    drawLineChart("lineChartAverage", {{ data.labelsAverage | tojson }}, averageDiffs, '#818cf8');
+    drawLineChart("lineChartDiffs",   {{ data.labelsDiff    | tojson }}, diffs,        '#fbbf24');
   });
 </script>
 {% endblock %}

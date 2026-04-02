@@ -2,95 +2,176 @@
 {% block title %}Tenants{% endblock %}
 
 {% block content %}
-<div class="p-6" x-data="{ modalOpen: false }">
+<div class="p-6" x-data="{ addModal: false, editId: null }" x-init="$watch('editId', function(id) { if (id) populateEditForm(id); })">
 
   <!-- Add Tenant Modal -->
-  <div x-show="modalOpen" x-transition class="fixed inset-0 z-50 flex items-center justify-center p-4">
-    <div class="absolute inset-0 bg-zinc-950/80" @click="modalOpen = false"></div>
-    <div class="relative bg-zinc-900 border border-zinc-700 rounded-2xl w-full max-w-md shadow-2xl overflow-y-auto max-h-[90vh]">
-      <div class="px-6 py-5 border-b border-zinc-800 flex items-center justify-between">
+  <template x-teleport="body">
+  <div x-show="addModal" x-transition class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+    <div class="absolute inset-0 bg-zinc-950/80 backdrop-blur-sm" @click="addModal = false"></div>
+    <div class="relative bg-zinc-900 border border-zinc-700/80 rounded-2xl w-full max-w-md shadow-2xl shadow-black/60 flex flex-col" style="max-height:90vh">
+      <div class="px-6 py-5 border-b border-zinc-800 flex items-center justify-between flex-shrink-0">
         <h2 class="text-base font-semibold text-zinc-100">Add new tenant</h2>
-        <button @click="modalOpen = false" class="text-zinc-500 hover:text-zinc-300 transition-colors">
+        <button type="button" @click="addModal = false" class="text-zinc-500 hover:text-zinc-300 transition-colors">
           <span class="material-icons-round">close</span>
         </button>
       </div>
-      <form action="/tenants/add" method="post" class="px-6 py-5 space-y-4">
-        <div>
-          <label class="label">Display Name <span class="text-rose-400">*</span></label>
-          <input type="text" name="tenant_display_name" class="input w-full" required />
-        </div>
-        <div>
-          <label class="label">Tenant domain <span class="text-rose-400">*</span></label>
-          <input type="text" name="tenant_name" class="input w-full" required />
-        </div>
-        <div>
-          <label class="label">Git Repo URL</label>
-          <input type="text" name="tenant_repo" class="input w-full" />
-        </div>
-        <div>
-          <label class="label">PAT token</label>
-          <input type="password" name="tenant_pat" class="input w-full" />
-        </div>
-        <div>
-          <label class="label">Update Args</label>
-          <input type="text" name="tenant_update_args" class="input w-full" />
-        </div>
-        <div>
-          <label class="label">Backup Args</label>
-          <input type="text" name="tenant_backup_args" class="input w-full" />
-        </div>
-        <label class="flex items-center gap-2 cursor-pointer">
-          <input type="checkbox" name="tenant_new_branch" value="false"
-                 onchange="this.value = this.checked ? 'true' : 'false'"
-                 class="rounded border-zinc-600 bg-zinc-800 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-zinc-900" />
-          <span class="text-sm text-zinc-300">Create new branch</span>
-        </label>
-        <label class="flex items-center gap-2 cursor-pointer">
-          {% if baseline %}
-          <input type="checkbox" name="tenant_baseline" value="false" disabled
-                 class="rounded border-zinc-600 bg-zinc-800 text-indigo-500" />
-          <span class="text-sm text-zinc-500">Baseline tenant (already set)</span>
-          {% else %}
-          <input type="checkbox" name="tenant_baseline" value="false"
-                 onchange="this.value = this.checked ? 'true' : 'false'"
-                 class="rounded border-zinc-600 bg-zinc-800 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-zinc-900" />
-          <span class="text-sm text-zinc-300">Baseline tenant</span>
-          {% endif %}
-        </label>
-        <div class="pt-2">
-          <button type="submit" class="btn-primary w-full justify-center">Save</button>
-        </div>
-      </form>
+      <form action="/tenants/add" method="post" class="px-6 py-5 space-y-4 overflow-y-auto flex-1">
+          <div>
+            <label class="label">Display Name <span class="text-rose-400">*</span></label>
+            <input type="text" name="tenant_display_name" class="input w-full" required />
+          </div>
+          <div>
+            <label class="label">Tenant domain <span class="text-rose-400">*</span></label>
+            <input type="text" name="tenant_name" class="input w-full" required />
+          </div>
+          <div>
+            <label class="label">Git Repo URL</label>
+            <input type="text" name="tenant_repo" class="input w-full" />
+          </div>
+          <div>
+            <label class="label">PAT token</label>
+            <input type="password" name="tenant_pat" class="input w-full" />
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="label">Update Args</label>
+              <input type="text" name="tenant_update_args" class="input w-full" />
+            </div>
+            <div>
+              <label class="label">Backup Args</label>
+              <input type="text" name="tenant_backup_args" class="input w-full" />
+            </div>
+          </div>
+          <div class="space-y-2">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" name="tenant_new_branch" value="false"
+                     onchange="this.value = this.checked ? 'true' : 'false'"
+                     class="rounded border-zinc-600 bg-zinc-800 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-zinc-900" />
+              <span class="text-sm text-zinc-300">Create new branch</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              {% if baseline %}
+              <input type="checkbox" name="tenant_baseline" value="false" disabled
+                     class="rounded border-zinc-600 bg-zinc-800 text-indigo-500" />
+              <span class="text-sm text-zinc-500">Baseline tenant (already set)</span>
+              {% else %}
+              <input type="checkbox" name="tenant_baseline" value="false"
+                     onchange="this.value = this.checked ? 'true' : 'false'"
+                     class="rounded border-zinc-600 bg-zinc-800 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-zinc-900" />
+              <span class="text-sm text-zinc-300">Baseline tenant</span>
+              {% endif %}
+            </label>
+          </div>
+          <div class="pt-2">
+            <button type="submit" class="btn-primary w-full justify-center">Save</button>
+          </div>
+        </form>
     </div>
   </div>
+  </template>
+
+  <!-- Edit Tenant Modal -->
+  <template x-teleport="body">
+  <div x-show="editId !== null" x-transition class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+    <div class="absolute inset-0 bg-zinc-950/80 backdrop-blur-sm" @click="editId = null"></div>
+    <div class="relative bg-zinc-900 border border-zinc-700/80 rounded-2xl w-full max-w-lg shadow-2xl shadow-black/60 flex flex-col" style="max-height:90vh">
+      <div class="px-6 py-5 border-b border-zinc-800 flex items-center justify-between flex-shrink-0">
+        <h2 id="edit-modal-title" class="text-base font-semibold text-zinc-100">Edit tenant</h2>
+        <button type="button" @click="editId = null" class="text-zinc-500 hover:text-zinc-300 transition-colors">
+          <span class="material-icons-round">close</span>
+        </button>
+      </div>
+      <form id="edit-tenant-form" action="" method="post" class="px-6 py-5 space-y-4 overflow-y-auto flex-1">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="label">Display Name</label>
+              <input id="edit-display-name" type="text" name="tenant_display_name" class="input w-full" required />
+            </div>
+            <div>
+              <label class="label">Tenant domain</label>
+              <input id="edit-tenant-name" type="text" class="input w-full opacity-40 cursor-not-allowed" disabled />
+            </div>
+          </div>
+          <div>
+            <label class="label">Git Repo URL</label>
+            <input id="edit-repo" type="text" name="tenant_repo" class="input w-full" />
+          </div>
+          <div>
+            <label class="label">PAT token</label>
+            <input type="password" name="tenant_pat" placeholder="Leave blank to keep existing" class="input w-full" />
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="label">Update Args</label>
+              <input id="edit-update-args" type="text" name="tenant_update_args" class="input w-full" />
+            </div>
+            <div>
+              <label class="label">Backup Args</label>
+              <input id="edit-backup-args" type="text" name="tenant_backup_args" class="input w-full" />
+            </div>
+          </div>
+          <div>
+            <label class="label">Update from branch</label>
+            <input id="edit-update-branch" type="text" name="tenant_update_branch" class="input w-full" />
+          </div>
+          <div class="space-y-2 pt-1">
+            <label id="edit-doc-wrap" class="hidden items-center gap-2 cursor-pointer">
+              <input id="edit-create-doc" type="checkbox" name="tenant_create_documentation" value="false"
+                     onchange="this.value = this.checked ? 'true' : 'false'"
+                     class="rounded border-zinc-600 bg-zinc-800 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-zinc-900" />
+              <span class="text-sm text-zinc-300">Create documentation</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input id="edit-new-branch" type="checkbox" name="tenant_new_branch" value="false"
+                     onchange="this.value = this.checked ? 'true' : 'false'"
+                     class="rounded border-zinc-600 bg-zinc-800 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-zinc-900" />
+              <span class="text-sm text-zinc-300">Create new branch</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input id="edit-baseline" type="checkbox" name="tenant_baseline" value="false"
+                     onchange="this.value = this.checked ? 'true' : 'false'"
+                     class="rounded border-zinc-600 bg-zinc-800 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-zinc-900" />
+              <span class="text-sm text-zinc-300">Baseline tenant</span>
+            </label>
+          </div>
+          <div class="pt-2">
+            <button type="submit" class="btn-primary w-full justify-center">
+              <span class="material-icons-round text-base">save</span>
+              Save changes
+            </button>
+          </div>
+        </form>
+    </div>
+  </div>
+  </template>
 
   <!-- Page header -->
-  <div class="flex items-center justify-between mb-6">
+  <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
     <div>
       <h2 class="text-base font-semibold text-zinc-100">Tenants</h2>
       <p class="text-xs text-zinc-500 mt-0.5">Overview of added tenants</p>
     </div>
-    <button @click="modalOpen = true" class="btn-primary">
+    <button @click="addModal = true" class="btn-primary w-full sm:w-auto justify-center">
       <span class="material-icons-round text-base">add</span>
       New tenant
     </button>
   </div>
 
   <!-- Tenant list -->
-  <div id="edit-tenant" class="space-y-3 max-w-3xl">
+  <div class="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-4">
     {% if tenants %}
     {% for tenant in tenants %}
     <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
-      <div class="flex items-start justify-between gap-4">
+      <div class="flex flex-col lg:flex-row items-stretch lg:items-start justify-between gap-4">
         <div class="space-y-1.5 min-w-0">
-          {% if tenant.baseline %}
+          {% if tenant.baseline == 'true' %}
           <h3 class="text-sm font-semibold text-amber-400">{{ tenant.display_name }}</h3>
           {% else %}
           <h3 class="text-sm font-semibold text-zinc-100">{{ tenant.display_name }}</h3>
           {% endif %}
           <p class="text-xs text-zinc-500">Domain: <span class="text-zinc-300 font-medium">{{ tenant.name }}</span></p>
           {% if tenant.repo %}
-          <p class="text-xs text-zinc-500">Repo: <span class="text-zinc-300 font-medium truncate">{{ tenant.repo }}</span></p>
+          <p class="text-xs text-zinc-500">Repo: <span class="text-zinc-300 font-medium break-all">{{ tenant.repo }}</span></p>
           {% endif %}
           {% if tenant.update_args %}
           <p class="text-xs text-zinc-500">Update args: <span class="text-zinc-300 font-medium">{{ tenant.update_args }}</span></p>
@@ -100,25 +181,25 @@
           {% endif %}
           <p class="text-xs text-zinc-500">Branch: <span class="text-zinc-300 font-medium">{{ tenant.update_branch or 'main' }}</span></p>
           <div class="flex flex-wrap gap-1.5 pt-1">
-            {% if tenant.baseline %}
+            {% if tenant.baseline == 'true' %}
             <span class="badge-warning">baseline</span>
             {% endif %}
-            {% if tenant.new_branch %}
+            {% if tenant.new_branch == 'true' %}
             <span class="badge-info">new branch</span>
             {% endif %}
-            {% if tenant.create_documentation %}
+            {% if tenant.create_documentation == 'true' %}
             <span class="badge-info">documentation</span>
             {% endif %}
           </div>
         </div>
-        <div class="flex items-center gap-2 flex-shrink-0">
-          <a href="/tenants/edit/{{ tenant.id }}"
-             class="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-100 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg px-3 py-1.5 transition-colors">
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 flex-shrink-0 w-full lg:w-auto lg:self-start">
+          <button @click="editId = {{ tenant.id }}"
+                  class="flex items-center justify-center gap-1.5 text-xs text-zinc-400 hover:text-zinc-100 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg px-3 py-1.5 transition-colors">
             <span class="material-icons-round text-sm">edit</span>
             Edit
-          </a>
+          </button>
           <a href="/tenants/delete/{{ tenant.id }}"
-             class="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-rose-400 bg-zinc-800 hover:bg-zinc-800 border border-zinc-700 hover:border-rose-700/50 rounded-lg px-3 py-1.5 transition-colors"
+             class="flex items-center justify-center gap-1.5 text-xs text-zinc-400 hover:text-rose-400 bg-zinc-800 hover:bg-zinc-800 border border-zinc-700 hover:border-rose-700/50 rounded-lg px-3 py-1.5 transition-colors"
              onclick="return confirm('Delete {{ tenant.display_name }}?')">
             <span class="material-icons-round text-sm">delete</span>
             Delete
@@ -128,12 +209,52 @@
     </div>
     {% endfor %}
     {% else %}
-    <div class="text-center py-12 text-zinc-600">
-      <span class="material-icons-round text-4xl mb-2 block">account_tree</span>
-      <p class="text-sm">No tenants added yet.</p>
+    <div class="card p-16 text-center sm:col-span-2 2xl:col-span-3">
+      <span class="material-icons-round text-zinc-700 mb-3" style="font-size:40px">account_tree</span>
+      <p class="text-sm font-medium text-zinc-400">No tenants added yet</p>
+      <p class="text-xs text-zinc-600 mt-1">Add a tenant to start tracking your Intune configuration</p>
     </div>
     {% endif %}
   </div>
 
 </div>
+
+<script>
+var _tenantsData = {{ tenants_json | safe }};
+
+function populateEditForm(id) {
+  var t = _tenantsData.find(function(x) { return x.id == id; });
+  if (!t) return;
+
+  document.getElementById('edit-tenant-form').action = '/tenants/edit/' + t.id + '/save';
+  document.getElementById('edit-modal-title').textContent = 'Edit: ' + t.display_name;
+  document.getElementById('edit-display-name').value = t.display_name;
+  document.getElementById('edit-tenant-name').value = t.name;
+  document.getElementById('edit-repo').value = t.repo;
+  document.getElementById('edit-update-args').value = t.update_args;
+  document.getElementById('edit-backup-args').value = t.backup_args;
+  document.getElementById('edit-update-branch').value = t.update_branch;
+
+  var docWrap = document.getElementById('edit-doc-wrap');
+  var docCheck = document.getElementById('edit-create-doc');
+  if (t.baseline) {
+    docWrap.classList.remove('hidden');
+    docWrap.classList.add('flex');
+    docCheck.checked = t.create_documentation;
+    docCheck.value = t.create_documentation ? 'true' : 'false';
+  } else {
+    docWrap.classList.add('hidden');
+    docWrap.classList.remove('flex');
+  }
+
+  var newBranch = document.getElementById('edit-new-branch');
+  newBranch.checked = t.new_branch;
+  newBranch.value = t.new_branch ? 'true' : 'false';
+
+  var baseline = document.getElementById('edit-baseline');
+  baseline.checked = t.baseline;
+  baseline.value = t.baseline ? 'true' : 'false';
+}
+</script>
 {% endblock %}
+

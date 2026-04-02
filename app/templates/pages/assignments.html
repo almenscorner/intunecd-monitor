@@ -2,64 +2,165 @@
 {% block title %}Assignments{% endblock %}
 
 {% block content %}
-<div class="p-6 space-y-8">
+<div class="p-6 space-y-6">
+
+  <!-- Page header -->
+  <div>
+    <h1 class="text-xl font-semibold text-zinc-100 tracking-tight">Assignments</h1>
+    <p class="text-sm text-zinc-500 mt-0.5">Group and user assignments across all configuration types</p>
+  </div>
+
   {% for tenant in tenant_assignments %}
   {% if tenant.data.assignments %}
-  <div>
-    <div class="mb-4">
-      <h2 class="text-base font-semibold text-zinc-100">{{ tenant.name }}</h2>
-    </div>
+  <div class="card overflow-hidden" x-data="{ open: true }">
 
-    <div class="card p-5">
-      <div class="mb-3">
-        <input id="accordionSearch-{{ tenant.id }}" type="text" placeholder="Search…"
-               onclick="attachAccordionListener({{ tenant.id }})"
-               class="input w-full text-sm" />
+    <!-- Tenant header -->
+    <button type="button" @click="open = !open"
+            class="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-zinc-800/40 transition-colors group">
+      <div class="flex items-center gap-3">
+        <div class="w-7 h-7 rounded-lg bg-indigo-500/10 ring-1 ring-inset ring-indigo-500/20 flex items-center justify-center flex-shrink-0">
+          <span class="material-icons-round text-indigo-400" style="font-size:14px">corporate_fare</span>
+        </div>
+        <h2 class="text-sm font-semibold text-zinc-100">{{ tenant.name }}</h2>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="badge-info">{{ tenant.data.assignments | length }} assignments</span>
+        <span class="material-icons-round text-zinc-500 text-base transition-transform duration-200"
+              :class="open ? 'rotate-180' : ''">expand_more</span>
+      </div>
+    </button>
+
+    <div x-show="open"
+         x-transition:enter="transition ease-out duration-150"
+         x-transition:enter-start="opacity-0 -translate-y-1"
+         x-transition:enter-end="opacity-100 translate-y-0"
+         class="border-t border-zinc-800/60">
+
+      <!-- Search -->
+      <div class="px-4 pt-4 pb-2">
+        <div class="relative">
+          <span class="material-icons-round absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none" style="font-size:16px">search</span>
+          <input id="accordionSearch-{{ tenant.id }}"
+                 type="text"
+                 placeholder="Filter assignments…"
+                 oninput="filterAccordion({{ tenant.id }}, this.value)"
+                 class="input pl-9 w-full text-sm" />
+        </div>
       </div>
 
-      <div id="accordionFlush-{{ tenant.id }}" class="space-y-1">
+      <div id="accordionFlush-{{ tenant.id }}" class="px-4 pb-4 space-y-2 mt-2">
         {% for assignment in tenant.data.assignments %}
-        <div class="accordion-item border border-zinc-800 rounded-lg overflow-hidden" x-data="{ open: false }">
+        {% set total_assigned = namespace(count=0) %}
+        {% for payload in assignment.assigned_to %}
+          {% set total_assigned.count = total_assigned.count + (assignment.assigned_to[payload] | length) %}
+        {% endfor %}
+        <div class="accordion-item border border-zinc-800/80 rounded-xl overflow-hidden"
+             x-data="{ open: false }">
+
+          <!-- Assignment header -->
           <button type="button" @click="open = !open"
-                  class="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-zinc-800/50 transition-colors">
-            <div>
-              <p class="text-sm text-zinc-200"><span class="text-zinc-500">Name:</span> {{ assignment.name }}</p>
-              <p class="text-xs text-zinc-500 mt-0.5"><span>Type:</span> {{ assignment.type }}</p>
-              {% if assignment.membership_rule %}
-              <p class="text-xs text-zinc-500"><span>Rule:</span> {{ assignment.membership_rule }}</p>
-              {% endif %}
+                  class="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-zinc-800/30 transition-colors group">
+            <div class="w-7 h-7 rounded-lg bg-zinc-800/80 ring-1 ring-inset ring-zinc-700/60 flex items-center justify-center flex-shrink-0">
+              <span class="material-icons-round text-zinc-400" style="font-size:13px">group</span>
             </div>
-            <span class="material-icons-round text-zinc-500 text-xl flex-shrink-0 ml-3"
-                  x-text="open ? 'expand_less' : 'expand_more'">expand_more</span>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-medium text-zinc-200 group-hover:text-zinc-100 transition-colors truncate">{{ assignment.name }}</p>
+              <div class="flex items-center gap-2 mt-0.5 flex-wrap">
+                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-zinc-800/80 text-zinc-400 ring-1 ring-inset ring-zinc-700/50">{{ assignment.type }}</span>
+                {% if total_assigned.count > 0 %}
+                <span class="text-[11px] text-zinc-600">{{ total_assigned.count }} configuration{{ '' if total_assigned.count == 1 else 's' }} assigned</span>
+                {% endif %}
+                {% if assignment.membership_rule %}
+                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-violet-500/10 text-violet-400 ring-1 ring-inset ring-violet-500/20">
+                  <span class="material-icons-round" style="font-size:10px">filter_alt</span>
+                  dynamic
+                </span>
+                {% endif %}
+              </div>
+            </div>
+            <span class="material-icons-round text-zinc-600 group-hover:text-zinc-400 text-xl flex-shrink-0 transition-transform duration-200"
+                  :class="open ? 'rotate-180 text-zinc-400' : ''">expand_more</span>
           </button>
-          <div x-show="open" x-transition class="border-t border-zinc-800 overflow-x-auto">
-            <table class="w-full text-xs">
-              <thead>
-                <tr class="border-b border-zinc-800">
-                  <th class="px-4 py-2.5 text-left font-semibold text-zinc-400 uppercase tracking-wider">Configuration Type</th>
-                  <th class="px-4 py-2.5 text-left font-semibold text-zinc-400 uppercase tracking-wider">Name</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-zinc-800">
-                {% for payload in assignment.assigned_to %}
-                <tr class="hover:bg-zinc-800/40 transition-colors">
-                  <td class="px-4 py-2.5 text-zinc-300">{{ payload }}</td>
-                  <td class="px-4 py-2.5 text-zinc-400">
-                    {% for item in assignment.assigned_to[payload] %}
-                    <p>{{ item }}</p>
-                    {% endfor %}
-                  </td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
+
+          <!-- Assignment detail -->
+          <div x-show="open"
+               x-transition:enter="transition ease-out duration-150"
+               x-transition:enter-start="opacity-0"
+               x-transition:enter-end="opacity-100"
+               class="border-t border-zinc-800/60 bg-zinc-950/50">
+
+            {% if assignment.membership_rule %}
+            <div class="px-4 py-3 border-b border-zinc-800/40">
+              <p class="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                <span class="material-icons-round text-zinc-600" style="font-size:11px">filter_alt</span>
+                Membership Rule
+              </p>
+              <code class="text-xs font-mono text-violet-300/80 bg-violet-500/8 px-3 py-2 rounded-md block break-all leading-relaxed">{{ assignment.membership_rule }}</code>
+            </div>
+            {% endif %}
+
+            {% if assignment.assigned_to %}
+            <div class="divide-y divide-zinc-800/40">
+              {% for payload in assignment.assigned_to %}
+              {% if assignment.assigned_to[payload] %}
+              <div class="px-4 py-3">
+                <p class="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                  <span class="material-icons-round text-zinc-600" style="font-size:12px">tune</span>
+                  {{ payload }}
+                </p>
+                <div class="space-y-1">
+                  {% for item in assignment.assigned_to[payload] %}
+                  {% if item is mapping %}
+                    {% set item_name   = item.name   if item.name   else '—' %}
+                    {% set item_intent = item.intent if item.intent else '' %}
+                  {% else %}
+                    {% set item_name   = item %}
+                    {% set item_intent = '' %}
+                  {% endif %}
+                  <div class="flex items-center justify-between gap-3 px-2.5 py-1.5 rounded-lg bg-zinc-900/60 hover:bg-zinc-800/50 transition-colors group">
+                    <span class="text-xs text-zinc-300 group-hover:text-zinc-100 transition-colors truncate">{{ item_name }}</span>
+                    {% if item_intent %}
+                    <span class="flex-shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium
+                      {% if item_intent | lower == 'include' %}bg-emerald-500/12 text-emerald-400 ring-1 ring-inset ring-emerald-500/25
+                      {% elif item_intent | lower == 'exclude' %}bg-rose-500/12 text-rose-400 ring-1 ring-inset ring-rose-500/25
+                      {% else %}bg-zinc-800/80 text-zinc-400 ring-1 ring-inset ring-zinc-700/50{% endif %}">
+                      {{ item_intent }}
+                    </span>
+                    {% endif %}
+                  </div>
+                  {% endfor %}
+                </div>
+              </div>
+              {% endif %}
+              {% endfor %}
+            </div>
+            {% else %}
+            <div class="px-4 py-6 text-center">
+              <p class="text-xs text-zinc-600">No configurations assigned</p>
+            </div>
+            {% endif %}
+
           </div>
         </div>
         {% endfor %}
       </div>
     </div>
+
   </div>
   {% endif %}
   {% endfor %}
+
+  {% set has_assignments = namespace(value=false) %}
+  {% for tenant in tenant_assignments %}
+    {% if tenant.data.assignments %}{% set has_assignments.value = true %}{% endif %}
+  {% endfor %}
+  {% if not has_assignments.value %}
+  <div class="card p-16 text-center">
+    <span class="material-icons-round text-zinc-700 mb-3" style="font-size:40px">group</span>
+    <p class="text-sm font-medium text-zinc-400">No assignments found</p>
+    <p class="text-xs text-zinc-600 mt-1">Assignments will appear here once configurations are tracked</p>
+  </div>
+  {% endif %}
+
 </div>
 {% endblock %}

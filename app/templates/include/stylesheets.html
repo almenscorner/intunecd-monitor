@@ -8,39 +8,47 @@
 
 <!-- Tailwind CSS -->
 <script src="https://cdn.tailwindcss.com"></script>
-<script>
-  tailwind.config = {
-    darkMode: 'class',
-    theme: {
-      extend: {
-        fontFamily: { sans: ['Inter', 'sans-serif'] }
-      }
-    }
-  }
-</script>
-
 <style type="text/tailwindcss">
-  @layer base {
-    html { @apply dark; }
-    body { @apply bg-zinc-950 text-zinc-100 font-sans antialiased; }
-    ::-webkit-scrollbar { @apply w-1.5; }
-    ::-webkit-scrollbar-track { @apply bg-zinc-900; }
-    ::-webkit-scrollbar-thumb { @apply bg-zinc-700 rounded-full; }
+  @theme {
+    --font-sans: 'Inter', sans-serif;
   }
+
+  @layer base {
+    body {
+      @apply bg-zinc-950 text-zinc-100 font-sans antialiased;
+      background-image:
+        radial-gradient(ellipse 80% 60% at 50% -30%, rgba(99,102,241,0.12) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 35% at 92% 5%,  rgba(139,92,246,0.08) 0%, transparent 50%),
+        radial-gradient(ellipse 50% 40% at -5% 95%, rgba(56,189,248,0.05) 0%, transparent 50%);
+    }
+    ::-webkit-scrollbar       { @apply w-1.5; }
+    ::-webkit-scrollbar-track { @apply bg-transparent; }
+    ::-webkit-scrollbar-thumb { @apply bg-zinc-700/70 rounded-full; }
+    ::-webkit-scrollbar-thumb:hover { @apply bg-zinc-600; }
+  }
+
   @layer components {
-    .btn-primary { @apply inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors; }
-    .btn-danger  { @apply inline-flex items-center gap-1.5 bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors; }
-    .btn-ghost   { @apply inline-flex items-center gap-1.5 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 px-3 py-2 rounded-lg text-sm transition-colors; }
-    .card        { @apply bg-zinc-900 border border-zinc-800 rounded-xl; }
-    .input       { @apply w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm; }
-    .label       { @apply block text-xs font-medium text-zinc-400 mb-1; }
-    .badge-success  { @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-500/10 text-emerald-400; }
-    .badge-warning  { @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-500/10 text-amber-400; }
-    .badge-danger   { @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-rose-500/10 text-rose-400; }
-    .badge-info     { @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-sky-500/10 text-sky-400; }
-    .prose-doc h1,
-    .prose-doc h2,
-    .prose-doc h3  { @apply text-zinc-100 font-semibold mt-6 mb-3; }
+    .btn-primary { @apply inline-flex items-center gap-1.5 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 active:scale-[0.97] text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150 shadow-md shadow-indigo-900/50; }
+    .btn-danger  { @apply inline-flex items-center gap-1.5 bg-gradient-to-r from-rose-600 to-rose-500 hover:from-rose-500 hover:to-rose-400 active:scale-[0.97] text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150 shadow-md shadow-rose-900/40; }
+    .btn-ghost   { @apply inline-flex items-center gap-1.5 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 px-3 py-2 rounded-lg text-sm transition-colors duration-150; }
+    .card        { @apply bg-zinc-900/80 backdrop-blur-sm border border-zinc-800/60 rounded-xl shadow-lg shadow-black/30; }
+    .input       { @apply w-full bg-zinc-800/60 border border-zinc-700/60 rounded-lg px-3 py-2 text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/60 focus:border-indigo-500/40 text-sm transition-all duration-150 backdrop-blur-sm; }
+    .label       { @apply block text-xs font-medium text-zinc-400 mb-1.5; }
+    .badge-success { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-emerald-500/15 text-emerald-400 ring-1 ring-inset ring-emerald-500/25; }
+    .badge-warning { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-amber-500/15  text-amber-400  ring-1 ring-inset ring-amber-500/25; }
+    .badge-danger  { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-rose-500/15   text-rose-400   ring-1 ring-inset ring-rose-500/25; }
+    .badge-info    { @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium bg-sky-500/15    text-sky-400    ring-1 ring-inset ring-sky-500/25; }
+    .section-title { @apply text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-3; }
+    .page-section  { @apply mb-8; }
+
+    /* Glow card variants */
+    .glow-sky     { box-shadow: 0 0 40px -8px rgba(56,189,248,0.15), 0 4px 24px -4px rgba(0,0,0,0.4); }
+    .glow-emerald { box-shadow: 0 0 40px -8px rgba(52,211,153,0.15), 0 4px 24px -4px rgba(0,0,0,0.4); }
+    .glow-amber   { box-shadow: 0 0 40px -8px rgba(251,191,36,0.15), 0 4px 24px -4px rgba(0,0,0,0.4); }
+    .glow-indigo  { box-shadow: 0 0 40px -8px rgba(99,102,241,0.2), 0 4px 24px -4px rgba(0,0,0,0.4); }
+    .glow-rose    { box-shadow: 0 0 40px -8px rgba(244,63,94,0.15), 0 4px 24px -4px rgba(0,0,0,0.4); }
+
+    .prose-doc h1, .prose-doc h2, .prose-doc h3 { @apply text-zinc-100 font-semibold mt-6 mb-3; }
     .prose-doc p   { @apply text-zinc-300 mb-3; }
     .prose-doc code { @apply bg-zinc-800 text-indigo-300 px-1 rounded text-sm; }
     .prose-doc pre  { @apply bg-zinc-900 border border-zinc-800 rounded-lg p-4 overflow-x-auto mb-4; }
@@ -50,6 +58,85 @@
     .prose-doc th   { @apply text-left text-zinc-400 font-medium border-b border-zinc-800 pb-2 pr-4; }
     .prose-doc td   { @apply py-2 border-b border-zinc-800 text-zinc-300 pr-4; }
   }
+</style>
+
+<style>
+  /* Noise texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0.025;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 256px 256px;
+  }
+
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  [x-cloak] { display: none !important; }
+  /* Page content slides in on load */
+  main > div { animation: fade-up 0.32s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+  /* Sidebar gradient edge */
+  @keyframes gradient-shift {
+    0%, 100% { background-position: 0% 0%; }
+    50%      { background-position: 0% 100%; }
+  }
+  .sidebar-glow-edge {
+    position: absolute;
+    top: 0; right: -1px; bottom: 0;
+    width: 1px;
+    background: linear-gradient(180deg,
+      rgba(99,102,241,0.0) 0%,
+      rgba(99,102,241,0.5) 20%,
+      rgba(139,92,246,0.5) 50%,
+      rgba(56,189,248,0.4) 80%,
+      rgba(56,189,248,0.0) 100%);
+    background-size: 100% 200%;
+    animation: gradient-shift 6s ease-in-out infinite;
+  }
+
+  /* Pulsing status dot */
+  @keyframes pulse-ring {
+    0%   { transform: scale(1); opacity: 0.6; }
+    70%  { transform: scale(2.2); opacity: 0; }
+    100% { transform: scale(2.2); opacity: 0; }
+  }
+  .status-dot { position: relative; }
+  .status-dot::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 9999px;
+    animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  .status-dot-emerald::after { background: rgba(52,211,153,0.4); }
+  .status-dot-amber::after   { background: rgba(251,191,36,0.4); }
+  .status-dot-rose::after    { background: rgba(244,63,94,0.4); }
+  .status-dot-sky::after     { background: rgba(56,189,248,0.4); }
+
+  /* Feed row hover glow */
+  .feed-row {
+    position: relative;
+    transition: background 0.15s;
+  }
+  .feed-row::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 2px;
+    border-radius: 0 2px 2px 0;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .feed-row:hover::before { opacity: 1; }
+  .feed-row-update::before { background: linear-gradient(180deg, #818cf8, #6366f1); }
+  .feed-row-backup::before { background: linear-gradient(180deg, #38bdf8, #0ea5e9); }
 </style>
 
 {% block stylesheets %}{% endblock %}

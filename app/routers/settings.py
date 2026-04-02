@@ -1,4 +1,5 @@
 import secrets
+import re
 from datetime import datetime, timedelta
 from typing import Annotated
 
@@ -17,7 +18,7 @@ router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 
 
-@router.get("/settings", response_class=HTMLResponse)
+@router.get("/settings", response_class=HTMLResponse, include_in_schema=False)
 async def settings_page(
     request: Request,
     db: Annotated[Session, Depends(get_db)],
@@ -26,20 +27,30 @@ async def settings_page(
     new_key = request.session.pop("new_key", "")
     keys = db.query(ApiKey).all()
     now = datetime.now()
-    keys_td = [{"id": k.id, "expiration": (k.key_expiration - now).days} for k in keys] if keys else []
+    keys_td = (
+        [{"id": k.id, "expiration": (k.key_expiration - now).days} for k in keys]
+        if keys
+        else []
+    )
+    safe_db_url = re.sub(
+        r"(?<=:\/\/)([^:]+):([^@]+)@", r"\1:***@", settings.DATABASE_URL
+    )
 
     ctx = base_ctx(request, db, user)
-    ctx.update({
-        "segment": get_segment(request),
-        "settings": settings,
-        "key": bool(keys),
-        "keys_td": keys_td,
-        "new_key": new_key,
-    })
+    ctx.update(
+        {
+            "segment": get_segment(request),
+            "settings": settings,
+            "database_url": safe_db_url,
+            "key": bool(keys),
+            "keys_td": keys_td,
+            "new_key": new_key,
+        }
+    )
     return templates.TemplateResponse("pages/settings.html", ctx)
 
 
-@router.post("/settings/key/create")
+@router.post("/settings/key/create", include_in_schema=False)
 async def create_key(
     request: Request,
     db: Annotated[Session, Depends(get_db)],
@@ -55,7 +66,7 @@ async def create_key(
     return RedirectResponse(url="/settings", status_code=303)
 
 
-@router.post("/settings/key/delete")
+@router.post("/settings/key/delete", include_in_schema=False)
 async def delete_key(
     request: Request,
     db: Annotated[Session, Depends(get_db)],
@@ -63,7 +74,10 @@ async def delete_key(
 ):
     form = await request.form()
     for key_id in form:
-        key = db.get(ApiKey, int(key_id))
+        try:
+            key = db.get(ApiKey, int(key_id))
+        except (ValueError, TypeError):
+            continue
         if key:
             db.delete(key)
     db.commit()

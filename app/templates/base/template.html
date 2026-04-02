@@ -1,26 +1,26 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}IntuneCD Monitor{% endblock %}</title>
-  <link rel="icon" type="image/png" href="{{ url_for('static', filename='icon-72x72.png') }}" />
+  <link rel="icon" type="image/png" href="/static/icon-72x72.png" />
   {% include 'include/stylesheets.html' %}
 </head>
 
-<body class="bg-zinc-950 text-zinc-100 h-screen flex overflow-hidden">
+<body x-data="{ sidebarOpen: false }" class="bg-zinc-950 text-zinc-100 min-h-screen lg:h-screen flex overflow-x-hidden" style="background-image: radial-gradient(ellipse 80% 60% at 50% -30%, rgba(99,102,241,0.08) 0%, transparent 60%), radial-gradient(ellipse 40% 35% at 92% 5%, rgba(139,92,246,0.05) 0%, transparent 50%);">
 
   <!-- Sidebar -->
   {% include 'include/sidebar.html' %}
 
   <!-- Main area -->
-  <div class="flex-1 flex flex-col overflow-hidden ml-64">
+  <div class="flex-1 flex flex-col overflow-hidden lg:ml-64 min-w-0">
 
     <!-- Top navbar -->
     {% include 'include/navbar.html' %}
 
     <!-- Page content -->
-    <main class="flex-1 overflow-y-auto">
+    <main class="flex-1 overflow-y-auto min-w-0">
       {% block content %}{% endblock %}
     </main>
 

@@ -5,16 +5,17 @@
 <div class="p-6" x-data="{ modalOpen: false }">
 
   <!-- Add Schedule Modal -->
-  <div x-show="modalOpen" x-transition class="fixed inset-0 z-50 flex items-center justify-center p-4">
-    <div class="absolute inset-0 bg-zinc-950/80" @click="modalOpen = false"></div>
-    <div class="relative bg-zinc-900 border border-zinc-700 rounded-2xl w-full max-w-md shadow-2xl overflow-y-auto max-h-[90vh]">
-      <div class="px-6 py-5 border-b border-zinc-800 flex items-center justify-between">
+  <template x-teleport="body">
+  <div x-show="modalOpen" x-transition class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+    <div class="absolute inset-0 bg-zinc-950/80 backdrop-blur-sm" @click="modalOpen = false"></div>
+    <div class="relative bg-zinc-900 border border-zinc-700 rounded-2xl w-full max-w-md shadow-2xl flex flex-col" style="max-height:90vh">
+      <div class="px-6 py-5 border-b border-zinc-800 flex items-center justify-between flex-shrink-0">
         <h2 class="text-base font-semibold text-zinc-100">Add new schedule</h2>
         <button @click="modalOpen = false" class="text-zinc-500 hover:text-zinc-300 transition-colors">
           <span class="material-icons-round">close</span>
         </button>
       </div>
-      <form action="/schedules/add" method="post" class="px-6 py-5 space-y-4">
+      <form action="/schedules/add" method="post" class="px-6 py-5 space-y-4 overflow-y-auto flex-1">
         <div>
           <label class="label">Display Name <span class="text-rose-400">*</span></label>
           <input type="text" name="display_name" class="input w-full" required />
@@ -67,6 +68,7 @@
             <option value="00">:00</option>
             <option value="15">:15</option>
             <option value="30">:30</option>
+            <option value="40">:40</option>
             <option value="45">:45</option>
           </select>
         </div>
@@ -93,24 +95,25 @@
       </form>
     </div>
   </div>
+  </template>
 
   <!-- Page header -->
-  <div class="flex items-center justify-between mb-6">
+  <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
     <div>
       <h2 class="text-base font-semibold text-zinc-100">Schedules</h2>
       <p class="text-xs text-zinc-500 mt-0.5">Overview of added schedules</p>
     </div>
-    <button @click="modalOpen = true; $nextTick(() => toggleTypes())" class="btn-primary">
+    <button @click="modalOpen = true; $nextTick(() => toggleTypes())" class="btn-primary w-full sm:w-auto justify-center">
       <span class="material-icons-round text-base">add</span>
       New schedule
     </button>
   </div>
 
   <!-- Schedule list -->
-  <div class="space-y-3 max-w-3xl">
+  <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
     {% if schedules %}
     {% for schedule in schedules %}
-    <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 flex items-start justify-between gap-4">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5 flex flex-col sm:flex-row items-stretch sm:items-start justify-between gap-4">
       <div class="space-y-1.5 min-w-0">
         <h3 class="text-sm font-semibold text-zinc-100">{{ schedule.name }}</h3>
         <p class="text-xs text-zinc-500">Type: <span class="text-zinc-300">{{ schedule.task }}</span></p>
@@ -120,16 +123,17 @@
       </div>
       <a href="/schedules/delete/{{ schedule.name }}"
          onclick="return confirm('Delete schedule {{ schedule.name }}?')"
-         class="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-rose-400 bg-zinc-800 border border-zinc-700 hover:border-rose-700/50 rounded-lg px-3 py-1.5 transition-colors flex-shrink-0">
+        class="flex items-center justify-center gap-1.5 text-xs text-zinc-400 hover:text-rose-400 bg-zinc-800 border border-zinc-700 hover:border-rose-700/50 rounded-lg px-3 py-1.5 transition-colors flex-shrink-0 w-full sm:w-auto">
         <span class="material-icons-round text-sm">delete</span>
         Delete
       </a>
     </div>
     {% endfor %}
     {% else %}
-    <div class="text-center py-12 text-zinc-600">
-      <span class="material-icons-round text-4xl mb-2 block">calendar_month</span>
-      <p class="text-sm">No schedules added yet.</p>
+    <div class="card p-16 text-center sm:col-span-2 xl:col-span-3">
+      <span class="material-icons-round text-zinc-700 mb-3" style="font-size:40px">calendar_month</span>
+      <p class="text-sm font-medium text-zinc-400">No schedules added yet</p>
+      <p class="text-xs text-zinc-600 mt-1">Add a schedule to automate your backup and update tasks</p>
     </div>
     {% endif %}
   </div>
